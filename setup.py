@@ -53,7 +53,7 @@ def setup_package():
     write_version_file()
 
     setup(
-        name="project_x",
+        name="project-x",
         version=VERSION,
         description="A package to process and analyze genotypic and "
                     "phenotypic data.",
@@ -72,7 +72,8 @@ def setup_package():
                 "launch_project_x=project_x.scripts.cli:main",
             ],
         },
-        install_requires=["numpy >= 1.11.0", "pandas >= 0.18.0"],
+        install_requires=["numpy >= 1.11.0", "pandas >= 0.18.0",
+                          "pyplink >= 1.2.0"],
         packages=find_packages(),
         classifiers=["Development Status :: 1 - Planning",
                      "Intended Audience :: Science/Research",
