@@ -138,7 +138,21 @@ class Impute2Genotypes(GenotypesContainer):
             )
 
     def _create_genotypes(self, impute2_line, representation, prob_t):
-        """Creates the genotype dataframe from an IMPUTE2 line."""
+        """Creates the genotype dataframe from an IMPUTE2 line.
+
+        Args:
+            impute2_line (str): The IMPUTE2 line to process.
+            representation (str): A valid genotype representation format (e.g.
+                                  genotypes.core.REPRESENTATION.ADDITIVE).
+            prob_t (float): The probability threshold for which genotypes will
+                            be set as missing.
+
+        Returns:
+            Genotypes: A named tuple containing the dataframe with the encoded
+                       genotypes for all samples (the index of the dataframe
+                       will be the sample IDs), the minor and major alleles.
+
+        """
         # Reading the probabilities
         marker_info = self._parse_impute2_line(impute2_line)
 
