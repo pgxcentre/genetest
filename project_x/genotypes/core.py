@@ -28,6 +28,7 @@ __all__ = ["GenotypesContainer"]
 Representation = SimpleNamespace(
     ADDITIVE="additive",
     GENOTYPIC="genotypic",
+    DOSAGE="dosage",
 )
 
 
@@ -129,7 +130,7 @@ class GenotypesContainer(object):
         """
         if representation not in vars(Representation).values():
             raise ValueError("{} is an invalid "
-                             "representation".format(representation))
+                             "representation".format(representation.upper()))
 
     @staticmethod
     def additive2genotypic(genotypes):

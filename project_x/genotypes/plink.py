@@ -80,7 +80,12 @@ class PlinkGenotypes(GenotypesContainer):
             sample family ID and individual ID (i.e. fid_iid).
 
         """
+        # Checking the genotype representation
         self.check_representation(representation)
+        if representation == Representation.DOSAGE:
+            raise ValueError("{} is an invalid representation for genotyped "
+                             "data (it is usually used for imputed "
+                             "data)".format(representation.upper()))
 
         # Getting and formatting the genotypes
         result = self.create_geno_df(
@@ -127,7 +132,12 @@ class PlinkGenotypes(GenotypesContainer):
             sample family ID and individual ID (i.e. fid_iid).
 
         """
+        # Checking the genotype representation
         self.check_representation(representation)
+        if representation == Representation.DOSAGE:
+            raise ValueError("{} is an invalid representation for genotyped "
+                             "data (it is usually used for imputed "
+                             "data)".format(representation.upper()))
 
         # Iterating over all markers
         for marker, result in self.bed.iter_geno():
