@@ -245,6 +245,6 @@ class Impute2Genotypes(GenotypesContainer):
         dosage = 2 * prob[:, 2] + prob[:, 1]
 
         if prob_t > 0:
-            dosage[~np.any(prob > prob_t, axis=1)] = np.nan
+            dosage[~np.any(prob >= prob_t, axis=1)] = np.nan
 
         return dosage
