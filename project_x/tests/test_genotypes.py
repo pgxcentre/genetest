@@ -195,23 +195,23 @@ class TestPlink(unittest.TestCase):
             print("f9 i9 0 0 2 -9", file=fam)
 
         # The expected results (additive)
-        self.expected_marker_1_add = pd.DataFrame(
+        marker_1_add = pd.DataFrame(
                 [("i0", 0), ("i1", 0), ("i2", 0), ("i3", 1), ("i4", 0),
                  ("i5", 0), ("i6", np.nan), ("i7", 2), ("i8", 1), ("i9", 0)],
                 columns=["iid", "geno"],
             ).set_index("iid")
-        self.expected_marker_2_add = pd.DataFrame(
+        marker_2_add = pd.DataFrame(
                 [("i0", 0.0), ("i1", 0.0), ("i2", 0.0), ("i3", 0.0),
                  ("i4", 1.0), ("i5", 1.0), ("i6", 0.0), ("i7", 0.0),
                  ("i8", 0.0), ("i9", 1.0)],
                 columns=["iid", "geno"],
             ).set_index("iid")
-        self.expected_marker_3_add = pd.DataFrame(
+        marker_3_add = pd.DataFrame(
                 [("i0", 0), ("i1", 2), ("i2", 0), ("i3", 0), ("i4", 1),
                  ("i5", 1), ("i6", np.nan), ("i7", 0), ("i8", 0), ("i9", 1)],
                 columns=["iid", "geno"],
             ).set_index("iid")
-        self.expected_marker_4_add = pd.DataFrame(
+        marker_4_add = pd.DataFrame(
                 [("i0", np.nan), ("i1", np.nan), ("i2", np.nan),
                  ("i3", np.nan), ("i4", np.nan), ("i5", np.nan), ("i6",
                  np.nan), ("i7", np.nan), ("i8", np.nan), ("i9", np.nan)],
@@ -219,26 +219,26 @@ class TestPlink(unittest.TestCase):
             ).set_index("iid")
 
         # The expected results (genotypic)
-        self.expected_marker_1_geno = pd.DataFrame(
+        marker_1_geno = pd.DataFrame(
                 [("i0", 0, 0), ("i1", 0, 0), ("i2", 0, 0), ("i3", 1, 0),
                  ("i4", 0, 0), ("i5", 0, 0), ("i6", np.nan, np.nan),
                  ("i7", 0, 1), ("i8", 1, 0), ("i9", 0, 0)],
                 columns=["iid", "geno_ab", "geno_bb"],
             ).set_index("iid")
-        self.expected_marker_2_geno = pd.DataFrame(
+        marker_2_geno = pd.DataFrame(
                 [("i0", 0.0, 0.0), ("i1", 0.0, 0.0), ("i2", 0.0, 0.0),
                  ("i3", 0.0, 0.0), ("i4", 1.0, 0.0), ("i5", 1.0, 0.0),
                  ("i6", 0.0, 0.0), ("i7", 0.0, 0.0), ("i8", 0.0, 0.0),
                  ("i9", 1.0, 0.0)],
                 columns=["iid", "geno_ab", "geno_bb"],
             ).set_index("iid")
-        self.expected_marker_3_geno = pd.DataFrame(
+        marker_3_geno = pd.DataFrame(
                 [("i0", 0, 0), ("i1", 0, 1), ("i2", 0, 0), ("i3", 0, 0),
                  ("i4", 1, 0), ("i5", 1, 0), ("i6", np.nan, np.nan),
                  ("i7", 0, 0), ("i8", 0, 0), ("i9", 1, 0)],
                 columns=["iid", "geno_ab", "geno_bb"],
             ).set_index("iid")
-        self.expected_marker_4_geno = pd.DataFrame(
+        marker_4_geno = pd.DataFrame(
                 [("i0", np.nan, np.nan), ("i1", np.nan, np.nan),
                  ("i2", np.nan, np.nan), ("i3", np.nan, np.nan),
                  ("i4", np.nan, np.nan), ("i5", np.nan, np.nan),
@@ -246,6 +246,30 @@ class TestPlink(unittest.TestCase):
                  ("i8", np.nan, np.nan), ("i9", np.nan, np.nan)],
                 columns=["iid", "geno_ab", "geno_bb"],
             ).set_index("iid")
+
+        # The expected ADDITIVE results
+        self.expected_additive_results = (
+            MarkerGenotypes(marker="marker_1", minor="C", major="T", chrom=1,
+                            pos=1, genotypes=marker_1_add),
+            MarkerGenotypes(marker="marker_2", minor="G", major="C", chrom=1,
+                            pos=2, genotypes=marker_2_add),
+            MarkerGenotypes(marker="marker_3", minor="T", major="A", chrom=2,
+                            pos=100, genotypes=marker_3_add),
+            MarkerGenotypes(marker="marker_4", minor="G", major="T", chrom=3,
+                            pos=230, genotypes=marker_4_add),
+        )
+
+        # The expected GENOTYPIC results
+        self.expected_genotypic_results = (
+            MarkerGenotypes(marker="marker_1", minor="C", major="T", chrom=1,
+                            pos=1, genotypes=marker_1_geno),
+            MarkerGenotypes(marker="marker_2", minor="G", major="C", chrom=1,
+                            pos=2, genotypes=marker_2_geno),
+            MarkerGenotypes(marker="marker_3", minor="T", major="A", chrom=2,
+                            pos=100, genotypes=marker_3_geno),
+            MarkerGenotypes(marker="marker_4", minor="G", major="T", chrom=3,
+                            pos=230, genotypes=marker_4_geno),
+        )
 
     def tearDown(self):
         self.tmpdir.cleanup()
@@ -312,91 +336,43 @@ class TestPlink(unittest.TestCase):
 
     def test_get_genotypes_additive(self):
         """Tests the 'get_genotypes' function (additive)."""
-        observed = PlinkGenotypes(self.prefix)
+        plink_geno = PlinkGenotypes(self.prefix)
 
-        # Checking marker_1
-        marker_1 = observed.get_genotypes("marker_1")
-        self.assertTrue(isinstance(marker_1, MarkerGenotypes))
-        self.assertEqual("marker_1", marker_1.marker)
-        self.assertEqual(1, marker_1.chrom)
-        self.assertEqual(1, marker_1.pos)
-        self.assertEqual("C", marker_1.minor)
-        self.assertEqual("T", marker_1.major)
-        self.assertTrue(self.expected_marker_1_add.equals(marker_1.genotypes))
+        for expected in self.expected_additive_results:
+            # Getting the observed results
+            observed = plink_geno.get_genotypes(
+                marker=expected.marker,
+                representation=Representation.ADDITIVE,
+            )
 
-        # Checking marker_2
-        marker_2 = observed.get_genotypes("marker_2")
-        self.assertTrue(isinstance(marker_2, MarkerGenotypes))
-        self.assertEqual("marker_2", marker_2.marker)
-        self.assertEqual(1, marker_2.chrom)
-        self.assertEqual(2, marker_2.pos)
-        self.assertEqual("G", marker_2.minor)
-        self.assertEqual("C", marker_2.major)
-        self.assertTrue(self.expected_marker_2_add.equals(marker_2.genotypes))
-
-        # Checking marker_3
-        marker_3 = observed.get_genotypes("marker_3")
-        self.assertTrue(isinstance(marker_3, MarkerGenotypes))
-        self.assertEqual("marker_3", marker_3.marker)
-        self.assertEqual(2, marker_3.chrom)
-        self.assertEqual(100, marker_3.pos)
-        self.assertEqual("T", marker_3.minor)
-        self.assertEqual("A", marker_3.major)
-        self.assertTrue(self.expected_marker_3_add.equals(marker_3.genotypes))
-
-        # Checking marker_4
-        marker_4 = observed.get_genotypes("marker_4")
-        self.assertTrue(isinstance(marker_4, MarkerGenotypes))
-        self.assertEqual("marker_4", marker_4.marker)
-        self.assertEqual(3, marker_4.chrom)
-        self.assertEqual(230, marker_4.pos)
-        self.assertEqual("G", marker_4.minor)
-        self.assertEqual("T", marker_4.major)
-        self.assertTrue(self.expected_marker_4_add.equals(marker_4.genotypes))
+            # Comparing with the expected results
+            self.assertTrue(isinstance(observed, MarkerGenotypes))
+            self.assertEqual(expected.marker, observed.marker)
+            self.assertEqual(expected.chrom, observed.chrom)
+            self.assertEqual(expected.pos, observed.pos)
+            self.assertEqual(expected.minor, observed.minor)
+            self.assertEqual(expected.major, observed.major)
+            self.assertTrue(expected.genotypes.equals(observed.genotypes))
 
     def test_get_genotypes_genotypic(self):
         """Tests the 'get_genotypes' function (genotypic)."""
-        observed = PlinkGenotypes(self.prefix)
+        plink_geno = PlinkGenotypes(self.prefix)
 
-        # Checking marker_1
-        marker_1 = observed.get_genotypes("marker_1", Representation.GENOTYPIC)
-        self.assertTrue(isinstance(marker_1, MarkerGenotypes))
-        self.assertEqual("marker_1", marker_1.marker)
-        self.assertEqual(1, marker_1.chrom)
-        self.assertEqual(1, marker_1.pos)
-        self.assertEqual("C", marker_1.minor)
-        self.assertEqual("T", marker_1.major)
-        self.assertTrue(self.expected_marker_1_geno.equals(marker_1.genotypes))
+        for expected in self.expected_genotypic_results:
+            # Getting the observed results
+            observed = plink_geno.get_genotypes(
+                marker=expected.marker,
+                representation=Representation.GENOTYPIC,
+            )
 
-        # Checking marker_2
-        marker_2 = observed.get_genotypes("marker_2", Representation.GENOTYPIC)
-        self.assertTrue(isinstance(marker_2, MarkerGenotypes))
-        self.assertEqual("marker_2", marker_2.marker)
-        self.assertEqual(1, marker_2.chrom)
-        self.assertEqual(2, marker_2.pos)
-        self.assertEqual("G", marker_2.minor)
-        self.assertEqual("C", marker_2.major)
-        self.assertTrue(self.expected_marker_2_geno.equals(marker_2.genotypes))
-
-        # Checking marker_3
-        marker_3 = observed.get_genotypes("marker_3", Representation.GENOTYPIC)
-        self.assertTrue(isinstance(marker_3, MarkerGenotypes))
-        self.assertEqual("marker_3", marker_3.marker)
-        self.assertEqual(2, marker_3.chrom)
-        self.assertEqual(100, marker_3.pos)
-        self.assertEqual("T", marker_3.minor)
-        self.assertEqual("A", marker_3.major)
-        self.assertTrue(self.expected_marker_3_geno.equals(marker_3.genotypes))
-
-        # Checking marker_4
-        marker_4 = observed.get_genotypes("marker_4", Representation.GENOTYPIC)
-        self.assertTrue(isinstance(marker_4, MarkerGenotypes))
-        self.assertEqual("marker_4", marker_4.marker)
-        self.assertEqual(3, marker_4.chrom)
-        self.assertEqual(230, marker_4.pos)
-        self.assertEqual("G", marker_4.minor)
-        self.assertEqual("T", marker_4.major)
-        self.assertTrue(self.expected_marker_4_geno.equals(marker_4.genotypes))
+            # Comparing the expected results
+            self.assertTrue(isinstance(observed, MarkerGenotypes))
+            self.assertEqual(expected.marker, observed.marker)
+            self.assertEqual(expected.chrom, observed.chrom)
+            self.assertEqual(expected.pos, observed.pos)
+            self.assertEqual(expected.minor, observed.minor)
+            self.assertEqual(expected.major, observed.major)
+            self.assertTrue(expected.genotypes.equals(observed.genotypes))
 
     def test_get_genotypes_dosage(self):
         """Tests the 'get_genotypes' function (dosage)."""
@@ -413,17 +389,10 @@ class TestPlink(unittest.TestCase):
         """Tests the 'iter_marker_genotypes' function (additive)."""
         plink_geno = PlinkGenotypes(self.prefix)
 
-        expected_results = (
-            MarkerGenotypes(marker="marker_1", minor="C", major="T", chrom=1,
-                            pos=1, genotypes=self.expected_marker_1_add),
-            MarkerGenotypes(marker="marker_2", minor="G", major="C", chrom=1,
-                            pos=2, genotypes=self.expected_marker_2_add),
-            MarkerGenotypes(marker="marker_3", minor="T", major="A", chrom=2,
-                            pos=100, genotypes=self.expected_marker_3_add),
-            MarkerGenotypes(marker="marker_4", minor="G", major="T", chrom=3,
-                            pos=230, genotypes=self.expected_marker_4_add),
+        zipped = zip(
+            plink_geno.iter_marker_genotypes(Representation.ADDITIVE),
+            self.expected_additive_results,
         )
-        zipped = zip(plink_geno.iter_marker_genotypes(), expected_results)
         for observed, expected in zipped:
             self.assertTrue(isinstance(observed, MarkerGenotypes))
             self.assertEqual(expected.marker, observed.marker)
@@ -435,19 +404,9 @@ class TestPlink(unittest.TestCase):
         """Tests the 'iter_marker_genotypes' function (genotypic)."""
         plink_geno = PlinkGenotypes(self.prefix)
 
-        expected_results = (
-            MarkerGenotypes(marker="marker_1", minor="C", major="T", chrom=1,
-                            pos=1, genotypes=self.expected_marker_1_geno),
-            MarkerGenotypes(marker="marker_2", minor="G", major="C", chrom=1,
-                            pos=2, genotypes=self.expected_marker_2_geno),
-            MarkerGenotypes(marker="marker_3", minor="T", major="A", chrom=2,
-                            pos=100, genotypes=self.expected_marker_3_geno),
-            MarkerGenotypes(marker="marker_4", minor="G", major="T", chrom=3,
-                            pos=230, genotypes=self.expected_marker_4_geno),
-        )
         zipped = zip(
             plink_geno.iter_marker_genotypes(Representation.GENOTYPIC),
-            expected_results,
+            self.expected_genotypic_results,
         )
         for observed, expected in zipped:
             self.assertTrue(isinstance(observed, MarkerGenotypes))
@@ -511,22 +470,22 @@ class TestImpute2(unittest.TestCase):
                   names=["chrom", "name", "pos"])
 
         # The expected results (dosage)
-        self.expected_marker_1_dose = pd.DataFrame(
+        marker_1_dose = pd.DataFrame(
             [("i0", 0.1), ("i1", 0.01), ("i2", 0), ("i3", 1.09), ("i4", 0),
              ("i5", 0), ("i6", np.nan), ("i7", 1.9), ("i8", 1.0), ("i9", 0)],
             columns=["iid", "geno"],
         ).set_index("iid")
-        self.expected_marker_2_dose = pd.DataFrame(
+        marker_2_dose = pd.DataFrame(
             [("i0", 0.02), ("i1", 0.01), ("i2", 0), ("i3", 0), ("i4", 1.1),
              ("i5", 0.9), ("i6", 0), ("i7", 0.06), ("i8", 0), ("i9", 0.97)],
             columns=["iid", "geno"],
             ).set_index("iid")
-        self.expected_marker_3_dose = pd.DataFrame(
+        marker_3_dose = pd.DataFrame(
             [("i0", 0.1), ("i1", 1.93), ("i2", 0.04), ("i3", 0), ("i4", 1.05),
              ("i5", 0.95), ("i6", np.nan), ("i7", 0), ("i8", 0), ("i9", 1)],
             columns=["iid", "geno"],
         ).set_index("iid")
-        self.expected_marker_4_dose = pd.DataFrame(
+        marker_4_dose = pd.DataFrame(
             [("i0", np.nan), ("i1", np.nan), ("i2", np.nan), ("i3", np.nan),
              ("i4", np.nan), ("i5", np.nan), ("i6", np.nan), ("i7", np.nan),
              ("i8", np.nan), ("i9", np.nan)],
@@ -534,23 +493,23 @@ class TestImpute2(unittest.TestCase):
         ).set_index("iid")
 
         # The expected results (additive)
-        self.expected_marker_1_add = pd.DataFrame(
+        marker_1_add = pd.DataFrame(
                 [("i0", 0), ("i1", 0), ("i2", 0), ("i3", 1), ("i4", 0),
                  ("i5", 0), ("i6", np.nan), ("i7", 2), ("i8", 1), ("i9", 0)],
                 columns=["iid", "geno"],
             ).set_index("iid")
-        self.expected_marker_2_add = pd.DataFrame(
+        marker_2_add = pd.DataFrame(
                 [("i0", 0.0), ("i1", 0.0), ("i2", 0.0), ("i3", 0.0),
                  ("i4", 1.0), ("i5", 1.0), ("i6", 0.0), ("i7", 0.0),
                  ("i8", 0.0), ("i9", 1.0)],
                 columns=["iid", "geno"],
             ).set_index("iid")
-        self.expected_marker_3_add = pd.DataFrame(
+        marker_3_add = pd.DataFrame(
                 [("i0", 0), ("i1", 2), ("i2", 0), ("i3", 0), ("i4", 1),
                  ("i5", 1), ("i6", np.nan), ("i7", 0), ("i8", 0), ("i9", 1)],
                 columns=["iid", "geno"],
             ).set_index("iid")
-        self.expected_marker_4_add = pd.DataFrame(
+        marker_4_add = pd.DataFrame(
                 [("i0", np.nan), ("i1", np.nan), ("i2", np.nan),
                  ("i3", np.nan), ("i4", np.nan), ("i5", np.nan), ("i6",
                  np.nan), ("i7", np.nan), ("i8", np.nan), ("i9", np.nan)],
@@ -558,26 +517,26 @@ class TestImpute2(unittest.TestCase):
             ).set_index("iid")
 
         # The expected results (genotypic)
-        self.expected_marker_1_geno = pd.DataFrame(
+        marker_1_geno = pd.DataFrame(
                 [("i0", 0, 0), ("i1", 0, 0), ("i2", 0, 0), ("i3", 1, 0),
                  ("i4", 0, 0), ("i5", 0, 0), ("i6", np.nan, np.nan),
                  ("i7", 0, 1), ("i8", 1, 0), ("i9", 0, 0)],
                 columns=["iid", "geno_ab", "geno_bb"],
             ).set_index("iid")
-        self.expected_marker_2_geno = pd.DataFrame(
+        marker_2_geno = pd.DataFrame(
                 [("i0", 0.0, 0.0), ("i1", 0.0, 0.0), ("i2", 0.0, 0.0),
                  ("i3", 0.0, 0.0), ("i4", 1.0, 0.0), ("i5", 1.0, 0.0),
                  ("i6", 0.0, 0.0), ("i7", 0.0, 0.0), ("i8", 0.0, 0.0),
                  ("i9", 1.0, 0.0)],
                 columns=["iid", "geno_ab", "geno_bb"],
             ).set_index("iid")
-        self.expected_marker_3_geno = pd.DataFrame(
+        marker_3_geno = pd.DataFrame(
                 [("i0", 0, 0), ("i1", 0, 1), ("i2", 0, 0), ("i3", 0, 0),
                  ("i4", 1, 0), ("i5", 1, 0), ("i6", np.nan, np.nan),
                  ("i7", 0, 0), ("i8", 0, 0), ("i9", 1, 0)],
                 columns=["iid", "geno_ab", "geno_bb"],
             ).set_index("iid")
-        self.expected_marker_4_geno = pd.DataFrame(
+        marker_4_geno = pd.DataFrame(
                 [("i0", np.nan, np.nan), ("i1", np.nan, np.nan),
                  ("i2", np.nan, np.nan), ("i3", np.nan, np.nan),
                  ("i4", np.nan, np.nan), ("i5", np.nan, np.nan),
@@ -585,6 +544,42 @@ class TestImpute2(unittest.TestCase):
                  ("i8", np.nan, np.nan), ("i9", np.nan, np.nan)],
                 columns=["iid", "geno_ab", "geno_bb"],
             ).set_index("iid")
+
+        # The expected DOSAGE ressults
+        self.expected_dosage_results = (
+            MarkerGenotypes(marker="marker_1", minor="C", major="T", chrom=1,
+                            pos=1, genotypes=marker_1_dose),
+            MarkerGenotypes(marker="marker_2", minor="G", major="C", chrom=1,
+                            pos=2, genotypes=marker_2_dose),
+            MarkerGenotypes(marker="marker_3", minor="T", major="A", chrom=2,
+                            pos=100, genotypes=marker_3_dose),
+            MarkerGenotypes(marker="marker_4", minor="G", major="T", chrom=3,
+                            pos=230, genotypes=marker_4_dose),
+        )
+
+        # The expected ADDITIVE results
+        self.expected_additive_results = (
+            MarkerGenotypes(marker="marker_1", minor="C", major="T", chrom=1,
+                            pos=1, genotypes=marker_1_add),
+            MarkerGenotypes(marker="marker_2", minor="G", major="C", chrom=1,
+                            pos=2, genotypes=marker_2_add),
+            MarkerGenotypes(marker="marker_3", minor="T", major="A", chrom=2,
+                            pos=100, genotypes=marker_3_add),
+            MarkerGenotypes(marker="marker_4", minor="G", major="T", chrom=3,
+                            pos=230, genotypes=marker_4_add),
+        )
+
+        # The expected GENOTYPIC results
+        self.expected_genotypic_results = (
+            MarkerGenotypes(marker="marker_1", minor="C", major="T", chrom=1,
+                            pos=1, genotypes=marker_1_geno),
+            MarkerGenotypes(marker="marker_2", minor="G", major="C", chrom=1,
+                            pos=2, genotypes=marker_2_geno),
+            MarkerGenotypes(marker="marker_3", minor="T", major="A", chrom=2,
+                            pos=100, genotypes=marker_3_geno),
+            MarkerGenotypes(marker="marker_4", minor="G", major="T", chrom=3,
+                            pos=230, genotypes=marker_4_geno),
+        )
 
     def tearDown(self):
         self.tmpdir.cleanup()
@@ -662,173 +657,62 @@ class TestImpute2(unittest.TestCase):
 
     def test_get_genotypes_dosage(self):
         """Tests the 'get_genotypes' function (dosage)."""
-        with Impute2Genotypes(self.impute2_file, self.sample_file) as observed:
-            # Checking marker_1
-            marker_1 = observed.get_genotypes("marker_1")
-            self.assertTrue(isinstance(marker_1, MarkerGenotypes))
-            self.assertEqual("marker_1", marker_1.marker)
-            self.assertEqual(1, marker_1.chrom)
-            self.assertEqual(1, marker_1.pos)
-            self.assertEqual("C", marker_1.minor)
-            self.assertEqual("T", marker_1.major)
-            self.assertEqual(self.expected_marker_1_dose.index.tolist(),
-                             marker_1.genotypes.index.tolist())
-            self.assertEqual(self.expected_marker_1_dose.columns.tolist(),
-                             marker_1.genotypes.columns.tolist())
-            np.testing.assert_allclose(self.expected_marker_1_dose,
-                                       marker_1.genotypes)
+        with Impute2Genotypes(self.impute2_file, self.sample_file) as imp_geno:
+            for expected in self.expected_dosage_results:
+                # Getting the observed results
+                observed = imp_geno.get_genotypes(
+                    marker=expected.marker,
+                    representation=Representation.DOSAGE,
+                )
 
-            # Checking marker_2
-            marker_2 = observed.get_genotypes("marker_2")
-            self.assertTrue(isinstance(marker_2, MarkerGenotypes))
-            self.assertEqual("marker_2", marker_2.marker)
-            self.assertEqual(1, marker_2.chrom)
-            self.assertEqual(2, marker_2.pos)
-            self.assertEqual("G", marker_2.minor)
-            self.assertEqual("C", marker_2.major)
-            self.assertEqual(self.expected_marker_2_dose.index.tolist(),
-                             marker_2.genotypes.index.tolist())
-            self.assertEqual(self.expected_marker_2_dose.columns.tolist(),
-                             marker_2.genotypes.columns.tolist())
-            np.testing.assert_allclose(self.expected_marker_2_dose,
-                                       marker_2.genotypes)
-
-            # Checking marker_3
-            marker_3 = observed.get_genotypes("marker_3")
-            self.assertTrue(isinstance(marker_3, MarkerGenotypes))
-            self.assertEqual("marker_3", marker_3.marker)
-            self.assertEqual(2, marker_3.chrom)
-            self.assertEqual(100, marker_3.pos)
-            self.assertEqual("T", marker_3.minor)
-            self.assertEqual("A", marker_3.major)
-            self.assertEqual(self.expected_marker_3_dose.index.tolist(),
-                             marker_3.genotypes.index.tolist())
-            self.assertEqual(self.expected_marker_3_dose.columns.tolist(),
-                             marker_3.genotypes.columns.tolist())
-            np.testing.assert_allclose(self.expected_marker_3_dose,
-                                       marker_3.genotypes)
-
-            # Checking marker_4
-            marker_4 = observed.get_genotypes("marker_4")
-            self.assertTrue(isinstance(marker_4, MarkerGenotypes))
-            self.assertEqual("marker_4", marker_4.marker)
-            self.assertEqual(3, marker_4.chrom)
-            self.assertEqual(230, marker_4.pos)
-            self.assertEqual("G", marker_4.minor)
-            self.assertEqual("T", marker_4.major)
-            self.assertEqual(self.expected_marker_4_dose.index.tolist(),
-                             marker_4.genotypes.index.tolist())
-            self.assertEqual(self.expected_marker_4_dose.columns.tolist(),
-                             marker_4.genotypes.columns.tolist())
-            np.testing.assert_allclose(self.expected_marker_4_dose,
-                                       marker_4.genotypes)
+                # Comparing with the expected results
+                self.assertTrue(isinstance(observed, MarkerGenotypes))
+                self.assertEqual(expected.marker, observed.marker)
+                self.assertEqual(expected.chrom, observed.chrom)
+                self.assertEqual(expected.pos, observed.pos)
+                self.assertEqual(expected.minor, observed.minor)
+                self.assertEqual(expected.major, observed.major)
+                self.assertEqual(expected.genotypes.index.tolist(),
+                                 observed.genotypes.index.tolist())
+                self.assertEqual(expected.genotypes.columns.tolist(),
+                                 observed.genotypes.columns.tolist())
+                np.testing.assert_allclose(expected.genotypes,
+                                           observed.genotypes)
 
     def test_get_genotypes_additive(self):
         """Tests the 'get_genotypes' function (additive)."""
-        with Impute2Genotypes(self.impute2_file, self.sample_file) as observed:
-            # Checking marker_1
-            marker_1 = observed.get_genotypes("marker_1",
-                                              Representation.ADDITIVE)
-            self.assertTrue(isinstance(marker_1, MarkerGenotypes))
-            self.assertEqual("marker_1", marker_1.marker)
-            self.assertEqual(1, marker_1.chrom)
-            self.assertEqual(1, marker_1.pos)
-            self.assertEqual("C", marker_1.minor)
-            self.assertEqual("T", marker_1.major)
-            self.assertTrue(
-                self.expected_marker_1_add.equals(marker_1.genotypes),
-            )
+        with Impute2Genotypes(self.impute2_file, self.sample_file) as imp_geno:
+            for expected in self.expected_additive_results:
+                # Getting the observed results
+                observed = imp_geno.get_genotypes(
+                    marker=expected.marker,
+                    representation=Representation.ADDITIVE,
+                )
 
-            # Checking marker_2
-            marker_2 = observed.get_genotypes("marker_2",
-                                              Representation.ADDITIVE)
-            self.assertTrue(isinstance(marker_2, MarkerGenotypes))
-            self.assertEqual("marker_2", marker_2.marker)
-            self.assertEqual(1, marker_2.chrom)
-            self.assertEqual(2, marker_2.pos)
-            self.assertEqual("G", marker_2.minor)
-            self.assertEqual("C", marker_2.major)
-            self.assertTrue(
-                self.expected_marker_2_add.equals(marker_2.genotypes),
-            )
-
-            # Checking marker_3
-            marker_3 = observed.get_genotypes("marker_3",
-                                              Representation.ADDITIVE)
-            self.assertTrue(isinstance(marker_3, MarkerGenotypes))
-            self.assertEqual("marker_3", marker_3.marker)
-            self.assertEqual(2, marker_3.chrom)
-            self.assertEqual(100, marker_3.pos)
-            self.assertEqual("T", marker_3.minor)
-            self.assertEqual("A", marker_3.major)
-            self.assertTrue(
-                self.expected_marker_3_add.equals(marker_3.genotypes),
-            )
-
-            # Checking marker_4
-            marker_4 = observed.get_genotypes("marker_4",
-                                              Representation.ADDITIVE)
-            self.assertTrue(isinstance(marker_4, MarkerGenotypes))
-            self.assertEqual("marker_4", marker_4.marker)
-            self.assertEqual(3, marker_4.chrom)
-            self.assertEqual(230, marker_4.pos)
-            self.assertEqual("G", marker_4.minor)
-            self.assertEqual("T", marker_4.major)
-            self.assertTrue(
-                self.expected_marker_4_add.equals(marker_4.genotypes),
-            )
+                # Comparing with the expected results
+                self.assertTrue(isinstance(observed, MarkerGenotypes))
+                self.assertEqual(expected.marker, observed.marker)
+                self.assertEqual(expected.chrom, observed.chrom)
+                self.assertEqual(expected.pos, observed.pos)
+                self.assertEqual(expected.minor, observed.minor)
+                self.assertEqual(expected.major, observed.major)
+                self.assertTrue(expected.genotypes.equals(observed.genotypes))
 
     def test_get_genotypes_genotypic(self):
         """Tests the 'get_genotypes' function (genotypic)."""
-        with Impute2Genotypes(self.impute2_file, self.sample_file) as observed:
-            # Checking marker_1
-            marker_1 = observed.get_genotypes("marker_1",
-                                              Representation.GENOTYPIC)
-            self.assertTrue(isinstance(marker_1, MarkerGenotypes))
-            self.assertEqual("marker_1", marker_1.marker)
-            self.assertEqual(1, marker_1.chrom)
-            self.assertEqual(1, marker_1.pos)
-            self.assertEqual("C", marker_1.minor)
-            self.assertEqual("T", marker_1.major)
-            self.assertTrue(
-                self.expected_marker_1_geno.equals(marker_1.genotypes),
-            )
+        with Impute2Genotypes(self.impute2_file, self.sample_file) as imp_geno:
+            for expected in self.expected_genotypic_results:
+                # Getting the observed results
+                observed = imp_geno.get_genotypes(
+                    marker=expected.marker,
+                    representation=Representation.GENOTYPIC,
+                )
 
-            # Checking marker_2
-            marker_2 = observed.get_genotypes("marker_2",
-                                              Representation.GENOTYPIC)
-            self.assertTrue(isinstance(marker_2, MarkerGenotypes))
-            self.assertEqual("marker_2", marker_2.marker)
-            self.assertEqual(1, marker_2.chrom)
-            self.assertEqual(2, marker_2.pos)
-            self.assertEqual("G", marker_2.minor)
-            self.assertEqual("C", marker_2.major)
-            self.assertTrue(
-                self.expected_marker_2_geno.equals(marker_2.genotypes),
-            )
-
-            # Checking marker_3
-            marker_3 = observed.get_genotypes("marker_3",
-                                              Representation.GENOTYPIC)
-            self.assertTrue(isinstance(marker_3, MarkerGenotypes))
-            self.assertEqual("marker_3", marker_3.marker)
-            self.assertEqual(2, marker_3.chrom)
-            self.assertEqual(100, marker_3.pos)
-            self.assertEqual("T", marker_3.minor)
-            self.assertEqual("A", marker_3.major)
-            self.assertTrue(
-                self.expected_marker_3_geno.equals(marker_3.genotypes),
-            )
-
-            # Checking marker_4
-            marker_4 = observed.get_genotypes("marker_4",
-                                              Representation.GENOTYPIC)
-            self.assertTrue(isinstance(marker_4, MarkerGenotypes))
-            self.assertEqual("marker_4", marker_4.marker)
-            self.assertEqual(3, marker_4.chrom)
-            self.assertEqual(230, marker_4.pos)
-            self.assertEqual("G", marker_4.minor)
-            self.assertEqual("T", marker_4.major)
-            self.assertTrue(
-                self.expected_marker_4_geno.equals(marker_4.genotypes),
-            )
+                # Comparing with the expected results
+                self.assertTrue(isinstance(observed, MarkerGenotypes))
+                self.assertEqual(expected.marker, observed.marker)
+                self.assertEqual(expected.chrom, observed.chrom)
+                self.assertEqual(expected.pos, observed.pos)
+                self.assertEqual(expected.minor, observed.minor)
+                self.assertEqual(expected.major, observed.major)
+                self.assertTrue(expected.genotypes.equals(observed.genotypes))
