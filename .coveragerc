@@ -1,0 +1,10 @@
+[run]
+branch = True
+include = project_x*
+
+[report]
+exclude_lines = 
+    pragma: no cover
+
+[html]
+title = Coverage report - project_x
