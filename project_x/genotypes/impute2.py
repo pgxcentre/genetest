@@ -102,46 +102,15 @@ class Impute2Genotypes(GenotypesContainer):
             raise NotImplementedError("Not implemented when IMPUTE2 file is "
                                       "not indexed (see genipe)")
 
-        # Reading the probabilities
+        # Seeking to the right place in the file
         self._impute2_file.seek(int(self._impute2_index.loc[marker, "seek"]))
-        marker_info = self._parse_impute2_line(self._impute2_file.readline())
 
-        # Creating the dosage data
-        dosage = self.create_geno_df(
-            genotypes=self._compute_dosage(marker_info.prob, prob_t),
-            samples=self.samples.index,
+        # Returning the genotypes
+        return self._create_genotypes(
+            impute2_line=self._impute2_file.readline(),
+            representation=representation,
+            prob_t=prob_t,
         )
-
-        # Checking the format is fine
-        dosage, minor, major = self.check_genotypes(
-            genotypes=dosage,
-            minor=marker_info.a2,
-            major=marker_info.a1,
-        )
-
-        # Returning the value as DOSAGE representation
-        if representation == Representation.DOSAGE:
-            return MarkerGenotypes(genotypes=dosage, marker=marker,
-                                   chrom=self.encode_chrom(marker_info.chrom),
-                                   pos=marker_info.pos,
-                                   major=major, minor=minor)
-
-        # Normal additive values are necessary for ADDITIVE and GENOTYPIC
-        geno = self.dosage2additive(dosage)
-
-        # Returning the value as ADDITIVE representation
-        if representation == Representation.ADDITIVE:
-            return MarkerGenotypes(genotypes=geno, marker=marker,
-                                   chrom=self.encode_chrom(marker_info.chrom),
-                                   pos=marker_info.pos, major=major,
-                                   minor=minor)
-
-        # Returning the value as GENOTYPIC representation
-        if representation == Representation.GENOTYPIC:
-            return MarkerGenotypes(genotypes=self.additive2genotypic(geno),
-                                   chrom=self.encode_chrom(marker_info.chrom),
-                                   pos=marker_info.pos, marker=marker,
-                                   major=major, minor=minor)
 
     def iter_marker_genotypes(self, representation=Representation.DOSAGE,
                               prob_t=0.9):
@@ -162,57 +131,65 @@ class Impute2Genotypes(GenotypesContainer):
         self.check_representation(representation)
 
         for line in self._impute2_file:
-            # Reading the probabilities
-            marker_info = self._parse_impute2_line(line)
-
-            # Creating the dosage data
-            dosage = self.create_geno_df(
-                genotypes=self._compute_dosage(marker_info.prob, prob_t),
-                samples=self.samples.index,
+            yield self._create_genotypes(
+                impute2_line=line,
+                representation=representation,
+                prob_t=prob_t,
             )
 
-            # Checking the format is fine
-            dosage, minor, major = self.check_genotypes(
+    def _create_genotypes(self, impute2_line, representation, prob_t):
+        """Creates the genotype dataframe from an IMPUTE2 line."""
+        # Reading the probabilities
+        marker_info = self._parse_impute2_line(impute2_line)
+
+        # Creating the dosage data
+        dosage = self.create_geno_df(
+            genotypes=self._compute_dosage(marker_info.prob, prob_t),
+            samples=self.samples.index,
+        )
+
+        # Checking the format is fine
+        dosage, minor, major = self.check_genotypes(
+            genotypes=dosage,
+            minor=marker_info.a2,
+            major=marker_info.a1,
+        )
+
+        # Returning the value as DOSAGE representation
+        if representation == Representation.DOSAGE:
+            return MarkerGenotypes(
                 genotypes=dosage,
-                minor=marker_info.a2,
-                major=marker_info.a1,
+                marker=marker_info.marker,
+                chrom=self.encode_chrom(marker_info.chrom),
+                pos=marker_info.pos,
+                major=major,
+                minor=minor,
             )
 
-            # Returning the value as DOSAGE representation
-            if representation == Representation.DOSAGE:
-                yield MarkerGenotypes(
-                    genotypes=dosage,
-                    marker=marker_info.marker,
-                    chrom=self.encode_chrom(marker_info.chrom),
-                    pos=marker_info.pos,
-                    major=major,
-                    minor=minor,
-                )
+        # Normal additive values are necessary for ADDITIVE and GENOTYPIC
+        geno = self.dosage2additive(dosage)
 
-            # Normal additive values are necessary for ADDITIVE and GENOTYPIC
-            geno = self.dosage2additive(dosage)
+        # Returning the value as ADDITIVE representation
+        if representation == Representation.ADDITIVE:
+            return MarkerGenotypes(
+                genotypes=geno,
+                marker=marker_info.marker,
+                chrom=self.encode_chrom(marker_info.chrom),
+                pos=marker_info.pos,
+                major=major,
+                minor=minor,
+            )
 
-            # Returning the value as ADDITIVE representation
-            if representation == Representation.ADDITIVE:
-                yield MarkerGenotypes(
-                    genotypes=geno,
-                    marker=marker_info.marker,
-                    chrom=self.encode_chrom(marker_info.chrom),
-                    pos=marker_info.pos,
-                    major=major,
-                    minor=minor,
-                )
-
-            # Returning the value as GENOTYPIC representation
-            if representation == Representation.GENOTYPIC:
-                yield MarkerGenotypes(
-                    genotypes=self.additive2genotypic(geno),
-                    chrom=self.encode_chrom(marker_info.chrom),
-                    pos=marker_info.pos,
-                    marker=marker_info.marker,
-                    major=major,
-                    minor=minor,
-                )
+        # Returning the value as GENOTYPIC representation
+        if representation == Representation.GENOTYPIC:
+            return MarkerGenotypes(
+                genotypes=self.additive2genotypic(geno),
+                chrom=self.encode_chrom(marker_info.chrom),
+                pos=marker_info.pos,
+                marker=marker_info.marker,
+                major=major,
+                minor=minor,
+            )
 
     @staticmethod
     def _parse_impute2_line(line):
