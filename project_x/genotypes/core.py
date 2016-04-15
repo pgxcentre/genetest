@@ -166,3 +166,33 @@ class GenotypesContainer(object):
         """
         genotypes["geno"] = genotypes.geno.round(0)
         return genotypes
+
+    @staticmethod
+    def encode_chrom(chrom):
+        """Encodes the chromosome to its numerical value.
+
+        Args:
+            chrom (str): The chromosome in string representation.
+
+        Returns:
+            int: The chromosome in integer representation.
+
+        """
+        if isinstance(chrom, int):
+            return chrom
+
+        chrom = chrom.upper()
+        if chrom == "X":
+            return 23
+        elif chrom == "Y":
+            return 24
+        elif chrom == "XY" or chrom == "YX":
+            return 25
+        elif chrom == "M" or chrom == "MT":
+            return 26
+
+        try:
+            return int(chrom)
+
+        except:
+            raise ValueError("{}: invalid chromosome".format(chrom))

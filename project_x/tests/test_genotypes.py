@@ -16,6 +16,7 @@ from itertools import zip_longest as zip
 import numpy as np
 import pandas as pd
 from pyplink import PyPlink
+from genipe.formats.index import get_index
 
 from ..genotypes.core import GenotypesContainer, Representation, \
                              MarkerGenotypes
@@ -146,6 +147,19 @@ class TestCore(unittest.TestCase):
         self.assertTrue(geno.equals(obs_geno))
         self.assertEqual("A", obs_minor)
         self.assertEqual("B", obs_major)
+
+    def test_encode_chrom(self):
+        """Tests the 'encode_chrom' function."""
+        chromosomes = [1, 2, "3", "X", "x", "y", "XY", "M", "Mt", "yx"]
+        expected_chrom = [1, 2, 3, 23, 23, 24, 25, 26, 26, 25]
+        for expected, chrom in zip(expected_chrom, chromosomes):
+            self.assertEqual(expected, PlinkGenotypes.encode_chrom(chrom))
+
+    def test_encode_invalid_chrom(self):
+        """Tests the 'encode_chrom' function with an invalid chromosome."""
+        with self.assertRaises(ValueError) as cm:
+            PlinkGenotypes.encode_chrom("invalid_chr")
+        self.assertEqual("INVALID_CHR: invalid chromosome", str(cm.exception))
 
 
 class TestPlink(unittest.TestCase):
