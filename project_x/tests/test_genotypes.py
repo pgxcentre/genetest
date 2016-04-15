@@ -72,6 +72,50 @@ class TestCore(unittest.TestCase):
             data.loc[:, ["geno_ab", "geno_bb"]].equals(observed)
         )
 
+    def test_create_geno_df(self):
+        """Tests the 'create_geno_df' function."""
+        expected = pd.DataFrame(
+            [("sample_1", 0),
+             ("sample_2", 1),
+             ("sample_3", np.nan),
+             ("sample_4", 2)],
+            columns=["sample", "geno"],
+        ).set_index("sample")
+
+        observed = PlinkGenotypes.create_geno_df(
+            genotypes=[0, 1, -1, 2],
+            samples=["sample_{}".format(i+1) for i in range(4)],
+        )
+
+        self.assertTrue(expected.equals(observed))
+
+    def test_check_genotypes_no_flip(self):
+        """Tests the 'check_genotypes' function (no flip)."""
+        geno = pd.DataFrame({"geno": [0, 0, 0, np.nan, 1, 1, 2, 2]})
+        obs_geno, obs_minor, obs_major = PlinkGenotypes.check_genotypes(
+            genotypes=geno,
+            minor="B",
+            major="A",
+        )
+
+        self.assertTrue(geno.equals(obs_geno))
+        self.assertEqual("B", obs_minor)
+        self.assertEqual("A", obs_major)
+
+    def test_check_genotypes_flip(self):
+        """Tests the 'check_genotypes' function (flip)."""
+        geno = pd.DataFrame({"geno": [0, np.nan, np.nan, np.nan, 1, 2, 2, 2]})
+        obs_geno, obs_minor, obs_major = PlinkGenotypes.check_genotypes(
+            genotypes=geno,
+            minor="B",
+            major="A",
+        )
+
+        geno = pd.DataFrame({"geno": [2, np.nan, np.nan, np.nan, 1, 0, 0, 0]})
+        self.assertTrue(geno.equals(obs_geno))
+        self.assertEqual("A", obs_minor)
+        self.assertEqual("B", obs_major)
+
 
 class TestPlink(unittest.TestCase):
     def setUp(self):
@@ -220,50 +264,6 @@ class TestPlink(unittest.TestCase):
             "PlinkGenotypes(10 samples; 4 markers)",
             str(observed),
         )
-
-    def test_create_geno_df(self):
-        """Tests the 'create_geno_df' function."""
-        expected = pd.DataFrame(
-            [("sample_1", 0),
-             ("sample_2", 1),
-             ("sample_3", np.nan),
-             ("sample_4", 2)],
-            columns=["sample", "geno"],
-        ).set_index("sample")
-
-        observed = PlinkGenotypes.create_geno_df(
-            genotypes=[0, 1, -1, 2],
-            samples=["sample_{}".format(i+1) for i in range(4)],
-        )
-
-        self.assertTrue(expected.equals(observed))
-
-    def test_check_genotypes_no_flip(self):
-        """Tests the 'check_genotypes' function (no flip)."""
-        geno = pd.DataFrame({"geno": [0, 0, 0, np.nan, 1, 1, 2, 2]})
-        obs_geno, obs_minor, obs_major = PlinkGenotypes.check_genotypes(
-            genotypes=geno,
-            minor="B",
-            major="A",
-        )
-
-        self.assertTrue(geno.equals(obs_geno))
-        self.assertEqual("B", obs_minor)
-        self.assertEqual("A", obs_major)
-
-    def test_check_genotypes_flip(self):
-        """Tests the 'check_genotypes' function (flip)."""
-        geno = pd.DataFrame({"geno": [0, np.nan, np.nan, np.nan, 1, 2, 2, 2]})
-        obs_geno, obs_minor, obs_major = PlinkGenotypes.check_genotypes(
-            genotypes=geno,
-            minor="B",
-            major="A",
-        )
-
-        geno = pd.DataFrame({"geno": [2, np.nan, np.nan, np.nan, 1, 0, 0, 0]})
-        self.assertTrue(geno.equals(obs_geno))
-        self.assertEqual("A", obs_minor)
-        self.assertEqual("B", obs_major)
 
     def test_get_genotypes_additive(self):
         """Tests the 'get_genotypes' function (additive)."""

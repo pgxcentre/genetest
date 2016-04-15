@@ -11,6 +11,7 @@
 
 
 import numpy as np
+import pandas as pd
 
 from types import SimpleNamespace
 from collections import namedtuple
@@ -77,6 +78,44 @@ class GenotypesContainer(object):
 
         """
         raise NotImplementedError()
+
+    @staticmethod
+    def create_geno_df(genotypes, samples):
+        """Creates the genotypes datafrane.
+
+        Args:
+            genotypes (numpy.ndarray): The genotypes.
+            samples (list): The sample (in the required order).
+
+        Returns:
+            pandas.DataFrame: The genotypes
+
+        """
+        genotypes = pd.DataFrame({"geno": genotypes}, index=samples)
+        genotypes.loc[genotypes.geno == -1, "geno"] = np.nan
+        return genotypes
+
+    @staticmethod
+    def check_genotypes(genotypes, minor, major):
+        """Checks that 0 -> homo major and 2 -> homo minor.
+
+        Args:
+            genotypes (pandas.DataFrame): The genotypes.
+            minor (str): The minor allele.
+            major (str): The major allele.
+
+        Returns:
+            tuple: The genotypes, the minor and major alleles.
+
+        """
+        # Checking we have 0 -> homo major and 2 -> homo minor
+        geno_sum = genotypes.geno.sum(skipna=True)
+        nb_geno = genotypes.shape[0] - np.sum(genotypes.geno.isnull())
+        if geno_sum / (nb_geno * 2) > 0.5:
+            genotypes.geno = 2 - genotypes.geno
+            minor, major = major, minor
+
+        return genotypes, minor, major
 
     @staticmethod
     def check_representation(representation):
