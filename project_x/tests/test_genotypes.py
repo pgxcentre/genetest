@@ -396,6 +396,8 @@ class TestPlink(unittest.TestCase):
         for observed, expected in zipped:
             self.assertTrue(isinstance(observed, MarkerGenotypes))
             self.assertEqual(expected.marker, observed.marker)
+            self.assertEqual(expected.chrom, observed.chrom)
+            self.assertEqual(expected.pos, observed.pos)
             self.assertEqual(expected.minor, observed.minor)
             self.assertEqual(expected.major, observed.major)
             self.assertTrue(expected.genotypes.equals(observed.genotypes))
@@ -709,6 +711,60 @@ class TestImpute2(unittest.TestCase):
                 )
 
                 # Comparing with the expected results
+                self.assertTrue(isinstance(observed, MarkerGenotypes))
+                self.assertEqual(expected.marker, observed.marker)
+                self.assertEqual(expected.chrom, observed.chrom)
+                self.assertEqual(expected.pos, observed.pos)
+                self.assertEqual(expected.minor, observed.minor)
+                self.assertEqual(expected.major, observed.major)
+                self.assertTrue(expected.genotypes.equals(observed.genotypes))
+
+    def test_iter_marker_genotypes_dosage(self):
+        """Tests the 'iter_marker_genotypes' function (dosage)."""
+        with Impute2Genotypes(self.impute2_file, self.sample_file) as imp_geno:
+            zipped = zip(
+                imp_geno.iter_marker_genotypes(Representation.DOSAGE),
+                self.expected_dosage_results,
+            )
+            for observed, expected in zipped:
+                # Comparing with the expected results
+                self.assertTrue(isinstance(observed, MarkerGenotypes))
+                self.assertEqual(expected.marker, observed.marker)
+                self.assertEqual(expected.chrom, observed.chrom)
+                self.assertEqual(expected.pos, observed.pos)
+                self.assertEqual(expected.minor, observed.minor)
+                self.assertEqual(expected.major, observed.major)
+                self.assertEqual(expected.genotypes.index.tolist(),
+                                 observed.genotypes.index.tolist())
+                self.assertEqual(expected.genotypes.columns.tolist(),
+                                 observed.genotypes.columns.tolist())
+                np.testing.assert_allclose(expected.genotypes,
+                                           observed.genotypes)
+
+    def test_iter_marker_genotypes_additive(self):
+        """Tests the 'iter_marker_genotypes' function (additive)."""
+        with Impute2Genotypes(self.impute2_file, self.sample_file) as imp_geno:
+            zipped = zip(
+                imp_geno.iter_marker_genotypes(Representation.ADDITIVE),
+                self.expected_additive_results,
+            )
+            for observed, expected in zipped:
+                self.assertTrue(isinstance(observed, MarkerGenotypes))
+                self.assertEqual(expected.marker, observed.marker)
+                self.assertEqual(expected.chrom, observed.chrom)
+                self.assertEqual(expected.pos, observed.pos)
+                self.assertEqual(expected.minor, observed.minor)
+                self.assertEqual(expected.major, observed.major)
+                self.assertTrue(expected.genotypes.equals(observed.genotypes))
+
+    def test_iter_marker_genotypes_genotypic(self):
+        """Tests the 'iter_marker_genotypes' function (genotypic)."""
+        with Impute2Genotypes(self.impute2_file, self.sample_file) as imp_geno:
+            zipped = zip(
+                imp_geno.iter_marker_genotypes(Representation.GENOTYPIC),
+                self.expected_genotypic_results,
+            )
+            for observed, expected in zipped:
                 self.assertTrue(isinstance(observed, MarkerGenotypes))
                 self.assertEqual(expected.marker, observed.marker)
                 self.assertEqual(expected.chrom, observed.chrom)
