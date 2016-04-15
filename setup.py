@@ -75,7 +75,7 @@ def setup_package():
         test_suite="project_x.tests.test_suite",
         zip_safe=False,
         install_requires=["numpy >= 1.11.0", "pandas >= 0.18.0",
-                          "pyplink >= 1.2.0"],
+                          "pyplink >= 1.2.0", "genipe >= 1.2.3"],
         packages=find_packages(),
         classifiers=["Development Status :: 1 - Planning",
                      "Intended Audience :: Science/Research",
