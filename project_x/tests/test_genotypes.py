@@ -169,16 +169,16 @@ class TestPlink(unittest.TestCase):
 
         # Creating a FAM file
         with open(self.prefix + ".fam", "w") as fam:
-            print("f0", "i0", 0, 0, 1, -9, file=fam)
-            print("f1", "i1", 0, 0, 1, -9, file=fam)
-            print("f2", "i2", 0, 0, 2, -9, file=fam)
-            print("f3", "i3", 0, 0, 2, -9, file=fam)
-            print("f4", "i4", 0, 0, 1, -9, file=fam)
-            print("f5", "i5", 0, 0, 2, -9, file=fam)
-            print("f6", "i6", 0, 0, 1, -9, file=fam)
-            print("f7", "i7", 0, 0, 1, -9, file=fam)
-            print("f8", "i8", 0, 0, 1, -9, file=fam)
-            print("f9", "i9", 0, 0, 2, -9, file=fam)
+            print("f0 i0 0 0 1 -9", file=fam)
+            print("f1 i1 0 0 1 -9", file=fam)
+            print("f2 i2 0 0 2 -9", file=fam)
+            print("f3 i3 0 0 2 -9", file=fam)
+            print("f4 i4 0 0 1 -9", file=fam)
+            print("f5 i5 0 0 2 -9", file=fam)
+            print("f6 i6 0 0 1 -9", file=fam)
+            print("f7 i7 0 0 1 -9", file=fam)
+            print("f8 i8 0 0 1 -9", file=fam)
+            print("f9 i9 0 0 2 -9", file=fam)
 
         # The expected results (additive)
         self.expected_marker_1_add = pd.DataFrame(
@@ -251,16 +251,16 @@ class TestPlink(unittest.TestCase):
         """Tests the creation of the instance, but with duplicated IID."""
         # Modifying the FAM file
         with open(self.prefix + ".fam", "w") as fam:
-            print("f0", "i0", 0, 0, 1, -9, file=fam)
-            print("f1", "i1", 0, 0, 1, -9, file=fam)
-            print("f2", "i2", 0, 0, 2, -9, file=fam)
-            print("f3", "i3", 0, 0, 2, -9, file=fam)
-            print("f4", "i4", 0, 0, 1, -9, file=fam)
-            print("f5", "i0", 0, 0, 2, -9, file=fam)
-            print("f6", "i6", 0, 0, 1, -9, file=fam)
-            print("f7", "i7", 0, 0, 1, -9, file=fam)
-            print("f8", "i8", 0, 0, 1, -9, file=fam)
-            print("f9", "i9", 0, 0, 2, -9, file=fam)
+            print("f0 i0 0 0 1 -9", file=fam)
+            print("f1 i1 0 0 1 -9", file=fam)
+            print("f2 i2 0 0 2 -9", file=fam)
+            print("f3 i3 0 0 2 -9", file=fam)
+            print("f4 i4 0 0 1 -9", file=fam)
+            print("f5 i0 0 0 2 -9", file=fam)
+            print("f6 i6 0 0 1 -9", file=fam)
+            print("f7 i7 0 0 1 -9", file=fam)
+            print("f8 i8 0 0 1 -9", file=fam)
+            print("f9 i9 0 0 2 -9", file=fam)
 
         observed = PlinkGenotypes(self.prefix)
 
@@ -273,16 +273,16 @@ class TestPlink(unittest.TestCase):
         """Tests the creation of the instance, but with duplicated FID/IID."""
         # Modifying the FAM file
         with open(self.prefix + ".fam", "w") as fam:
-            print("f0", "i0", 0, 0, 1, -9, file=fam)
-            print("f1", "i1", 0, 0, 1, -9, file=fam)
-            print("f2", "i2", 0, 0, 2, -9, file=fam)
-            print("f3", "i3", 0, 0, 2, -9, file=fam)
-            print("f4", "i4", 0, 0, 1, -9, file=fam)
-            print("f0", "i0", 0, 0, 2, -9, file=fam)
-            print("f6", "i6", 0, 0, 1, -9, file=fam)
-            print("f7", "i7", 0, 0, 1, -9, file=fam)
-            print("f8", "i8", 0, 0, 1, -9, file=fam)
-            print("f9", "i9", 0, 0, 2, -9, file=fam)
+            print("f0 i0 0 0 1 -9", file=fam)
+            print("f1 i1 0 0 1 -9", file=fam)
+            print("f2 i2 0 0 2 -9", file=fam)
+            print("f3 i3 0 0 2 -9", file=fam)
+            print("f4 i4 0 0 1 -9", file=fam)
+            print("f0 i0 0 0 2 -9", file=fam)
+            print("f6 i6 0 0 1 -9", file=fam)
+            print("f7 i7 0 0 1 -9", file=fam)
+            print("f8 i8 0 0 1 -9", file=fam)
+            print("f9 i9 0 0 2 -9", file=fam)
 
         # This should raise a ValueError
         with self.assertRaises(ValueError):
