@@ -38,6 +38,11 @@ class TestCore(unittest.TestCase):
         with self.assertRaises(NotImplementedError):
             GenotypesContainer().iter_marker_genotypes()
 
+    def test_close(self):
+        """Tests that 'close' raises a NotImplementedError."""
+        with self.assertRaises(NotImplementedError):
+            GenotypesContainer().close()
+
     def test_check_valid_representation(self):
         """Tests with a valid representation."""
         GenotypesContainer.check_representation(Representation.ADDITIVE)
@@ -284,12 +289,12 @@ class TestPlink(unittest.TestCase):
             PlinkGenotypes(self.prefix)
 
     def test_repr(self):
-        """Tests the '__repr__' function."""
-        observed = PlinkGenotypes(self.prefix)
-        self.assertEqual(
-            "PlinkGenotypes(10 samples; 4 markers)",
-            str(observed),
-        )
+        """Tests the '__repr__' function (and as context manager)."""
+        with PlinkGenotypes(self.prefix) as plink_geno:
+            self.assertEqual(
+                "PlinkGenotypes(10 samples; 4 markers)",
+                str(plink_geno),
+            )
 
     def test_get_genotypes_additive(self):
         """Tests the 'get_genotypes' function (additive)."""
