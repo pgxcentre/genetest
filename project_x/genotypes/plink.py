@@ -9,8 +9,6 @@
 # Commons, PO Box 1866, Mountain View, CA 94042, USA.
 
 
-import numpy as np
-import pandas as pd
 from pyplink import PyPlink
 
 from .core import GenotypesContainer, Representation, MarkerGenotypes
@@ -87,32 +85,12 @@ class PlinkGenotypes(GenotypesContainer):
                              "data (it is usually used for imputed "
                              "data)".format(representation.upper()))
 
-        # Getting and formatting the genotypes
-        result = self.create_geno_df(
+        # Returning the genotypes
+        return self._create_genotypes(
+            marker=marker,
             genotypes=self.bed.get_geno_marker(marker),
-            samples=self.fam.index,
+            representation=representation,
         )
-
-        # Checking the format is fine
-        result, minor, major = self.check_genotypes(
-            genotypes=result,
-            minor=self.bim.loc[marker, "a1"],
-            major=self.bim.loc[marker, "a2"],
-        )
-
-        # Returning the value as ADDITIVE representation
-        if representation == Representation.ADDITIVE:
-            return MarkerGenotypes(genotypes=result, marker=marker,
-                                   chrom=self.bim.loc[marker, "chrom"],
-                                   pos=self.bim.loc[marker, "pos"],
-                                   major=major, minor=minor)
-
-        # Returning the value as GENOTYPIC representation
-        if representation == Representation.GENOTYPIC:
-            return MarkerGenotypes(genotypes=self.additive2genotypic(result),
-                                   chrom=self.bim.loc[marker, "chrom"],
-                                   pos=self.bim.loc[marker, "pos"],
-                                   marker=marker, major=major, minor=minor)
 
     def iter_marker_genotypes(self, representation=Representation.ADDITIVE):
         """Returns a dataframe of genotypes encoded using the provided model.
@@ -140,32 +118,47 @@ class PlinkGenotypes(GenotypesContainer):
                              "data)".format(representation.upper()))
 
         # Iterating over all markers
-        for marker, result in self.bed.iter_geno():
-            # Getting and formatting the genotypes
-            result = self.create_geno_df(
-                genotypes=result,
-                samples=self.fam.index,
+        for marker, genotypes in self.bed.iter_geno():
+            yield self._create_genotypes(
+                marker=marker,
+                genotypes=genotypes,
+                representation=representation,
             )
 
-            # Checking the format is fine
-            result, minor, major = self.check_genotypes(
-                genotypes=result,
-                minor=self.bim.loc[marker, "a1"],
-                major=self.bim.loc[marker, "a2"],
-            )
+    def _create_genotypes(self, marker, genotypes, representation):
+        """Creates the genotype dataframe from an binary Plink file.
 
-            # Returning the value as ADDITIVE representation
-            if representation == Representation.ADDITIVE:
-                yield MarkerGenotypes(genotypes=result, marker=marker,
-                                      chrom=self.bim.loc[marker, "chrom"],
-                                      pos=self.bim.loc[marker, "pos"],
-                                      major=major, minor=minor)
+        Args:
+            marker (str): The name of the marker.
+            genotypes (numpy.ndarray): The genotypes.
+            representation (str): The final genotype representation to use.
 
-            # Returning the value as GENOTYPIC representation
-            if representation == Representation.GENOTYPIC:
-                yield MarkerGenotypes(
-                    genotypes=self.additive2genotypic(result),
-                    chrom=self.bim.loc[marker, "chrom"],
-                    pos=self.bim.loc[marker, "pos"],
-                    marker=marker, major=major, minor=minor,
-                )
+        Returns:
+            pandas.DataFrame: The genotypes in the required representation.
+        """
+        # Getting and formatting the genotypes
+        additive = self.create_geno_df(
+            genotypes=genotypes,
+            samples=self.fam.index,
+        )
+
+        # Checking the format is fine
+        additive, minor, major = self.check_genotypes(
+            genotypes=additive,
+            minor=self.bim.loc[marker, "a1"],
+            major=self.bim.loc[marker, "a2"],
+        )
+
+        # Returning the value as ADDITIVE representation
+        if representation == Representation.ADDITIVE:
+            return MarkerGenotypes(genotypes=additive, marker=marker,
+                                   chrom=self.bim.loc[marker, "chrom"],
+                                   pos=self.bim.loc[marker, "pos"],
+                                   major=major, minor=minor)
+
+        # Returning the value as GENOTYPIC representation
+        if representation == Representation.GENOTYPIC:
+            return MarkerGenotypes(genotypes=self.additive2genotypic(additive),
+                                   chrom=self.bim.loc[marker, "chrom"],
+                                   pos=self.bim.loc[marker, "pos"],
+                                   marker=marker, major=major, minor=minor)
