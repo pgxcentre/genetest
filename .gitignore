@@ -1,8 +1,14 @@
-.DS_Store
 *.swp
 *.pyc
 __pycache__
+
+.DS_Store
 dist
 build
+test
+
 project_x.egg-info/
 project_x/version.py
+
+.coverage
+htmlcov
