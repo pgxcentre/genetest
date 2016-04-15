@@ -46,6 +46,9 @@ class PlinkGenotypes(GenotypesContainer):
             ]
             self.fam = self.fam.set_index("fid_iid", verify_integrity=True)
 
+    def close(self):
+        pass
+
     def __repr__(self):
         """The string representation."""
         return "PlinkGenotypes({:,d} samples; {:,d} markers)".format(
