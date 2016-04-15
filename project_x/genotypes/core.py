@@ -33,7 +33,7 @@ Representation = SimpleNamespace(
 # The genotypes that will be returned by the function
 MarkerGenotypes = namedtuple(
     "MarkerGenotypes",
-    ["marker", "genotypes", "major", "minor"],
+    ["marker", "chrom", "pos", "genotypes", "major", "minor"],
 )
 
 

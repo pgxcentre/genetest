@@ -133,11 +133,15 @@ class PlinkGenotypes(GenotypesContainer):
         # Returning the value as ADDITIVE representation
         if representation == Representation.ADDITIVE:
             return MarkerGenotypes(genotypes=result, marker=marker,
+                                   chrom=self.bim.loc[marker, "chrom"],
+                                   pos=self.bim.loc[marker, "pos"],
                                    major=major, minor=minor)
 
         # Returning the value as GENOTYPIC representation
         if representation == Representation.GENOTYPIC:
             return MarkerGenotypes(genotypes=self.additive2genotypic(result),
+                                   chrom=self.bim.loc[marker, "chrom"],
+                                   pos=self.bim.loc[marker, "pos"],
                                    marker=marker, major=major, minor=minor)
 
     def iter_marker_genotypes(self, representation=Representation.ADDITIVE):
@@ -178,11 +182,15 @@ class PlinkGenotypes(GenotypesContainer):
             # Returning the value as ADDITIVE representation
             if representation == Representation.ADDITIVE:
                 yield MarkerGenotypes(genotypes=result, marker=marker,
+                                      chrom=self.bim.loc[marker, "chrom"],
+                                      pos=self.bim.loc[marker, "pos"],
                                       major=major, minor=minor)
 
             # Returning the value as GENOTYPIC representation
             if representation == Representation.GENOTYPIC:
                 yield MarkerGenotypes(
                     genotypes=self.additive2genotypic(result),
+                    chrom=self.bim.loc[marker, "chrom"],
+                    pos=self.bim.loc[marker, "pos"],
                     marker=marker, major=major, minor=minor,
                 )

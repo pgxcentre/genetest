@@ -273,6 +273,8 @@ class TestPlink(unittest.TestCase):
         marker_1 = observed.get_genotypes("marker_1")
         self.assertTrue(isinstance(marker_1, MarkerGenotypes))
         self.assertEqual("marker_1", marker_1.marker)
+        self.assertEqual(1, marker_1.chrom)
+        self.assertEqual(1, marker_1.pos)
         self.assertEqual("C", marker_1.minor)
         self.assertEqual("T", marker_1.major)
         self.assertTrue(self.expected_marker_1_add.equals(marker_1.genotypes))
@@ -281,6 +283,8 @@ class TestPlink(unittest.TestCase):
         marker_2 = observed.get_genotypes("marker_2")
         self.assertTrue(isinstance(marker_2, MarkerGenotypes))
         self.assertEqual("marker_2", marker_2.marker)
+        self.assertEqual(1, marker_2.chrom)
+        self.assertEqual(2, marker_2.pos)
         self.assertEqual("G", marker_2.minor)
         self.assertEqual("C", marker_2.major)
         self.assertTrue(self.expected_marker_2_add.equals(marker_2.genotypes))
@@ -289,6 +293,8 @@ class TestPlink(unittest.TestCase):
         marker_3 = observed.get_genotypes("marker_3")
         self.assertTrue(isinstance(marker_3, MarkerGenotypes))
         self.assertEqual("marker_3", marker_3.marker)
+        self.assertEqual(2, marker_3.chrom)
+        self.assertEqual(100, marker_3.pos)
         self.assertEqual("T", marker_3.minor)
         self.assertEqual("A", marker_3.major)
         self.assertTrue(self.expected_marker_3_add.equals(marker_3.genotypes))
@@ -297,6 +303,8 @@ class TestPlink(unittest.TestCase):
         marker_4 = observed.get_genotypes("marker_4")
         self.assertTrue(isinstance(marker_4, MarkerGenotypes))
         self.assertEqual("marker_4", marker_4.marker)
+        self.assertEqual(3, marker_4.chrom)
+        self.assertEqual(230, marker_4.pos)
         self.assertEqual("G", marker_4.minor)
         self.assertEqual("T", marker_4.major)
         self.assertTrue(self.expected_marker_4_add.equals(marker_4.genotypes))
@@ -309,6 +317,8 @@ class TestPlink(unittest.TestCase):
         marker_1 = observed.get_genotypes("marker_1", Representation.GENOTYPIC)
         self.assertTrue(isinstance(marker_1, MarkerGenotypes))
         self.assertEqual("marker_1", marker_1.marker)
+        self.assertEqual(1, marker_1.chrom)
+        self.assertEqual(1, marker_1.pos)
         self.assertEqual("C", marker_1.minor)
         self.assertEqual("T", marker_1.major)
         self.assertTrue(self.expected_marker_1_geno.equals(marker_1.genotypes))
@@ -317,6 +327,8 @@ class TestPlink(unittest.TestCase):
         marker_2 = observed.get_genotypes("marker_2", Representation.GENOTYPIC)
         self.assertTrue(isinstance(marker_2, MarkerGenotypes))
         self.assertEqual("marker_2", marker_2.marker)
+        self.assertEqual(1, marker_2.chrom)
+        self.assertEqual(2, marker_2.pos)
         self.assertEqual("G", marker_2.minor)
         self.assertEqual("C", marker_2.major)
         self.assertTrue(self.expected_marker_2_geno.equals(marker_2.genotypes))
@@ -325,6 +337,8 @@ class TestPlink(unittest.TestCase):
         marker_3 = observed.get_genotypes("marker_3", Representation.GENOTYPIC)
         self.assertTrue(isinstance(marker_3, MarkerGenotypes))
         self.assertEqual("marker_3", marker_3.marker)
+        self.assertEqual(2, marker_3.chrom)
+        self.assertEqual(100, marker_3.pos)
         self.assertEqual("T", marker_3.minor)
         self.assertEqual("A", marker_3.major)
         self.assertTrue(self.expected_marker_3_geno.equals(marker_3.genotypes))
@@ -333,6 +347,8 @@ class TestPlink(unittest.TestCase):
         marker_4 = observed.get_genotypes("marker_4", Representation.GENOTYPIC)
         self.assertTrue(isinstance(marker_4, MarkerGenotypes))
         self.assertEqual("marker_4", marker_4.marker)
+        self.assertEqual(3, marker_4.chrom)
+        self.assertEqual(230, marker_4.pos)
         self.assertEqual("G", marker_4.minor)
         self.assertEqual("T", marker_4.major)
         self.assertTrue(self.expected_marker_4_geno.equals(marker_4.genotypes))
@@ -342,14 +358,14 @@ class TestPlink(unittest.TestCase):
         plink_geno = PlinkGenotypes(self.prefix)
 
         expected_results = (
-            MarkerGenotypes(marker="marker_1", minor="C", major="T",
-                            genotypes=self.expected_marker_1_add),
-            MarkerGenotypes(marker="marker_2", minor="G", major="C",
-                            genotypes=self.expected_marker_2_add),
-            MarkerGenotypes(marker="marker_3", minor="T", major="A",
-                            genotypes=self.expected_marker_3_add),
-            MarkerGenotypes(marker="marker_4", minor="G", major="T",
-                            genotypes=self.expected_marker_4_add),
+            MarkerGenotypes(marker="marker_1", minor="C", major="T", chrom=1,
+                            pos=1, genotypes=self.expected_marker_1_add),
+            MarkerGenotypes(marker="marker_2", minor="G", major="C", chrom=1,
+                            pos=2, genotypes=self.expected_marker_2_add),
+            MarkerGenotypes(marker="marker_3", minor="T", major="A", chrom=2,
+                            pos=100, genotypes=self.expected_marker_3_add),
+            MarkerGenotypes(marker="marker_4", minor="G", major="T", chrom=3,
+                            pos=230, genotypes=self.expected_marker_4_add),
         )
         zipped = zip(plink_geno.iter_marker_genotypes(), expected_results)
         for observed, expected in zipped:
@@ -364,14 +380,14 @@ class TestPlink(unittest.TestCase):
         plink_geno = PlinkGenotypes(self.prefix)
 
         expected_results = (
-            MarkerGenotypes(marker="marker_1", minor="C", major="T",
-                            genotypes=self.expected_marker_1_geno),
-            MarkerGenotypes(marker="marker_2", minor="G", major="C",
-                            genotypes=self.expected_marker_2_geno),
-            MarkerGenotypes(marker="marker_3", minor="T", major="A",
-                            genotypes=self.expected_marker_3_geno),
-            MarkerGenotypes(marker="marker_4", minor="G", major="T",
-                            genotypes=self.expected_marker_4_geno),
+            MarkerGenotypes(marker="marker_1", minor="C", major="T", chrom=1,
+                            pos=1, genotypes=self.expected_marker_1_geno),
+            MarkerGenotypes(marker="marker_2", minor="G", major="C", chrom=1,
+                            pos=2, genotypes=self.expected_marker_2_geno),
+            MarkerGenotypes(marker="marker_3", minor="T", major="A", chrom=2,
+                            pos=100, genotypes=self.expected_marker_3_geno),
+            MarkerGenotypes(marker="marker_4", minor="G", major="T", chrom=3,
+                            pos=230, genotypes=self.expected_marker_4_geno),
         )
         zipped = zip(
             plink_geno.iter_marker_genotypes(Representation.GENOTYPIC),
@@ -380,6 +396,8 @@ class TestPlink(unittest.TestCase):
         for observed, expected in zipped:
             self.assertTrue(isinstance(observed, MarkerGenotypes))
             self.assertEqual(expected.marker, observed.marker)
+            self.assertEqual(expected.chrom, observed.chrom)
+            self.assertEqual(expected.pos, observed.pos)
             self.assertEqual(expected.minor, observed.minor)
             self.assertEqual(expected.major, observed.major)
             self.assertTrue(expected.genotypes.equals(observed.genotypes))
