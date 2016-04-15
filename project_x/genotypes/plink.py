@@ -1,6 +1,13 @@
 """
 """
 
+# This file is part of project_x.
+#
+# This work is licensed under the Creative Commons Attribution-NonCommercial
+# 4.0 International License. To view a copy of this license, visit
+# http://creativecommons.org/licenses/by-nc/4.0/ or send a letter to Creative
+# Commons, PO Box 1866, Mountain View, CA 94042, USA.
+
 
 import numpy as np
 import pandas as pd
@@ -11,6 +18,9 @@ from .core import GenotypesContainer, Representation, MarkerGenotypes
 
 __copyright__ = "Copyright 2016, Beaulieu-Saucier Pharmacogenomics Centre"
 __license__ = "Attribution-NonCommercial 4.0 International (CC BY-NC 4.0)"
+
+
+__all__ = ["PlinkGenotypes"]
 
 
 class PlinkGenotypes(GenotypesContainer):
@@ -96,7 +106,13 @@ class PlinkGenotypes(GenotypesContainer):
 
         Note
         ====
-            PyPlink returns the genotypes in the additive format.
+            PyPlink returns the genotypes in the additive format. So we only
+            require to convert to genitypic representation if required.
+
+        Note
+        ====
+            If the sample IDs are not unique, the index is changed to be the
+            sample family ID and individual ID (i.e. fid_iid).
 
         """
         self.check_representation(representation)
@@ -135,6 +151,11 @@ class PlinkGenotypes(GenotypesContainer):
             Genotypes: A named tuple containing the dataframe with the encoded
                        genotypes for all samples (the index of the dataframe
                        will be the sample IDs), the minor and major alleles.
+
+        Note
+        ====
+            If the sample IDs are not unique, the index is changed to be the
+            sample family ID and individual ID (i.e. fid_iid).
 
         """
         self.check_representation(representation)
