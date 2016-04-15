@@ -46,7 +46,7 @@ class TestCore(unittest.TestCase):
         with self.assertRaises(ValueError) as cm:
             GenotypesContainer.check_representation("invalid_representation")
         self.assertEqual(
-            "invalid_representation is an invalid representation",
+            "INVALID_REPRESENTATION is an invalid representation",
             str(cm.exception),
         )
 
@@ -353,6 +353,17 @@ class TestPlink(unittest.TestCase):
         self.assertEqual("T", marker_4.major)
         self.assertTrue(self.expected_marker_4_geno.equals(marker_4.genotypes))
 
+    def test_get_genotypes_dosage(self):
+        """Tests the 'get_genotypes' function (dosage)."""
+        observed = PlinkGenotypes(self.prefix)
+        with self.assertRaises(ValueError) as cm:
+            observed.get_genotypes("marker_1", Representation.DOSAGE)
+        self.assertEqual(
+            "DOSAGE is an invalid representation for genotyped data (it is "
+            "usually used for imputed data)",
+            str(cm.exception),
+        )
+
     def test_iter_marker_genotypes_additive(self):
         """Tests the 'iter_marker_genotypes' function (additive)."""
         plink_geno = PlinkGenotypes(self.prefix)
@@ -401,3 +412,14 @@ class TestPlink(unittest.TestCase):
             self.assertEqual(expected.minor, observed.minor)
             self.assertEqual(expected.major, observed.major)
             self.assertTrue(expected.genotypes.equals(observed.genotypes))
+
+    def test_iter_marker_genotypes_dosage(self):
+        """Tests the 'get_genotypes' function (dosage)."""
+        observed = PlinkGenotypes(self.prefix)
+        with self.assertRaises(ValueError) as cm:
+            next(observed.iter_marker_genotypes(Representation.DOSAGE))
+        self.assertEqual(
+            "DOSAGE is an invalid representation for genotyped data (it is "
+            "usually used for imputed data)",
+            str(cm.exception),
+        )
