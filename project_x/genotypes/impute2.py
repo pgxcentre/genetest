@@ -79,16 +79,16 @@ class Impute2Genotypes(GenotypesContainer):
             self.samples.shape[0],
         )
 
-    def get_genotypes(self, marker, prob_t=0.9,
-                      representation=Representation.ADDITIVE):
+    def get_genotypes(self, marker, representation=Representation.DOSAGE,
+                      prob_t=0.9):
         """Returns a dataframe of genotypes encoded using the provided model.
 
         Args:
             marker (str): A marker ID (e.g. rs123456).
-            prob_t (float): The probability threshold for which genotypes will
-                            be set as missing.
             representation (str): A valid genotype representation format (e.g.
                                   genotypes.core.REPRESENTATION.ADDITIVE).
+            prob_t (float): The probability threshold for which genotypes will
+                            be set as missing.
 
         Returns:
             Genotypes: A named tuple containing the dataframe with the encoded
@@ -119,29 +119,39 @@ class Impute2Genotypes(GenotypesContainer):
             major=marker_info.a1,
         )
 
-        # Returning the value as ADDITIVE representation
-        if representation == Representation.ADDITIVE:
+        # Returning the value as DOSAGE representation
+        if representation == Representation.DOSAGE:
             return MarkerGenotypes(genotypes=dosage, marker=marker,
                                    chrom=marker_info.chrom,
                                    pos=marker_info.pos,
                                    major=major, minor=minor)
 
+        # Normal additive values are necessary for ADDITIVE and GENOTYPIC
+        geno = self.dosage2additive(dosage)
+
+        # Returning the value as ADDITIVE representation
+        if representation == Representation.ADDITIVE:
+            return MarkerGenotypes(genotypes=geno, marker=marker,
+                                   chrom=marker_info.chrom,
+                                   pos=marker_info.pos, major=major,
+                                   minor=minor)
+
         # Returning the value as GENOTYPIC representation
         if representation == Representation.GENOTYPIC:
-            return MarkerGenotypes(genotypes=self.additive2genotypic(dosage),
+            return MarkerGenotypes(genotypes=self.additive2genotypic(geno),
                                    chrom=marker_info.chrom,
                                    pos=marker_info.pos, marker=marker,
                                    major=major, minor=minor)
 
-    def iter_marker_genotypes(self, prob_t=0.9,
-                              representation=Representation.ADDITIVE):
+    def iter_marker_genotypes(self, representation=Representation.DOSAGE,
+                              prob_t=0.9):
         """Returns a dataframe of genotypes encoded using the provided model.
 
         Args:
-            prob_t (float): The probability threshold for which genotypes will
-                            be set as missing.
             representation (str): A valid genotype representation format (e.g.
                                   genotypes.core.REPRESENTATION.ADDITIVE).
+            prob_t (float): The probability threshold for which genotypes will
+                            be set as missing.
 
         Returns:
             Genotypes: A named tuple containing the dataframe with the encoded
@@ -168,8 +178,8 @@ class Impute2Genotypes(GenotypesContainer):
                 major=marker_info.a1,
             )
 
-            # Returning the value as ADDITIVE representation
-            if representation == Representation.ADDITIVE:
+            # Returning the value as DOSAGE representation
+            if representation == Representation.DOSAGE:
                 yield MarkerGenotypes(
                     genotypes=dosage,
                     marker=marker_info.marker,
@@ -179,16 +189,24 @@ class Impute2Genotypes(GenotypesContainer):
                     minor=minor,
                 )
 
+            # Normal additive values are necessary for ADDITIVE and GENOTYPIC
+            geno = self.dosage2additive(dosage)
+
+            # Returning the value as ADDITIVE representation
+            if representation == Representation.ADDITIVE:
+                yield MarkerGenotypes(genotypes=geno,
+                                      marker=marker_info.marker,
+                                      chrom=marker_info.chrom,
+                                      pos=marker_info.pos, major=major,
+                                      minor=minor)
+
             # Returning the value as GENOTYPIC representation
             if representation == Representation.GENOTYPIC:
-                yield MarkerGenotypes(
-                    genotypes=self.additive2genotypic(dosage),
-                    chrom=marker_info.chrom,
-                    pos=marker_info.pos,
-                    marker=marker_info.marker,
-                    major=major,
-                    minor=minor,
-                )
+                yield MarkerGenotypes(genotypes=self.additive2genotypic(geno),
+                                      chrom=marker_info.chrom,
+                                      pos=marker_info.pos,
+                                      marker=marker_info.marker, major=major,
+                                      minor=minor)
 
     @staticmethod
     def _parse_impute2_line(line):
