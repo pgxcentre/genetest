@@ -72,6 +72,8 @@ def setup_package():
                 "launch_project_x=project_x.scripts.cli:main",
             ],
         },
+        test_suite="project_x.tests.test_suite",
+        zip_safe=False,
         install_requires=["numpy >= 1.11.0", "pandas >= 0.18.0",
                           "pyplink >= 1.2.0"],
         packages=find_packages(),
