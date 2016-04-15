@@ -185,7 +185,7 @@ class Impute2Genotypes(GenotypesContainer):
                     genotypes=self.additive2genotypic(dosage),
                     chrom=marker_info.chrom,
                     pos=marker_info.pos,
-                    marker=marker,
+                    marker=marker_info.marker,
                     major=major,
                     minor=minor,
                 )
