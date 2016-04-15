@@ -20,6 +20,7 @@ from pyplink import PyPlink
 from ..genotypes.core import GenotypesContainer, Representation, \
                              MarkerGenotypes
 from ..genotypes.plink import PlinkGenotypes
+from ..genotypes.impute2 import Impute2Genotypes
 
 
 __copyright__ = "Copyright 2016, Beaulieu-Saucier Pharmacogenomics Centre"
@@ -70,6 +71,31 @@ class TestCore(unittest.TestCase):
 
         self.assertTrue(
             data.loc[:, ["geno_ab", "geno_bb"]].equals(observed)
+        )
+
+    def test_dosage2additive(self):
+        """Tests the 'dosage2additive' function."""
+        data = pd.DataFrame(
+            [("sample_0", 0.0, 0.0),
+             ("sample_1", 0.1, 0.0),
+             ("sample_2", 0.9, 1.0),
+             ("sample_3", 1.0, 1.0),
+             ("sample_4", 1.1, 1.0),
+             ("sample_5", 1.9, 2.0),
+             ("sample_6", 2.0, 2.0),
+             ("sample_7", 2.1, 2.0),
+             ("sample_8", np.nan, np.nan),
+             ("sample_9", 1.3, 1.0)],
+            columns=["iid", "geno", "geno_add"],
+        ).set_index("iid")
+
+        observed = GenotypesContainer.dosage2additive(data.loc[:, ["geno"]])
+
+        expected = data.loc[:, ["geno_add"]].rename(
+            columns={"geno_add": "geno"},
+        )
+        self.assertTrue(
+            expected.equals(observed)
         )
 
     def test_create_geno_df(self):

@@ -150,3 +150,19 @@ class GenotypesContainer(object):
         genotypes["geno_bb"] = [1 if g == 2 else 0 for g in genotypes.geno]
         genotypes.loc[genotypes.geno.isnull(), ["geno_ab", "geno_bb"]] = np.nan
         return genotypes.loc[:, ["geno_ab", "geno_bb"]]
+
+    @staticmethod
+    def dosage2additive(genotypes):
+        """Converts from 'dosage' representation to 'additive'.
+
+        Args:
+            genotypes (pandas.DataFrame): The dataframe containing the
+                                          genotypes (with  a 'geno' column).
+
+        Returns:
+            pandas.DataFrame: The dataframe containing the additive
+                              representation of the genotypes.
+
+        """
+        genotypes["geno"] = genotypes.geno.round(0)
+        return genotypes
