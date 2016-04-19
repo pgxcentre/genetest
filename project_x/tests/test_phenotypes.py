@@ -80,6 +80,61 @@ class TestText(unittest.TestCase):
 
         self.assertTrue(self.expected_pheno.equals(observed_pheno))
 
+    def test_repeated_measurements(self):
+        """Tests when there are repeated measurements available."""
+        with open(self.pheno_file, "w") as f:
+            print("sample", "Time", "V1", "V2", "V3", file=f)
+            print("s1", "13", "1", "1.2", "a", file=f)
+            print("s1", "125", "1", "1.2", "a", file=f)
+            print("s1", "356", "1", "1.2", "a", file=f)
+            print("s2", "12", "5463", "16.8", "b", file=f)
+            print("s2", "34", "5463", "16.8", "b", file=f)
+            print("s2", "67", "5463", "16.8", "b", file=f)
+            print("s3", "1", "57634", "3134.3", "c", file=f)
+            print("s3", "5", "57634", "3134.3", "c", file=f)
+            print("s3", "10", "57634", "3134.3", "c", file=f)
+
+        expected_pheno = pd.DataFrame(
+            [("s1_0", 13, 1, 1.2, "a"),
+             ("s1_1", 125, 1, 1.2, "a"),
+             ("s1_2", 356, 1, 1.2, "a"),
+             ("s2_0", 12, 5463, 16.8, "b"),
+             ("s2_1", 34, 5463, 16.8, "b"),
+             ("s2_2", 67, 5463, 16.8, "b"),
+             ("s3_0", 1, 57634, 3134.3, "c"),
+             ("s3_1", 5, 57634, 3134.3, "c"),
+             ("s3_2", 10, 57634, 3134.3, "c")],
+            columns=["sample", "Time", "V1", "V2", "V3"],
+        ).set_index("sample")
+
+        observed_pheno = TextPhenotypes(
+            fn=self.pheno_file,
+            sep=" ",
+            repeated_measurements=True,
+        )
+
+        # Checking the values
+        self.assertTrue(expected_pheno.equals(observed_pheno.get_phenotypes()))
+
+        # Checking the original values
+        expected_ori_samples = pd.DataFrame(
+            [("s1_0", "s1"),
+             ("s1_1", "s1"),
+             ("s1_2", "s1"),
+             ("s2_0", "s2"),
+             ("s2_1", "s2"),
+             ("s2_2", "s2"),
+             ("s3_0", "s3"),
+             ("s3_1", "s3"),
+             ("s3_2", "s3")],
+            columns=["sample", "_ori_sample_names"],
+        ).set_index("sample")
+        self.assertTrue(
+            expected_ori_samples.equals(
+                observed_pheno.get_original_sample_names(),
+            ),
+        )
+
     def test_one_other_missing_value(self):
         """Tests when there are other missing values."""
         observed_pheno = TextPhenotypes(
