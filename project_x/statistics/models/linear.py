@@ -35,7 +35,7 @@ class StatsLinear(StatsModels):
             rsquared_adj="adjusted r-squared",
         )
 
-    def fit(self, y, X, result_col):
+    def fit(self, y, X, result_col, condition_value_t=1000):
         """Fit the model.
 
         Args:
@@ -54,7 +54,7 @@ class StatsLinear(StatsModels):
         # Checking the condition number (according to StatsModels, condition
         # number higher than 1000 indicate that there are strong
         # multicollinearity or other numerical problems)
-        if fitted.condition_number > 1000:
+        if fitted.condition_number > condition_value_t:
             raise StatsError("condition number is large, {}".format(
                 fitted.condition_number,
             ))
