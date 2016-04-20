@@ -49,18 +49,21 @@ class TestStatsLinear(unittest.TestCase):
         # Fitting
         self.ols.fit(y, X, result_col="snp1")
 
-        # Checking the results (according to R)
-        self.assertAlmostEqual(113.1989213865802668, self.ols.results.coef)
-        self.assertAlmostEqual(20.8583649966504652, self.ols.results.std_err)
-        self.assertAlmostEqual(71.3978238271019876, self.ols.results.lower_ci)
-        self.assertAlmostEqual(155.0000189460585602, self.ols.results.upper_ci)
-        self.assertAlmostEqual(5.4270275452921783, self.ols.results.t_value)
-        self.assertAlmostEqual(0.3082338225205, self.ols.results.rsquared_adj)
+        # The number of observation and parameters that were fitted
+        n = X.shape[0]
+        p = X.shape[1] - 1
 
-        # The p-value is small, so we check the -log10 value instead
+        # Checking the results (according to SAS)
+        self.assertAlmostEqual(113.19892138658, self.ols.results.coef)
+        self.assertAlmostEqual(20.8583649966504, self.ols.results.std_err)
+        self.assertAlmostEqual(71.397823827102, self.ols.results.lower_ci)
+        self.assertAlmostEqual(155.000018946058, self.ols.results.upper_ci)
+        self.assertAlmostEqual(5.42702754529217, self.ols.results.t_value)
+        self.assertAlmostEqual(-np.log10(0.0000013285915771),
+                               -np.log10(self.ols.results.p_value))
         self.assertAlmostEqual(
-            -np.log10(1.328591577071916e-06),
-            -np.log10(self.ols.results.p_value),
+            1 - (n - 1) * (1 - 0.35513322438349)/((n - 1) - p),
+            self.ols.results.rsquared_adj,
         )
 
     def test_linear_snp2(self):
@@ -75,18 +78,21 @@ class TestStatsLinear(unittest.TestCase):
         # Fitting
         self.ols.fit(y, X, result_col="snp2")
 
-        # Checking the results (according to R)
-        self.assertAlmostEqual(25.6638410624231454, self.ols.results.coef)
-        self.assertAlmostEqual(7.0244242187562653, self.ols.results.std_err)
-        self.assertAlmostEqual(11.5865803512147210, self.ols.results.lower_ci)
-        self.assertAlmostEqual(39.7411017736315699, self.ols.results.upper_ci)
-        self.assertAlmostEqual(3.6535152580757928, self.ols.results.t_value)
-        self.assertAlmostEqual(0.1452372691714, self.ols.results.rsquared_adj)
+        # The number of observation and parameters that were fitted
+        n = X.shape[0]
+        p = X.shape[1] - 1
 
-        # The p-value is small, so we check the -log10 value instead
+        # Checking the results (according to SAS)
+        self.assertAlmostEqual(25.6638410624231, self.ols.results.coef)
+        self.assertAlmostEqual(7.02442421875627, self.ols.results.std_err)
+        self.assertAlmostEqual(11.5865803512147, self.ols.results.lower_ci)
+        self.assertAlmostEqual(39.7411017736316, self.ols.results.upper_ci)
+        self.assertAlmostEqual(3.65351525807579, self.ols.results.t_value)
+        self.assertAlmostEqual(-np.log10(0.0005783767026428),
+                               -np.log10(self.ols.results.p_value))
         self.assertAlmostEqual(
-            -np.log10(0.0005783767026428237),
-            -np.log10(self.ols.results.p_value),
+            1 - (n - 1) * (1 - 0.20318728482079)/((n - 1) - p),
+            self.ols.results.rsquared_adj,
         )
 
     def test_linear_snp3(self):
@@ -101,14 +107,21 @@ class TestStatsLinear(unittest.TestCase):
         # Fitting
         self.ols.fit(y, X, result_col="snp3")
 
-        # Checking the results (according to R)
-        self.assertAlmostEqual(0.08097682855889538, self.ols.results.coef)
-        self.assertAlmostEqual(6.6803747245602088, self.ols.results.std_err)
-        self.assertAlmostEqual(-13.3067932886126528, self.ols.results.lower_ci)
-        self.assertAlmostEqual(13.4687469457304445, self.ols.results.upper_ci)
-        self.assertAlmostEqual(0.01212159974517393, self.ols.results.t_value)
-        self.assertAlmostEqual(0.99037246258070233, self.ols.results.p_value)
-        self.assertAlmostEqual(-0.06220573746784, self.ols.results.rsquared_adj)
+        # The number of observation and parameters that were fitted
+        n = X.shape[0]
+        p = X.shape[1] - 1
+
+        # Checking the results (according to SAS)
+        self.assertAlmostEqual(0.08097682855889, self.ols.results.coef)
+        self.assertAlmostEqual(6.6803747245602, self.ols.results.std_err)
+        self.assertAlmostEqual(-13.3067932886126, self.ols.results.lower_ci)
+        self.assertAlmostEqual(13.4687469457304, self.ols.results.upper_ci)
+        self.assertAlmostEqual(0.0121215997451737, self.ols.results.t_value)
+        self.assertAlmostEqual(0.99037246258077, self.ols.results.p_value)
+        self.assertAlmostEqual(
+            1 - (n - 1) * (1 - 0.0098082108350667)/((n - 1) - p),
+            self.ols.results.rsquared_adj,
+        )
 
     def test_linear_snp4(self):
         """Tests linear regression with the fourth SNP."""
@@ -122,14 +135,21 @@ class TestStatsLinear(unittest.TestCase):
         # Fitting
         self.ols.fit(y, X, result_col="snp4")
 
-        # Checking the results (according to R)
-        self.assertAlmostEqual(-17.09338157602033803, self.ols.results.coef)
-        self.assertAlmostEqual(6.495704343238213, self.ols.results.std_err)
-        self.assertAlmostEqual(-30.1110639788755243, self.ols.results.lower_ci)
-        self.assertAlmostEqual(-4.0756991731651517, self.ols.results.upper_ci)
-        self.assertAlmostEqual(-2.6314900852613334, self.ols.results.t_value)
-        self.assertAlmostEqual(0.01100922909893113, self.ols.results.p_value)
-        self.assertAlmostEqual(0.05657300185575, self.ols.results.rsquared_adj)
+        # The number of observation and parameters that were fitted
+        n = X.shape[0]
+        p = X.shape[1] - 1
+
+        # Checking the results (according to SAS)
+        self.assertAlmostEqual(-17.0933815760203, self.ols.results.coef)
+        self.assertAlmostEqual(6.49570434323821, self.ols.results.std_err)
+        self.assertAlmostEqual(-30.1110639788755, self.ols.results.lower_ci)
+        self.assertAlmostEqual(-4.07569917316514, self.ols.results.upper_ci)
+        self.assertAlmostEqual(-2.63149008526133, self.ols.results.t_value)
+        self.assertAlmostEqual(0.0110092290989312, self.ols.results.p_value)
+        self.assertAlmostEqual(
+            1 - (n - 1) * (1 - 0.1205341542723)/((n - 1) - p),
+            self.ols.results.rsquared_adj,
+        )
 
     def test_linear_snp5(self):
         """Tests linear regression with the fifth SNP (raises StatsError)."""
