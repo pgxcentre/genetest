@@ -1,6 +1,6 @@
 [run]
 branch = True
-include = project_x*
+source = project_x
 
 [report]
 exclude_lines = 
