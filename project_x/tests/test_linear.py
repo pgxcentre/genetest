@@ -16,6 +16,7 @@ import pandas as pd
 from patsy import dmatrices
 from pkg_resources import resource_filename
 
+from ..statistics.core import StatsError
 from ..statistics.models.linear import StatsLinear
 
 
@@ -131,7 +132,7 @@ class TestStatsLinear(unittest.TestCase):
         self.assertAlmostEqual(0.05657300185575, self.ols.results.rsquared_adj)
 
     def test_linear_snp5(self):
-        """Tests linear regression with the fifth SNP (raises ValueError)."""
+        """Tests linear regression with the fifth SNP (raises StatsError)."""
         # Preparing the matrices
         y, X = dmatrices(
             "pheno1 ~ age + var1 + C(gender) + snp5",
@@ -140,7 +141,7 @@ class TestStatsLinear(unittest.TestCase):
         )
 
         # Fitting
-        with self.assertRaises(ValueError) as cm:
+        with self.assertRaises(StatsError) as cm:
             self.ols.fit(y, X, result_col="snp5")
 
         # Checking the error message

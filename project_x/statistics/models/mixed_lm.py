@@ -13,7 +13,7 @@
 import numpy as np
 import statsmodels.api as sm
 
-from ..core import StatsModels, StatsResults
+from ..core import StatsModels, StatsResults, StatsError
 
 
 __copyright__ = "Copyright 2016, Beaulieu-Saucier Pharmacogenomics Centre"
@@ -53,7 +53,7 @@ class StatsMixedLM(StatsModels):
         try:
             fitted = model.fit(reml=reml)
         except np.linalg.linalg.LinAlgError as e:
-            raise ValueError(str(e))
+            raise StatsError(str(e))
 
         # Saving the statistics
         self.results.coef = fitted.params[result_col]

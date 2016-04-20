@@ -12,7 +12,7 @@
 
 import statsmodels.api as sm
 
-from ..core import StatsModels, StatsResults
+from ..core import StatsModels, StatsResults, StatsError
 
 
 __copyright__ = "Copyright 2016, Beaulieu-Saucier Pharmacogenomics Centre"
@@ -55,7 +55,7 @@ class StatsLinear(StatsModels):
         # number higher than 1000 indicate that there are strong
         # multicollinearity or other numerical problems)
         if fitted.condition_number > 1000:
-            raise ValueError("condition number is large, {}".format(
+            raise StatsError("condition number is large, {}".format(
                 fitted.condition_number,
             ))
 
@@ -63,7 +63,7 @@ class StatsLinear(StatsModels):
         # loser than 1e-10 might indicate that there are strong
         # multicollinearity problems or that the design matrix is singular)
         if fitted.eigenvals.min() < 1e-10:
-            raise ValueError("smallest eigenvalue is small, {}".format(
+            raise StatsError("smallest eigenvalue is small, {}".format(
                 fitted.eigenvals.min(),
             ))
 

@@ -17,7 +17,7 @@ __copyright__ = "Copyright 2016, Beaulieu-Saucier Pharmacogenomics Centre"
 __license__ = "Attribution-NonCommercial 4.0 International (CC BY-NC 4.0)"
 
 
-__all__ = ["StatsModels", "StatsResults"]
+__all__ = ["StatsModels", "StatsResults", "StatsError"]
 
 
 class StatsModels(object):
@@ -60,3 +60,12 @@ class StatsResults(object):
     def reset(self):
         """Resets the statistics (sets all the values to NaN)."""
         self._results[:] = np.nan
+
+
+class StatsError(Exception):
+    """An Exception raised if there is any statistical problem."""
+    def __init__(self, msg):
+        self.message = str(msg)
+
+    def __str__(self):
+        return self.message
