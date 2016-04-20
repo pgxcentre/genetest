@@ -49,24 +49,20 @@ class TestStatsLogistic(unittest.TestCase):
         # Fitting
         self.logistic.fit(y, X, result_col="snp1")
 
-        # Checking the results (according to R)
-        self.assertAlmostEqual(-2.24198759580421436,
-                               self.logistic.results.coef)
-        self.assertAlmostEqual(0.59758174548961274,
-                               self.logistic.results.std_err, places=4)
-        self.assertAlmostEqual(-3.55431314172335844 / 10,
-                               self.logistic.results.lower_ci / 10, places=1)
-        self.assertAlmostEqual(-1.18244470804878388 / 10,
-                               self.logistic.results.upper_ci / 10, places=1)
-        self.assertAlmostEqual(-3.7517672062879051,
-                               self.logistic.results.z_value, places=3)
-
-        # The p-value is small, so we check the -log10 value instead
-        self.assertAlmostEqual(
-            -np.log10(0.0001755924726864904),
-            -np.log10(self.logistic.results.p_value),
-            places=3,
-        )
+        # Checking the results (according to SAS)
+        self.assertAlmostEqual(-2.24198635855498, self.logistic.results.coef,
+                               places=5)
+        self.assertAlmostEqual(0.59759558908668, self.logistic.results.std_err,
+                               places=6)
+        self.assertAlmostEqual(-3.41325219048488,
+                               self.logistic.results.lower_ci, places=5)
+        self.assertAlmostEqual(-1.07072052662507,
+                               self.logistic.results.upper_ci, places=5)
+        self.assertAlmostEqual(14.0750894991982,
+                               self.logistic.results.z_value**2, places=4)
+        self.assertAlmostEqual(-np.log10(0.0001756548178104),
+                               -np.log10(self.logistic.results.p_value),
+                               places=5)
 
     def test_logistic_snp2(self):
         """Tests logistic regression with the second SNP."""
@@ -80,24 +76,20 @@ class TestStatsLogistic(unittest.TestCase):
         # Fitting
         self.logistic.fit(y, X, result_col="snp2")
 
-        # Checking the results (according to R)
-        self.assertAlmostEqual(1.12532537333269489,
-                               self.logistic.results.coef)
-        self.assertAlmostEqual(0.45211812806716867,
+        # Checking the results (according to SAS)
+        self.assertAlmostEqual(1.12532308347075,
+                               self.logistic.results.coef, places=5)
+        self.assertAlmostEqual(0.45211815097241,
                                self.logistic.results.std_err, places=6)
-        self.assertAlmostEqual(0.28806348871004650,
-                               self.logistic.results.lower_ci, places=1)
-        self.assertAlmostEqual(2.08869739528846932 / 10,
-                               self.logistic.results.upper_ci / 10, places=1)
-        self.assertAlmostEqual(2.4890074152600925,
-                               self.logistic.results.z_value, places=3)
-
-        # The p-value is small, so we check the -log10 value instead
-        self.assertAlmostEqual(
-            -np.log10(0.01281002939196238),
-            -np.log10(self.logistic.results.p_value),
-            places=5,
-        )
+        self.assertAlmostEqual(0.2391877908079700,
+                               self.logistic.results.lower_ci, places=5)
+        self.assertAlmostEqual(2.0114583761335300,
+                               self.logistic.results.upper_ci, places=5)
+        self.assertAlmostEqual(6.19513207316499,
+                               self.logistic.results.z_value**2, places=4)
+        self.assertAlmostEqual(-np.log10(0.0128102164253392),
+                               -np.log10(self.logistic.results.p_value),
+                               places=5)
 
     def test_logistic_snp3(self):
         """Tests logistic regression with the third SNP (raises StatsError)."""
