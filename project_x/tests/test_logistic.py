@@ -111,3 +111,11 @@ class TestStatsLogistic(unittest.TestCase):
         # Fitting
         with self.assertRaises(StatsError):
             self.logistic.fit(y, X, result_col="snp3")
+
+        # All the value should be NaN
+        self.assertTrue(np.isnan(self.logistic.results.coef))
+        self.assertTrue(np.isnan(self.logistic.results.std_err))
+        self.assertTrue(np.isnan(self.logistic.results.lower_ci))
+        self.assertTrue(np.isnan(self.logistic.results.upper_ci))
+        self.assertTrue(np.isnan(self.logistic.results.z_value))
+        self.assertTrue(np.isnan(self.logistic.results.p_value))
