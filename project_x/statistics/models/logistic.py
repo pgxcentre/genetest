@@ -11,8 +11,9 @@
 
 
 import statsmodels.api as sm
+from statsmodels.tools.sm_exceptions import PerfectSeparationError
 
-from ..core import StatsModels, StatsResults
+from ..core import StatsModels, StatsResults, StatsError
 
 
 __copyright__ = "Copyright 2016, Beaulieu-Saucier Pharmacogenomics Centre"
@@ -48,7 +49,10 @@ class StatsLogistic(StatsModels):
 
         # Creating the OLS model from StatsModels and fitting it
         model = sm.GLM(y, X, family=sm.families.Binomial())
-        fitted = model.fit()
+        try:
+            fitted = model.fit()
+        except PerfectSeparationError as e:
+            raise StatsError(str(e))
 
         # Saving the statistics
         self.results.coef = fitted.params[result_col]
