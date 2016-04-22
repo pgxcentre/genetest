@@ -32,7 +32,7 @@ class TestStatsLinear(unittest.TestCase):
 
     def setUp(self):
         self.data = pd.read_csv(
-            resource_filename(__name__, "data/regression_linear.txt.bz2"),
+            resource_filename(__name__, "data/statistics/linear.txt.bz2"),
             sep="\t",
             compression="bz2",
         )
