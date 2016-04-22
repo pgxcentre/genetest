@@ -1,0 +1,4 @@
+# project_x - A Python module for statistical genetics
+
+The `project_x` module includes a script that will perform various statistical
+analysis on genetics data (*e.g.* hard calls, imputed data, etc.).
