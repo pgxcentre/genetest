@@ -32,6 +32,16 @@ class StatsModels(object):
         """
         raise NotImplementedError()
 
+    def from_formula(self, formula, data):
+        """Fit the model using a formula.
+
+        Args:
+            formula (str): The formula explaining the model.
+            data (pandas.DataFrame): The data to fit.
+
+        """
+        raise NotImplementedError()
+
 
 class StatsResults(object):
     def __init__(self, **kwargs):
