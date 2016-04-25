@@ -9,6 +9,7 @@
 
 
 import os
+import random
 import unittest
 from tempfile import TemporaryDirectory
 from itertools import zip_longest as zip
@@ -17,11 +18,13 @@ import numpy as np
 import pandas as pd
 from pyplink import PyPlink
 from genipe.formats.index import get_index
+from pkg_resources import resource_filename
 
 from ..genotypes.core import GenotypesContainer, Representation, \
                              MarkerGenotypes
 from ..genotypes.plink import PlinkGenotypes
 from ..genotypes.impute2 import Impute2Genotypes
+from ..genotypes.vcf import VCFGenotypes
 
 
 __copyright__ = "Copyright 2016, Beaulieu-Saucier Pharmacogenomics Centre"
@@ -150,8 +153,8 @@ class TestCore(unittest.TestCase):
 
     def test_encode_chrom(self):
         """Tests the 'encode_chrom' function."""
-        chromosomes = [1, 2, "3", "X", "x", "y", "XY", "M", "Mt", "yx"]
-        expected_chrom = [1, 2, 3, 23, 23, 24, 25, 26, 26, 25]
+        chromosomes = ["chr1", 1, 2, "3", "X", "x", "y", "XY", "M", "Mt", "yx"]
+        expected_chrom = [1, 1, 2, 3, 23, 23, 24, 25, 26, 26, 25]
         for expected, chrom in zip(expected_chrom, chromosomes):
             self.assertEqual(expected, PlinkGenotypes.encode_chrom(chrom))
 
@@ -248,7 +251,7 @@ class TestPlink(unittest.TestCase):
             ).set_index("iid")
 
         # The expected ADDITIVE results
-        self.expected_additive_results = (
+        self.expected_additive_results = [
             MarkerGenotypes(marker="marker_1", minor="C", major="T", chrom=1,
                             pos=1, genotypes=marker_1_add),
             MarkerGenotypes(marker="marker_2", minor="G", major="C", chrom=1,
@@ -257,10 +260,10 @@ class TestPlink(unittest.TestCase):
                             pos=100, genotypes=marker_3_add),
             MarkerGenotypes(marker="marker_4", minor="G", major="T", chrom=3,
                             pos=230, genotypes=marker_4_add),
-        )
+        ]
 
         # The expected GENOTYPIC results
-        self.expected_genotypic_results = (
+        self.expected_genotypic_results = [
             MarkerGenotypes(marker="marker_1", minor="C", major="T", chrom=1,
                             pos=1, genotypes=marker_1_geno),
             MarkerGenotypes(marker="marker_2", minor="G", major="C", chrom=1,
@@ -269,7 +272,7 @@ class TestPlink(unittest.TestCase):
                             pos=100, genotypes=marker_3_geno),
             MarkerGenotypes(marker="marker_4", minor="G", major="T", chrom=3,
                             pos=230, genotypes=marker_4_geno),
-        )
+        ]
 
     def tearDown(self):
         self.tmpdir.cleanup()
@@ -338,6 +341,7 @@ class TestPlink(unittest.TestCase):
         """Tests the 'get_genotypes' function (additive)."""
         plink_geno = PlinkGenotypes(self.prefix)
 
+        random.shuffle(self.expected_additive_results)
         for expected in self.expected_additive_results:
             # Getting the observed results
             observed = plink_geno.get_genotypes(
@@ -358,6 +362,7 @@ class TestPlink(unittest.TestCase):
         """Tests the 'get_genotypes' function (genotypic)."""
         plink_geno = PlinkGenotypes(self.prefix)
 
+        random.shuffle(self.expected_genotypic_results)
         for expected in self.expected_genotypic_results:
             # Getting the observed results
             observed = plink_geno.get_genotypes(
@@ -548,7 +553,7 @@ class TestImpute2(unittest.TestCase):
             ).set_index("iid")
 
         # The expected DOSAGE ressults
-        self.expected_dosage_results = (
+        self.expected_dosage_results = [
             MarkerGenotypes(marker="marker_1", minor="C", major="T", chrom=1,
                             pos=1, genotypes=marker_1_dose),
             MarkerGenotypes(marker="marker_2", minor="G", major="C", chrom=1,
@@ -557,10 +562,10 @@ class TestImpute2(unittest.TestCase):
                             pos=100, genotypes=marker_3_dose),
             MarkerGenotypes(marker="marker_4", minor="G", major="T", chrom=3,
                             pos=230, genotypes=marker_4_dose),
-        )
+        ]
 
         # The expected ADDITIVE results
-        self.expected_additive_results = (
+        self.expected_additive_results = [
             MarkerGenotypes(marker="marker_1", minor="C", major="T", chrom=1,
                             pos=1, genotypes=marker_1_add),
             MarkerGenotypes(marker="marker_2", minor="G", major="C", chrom=1,
@@ -569,10 +574,10 @@ class TestImpute2(unittest.TestCase):
                             pos=100, genotypes=marker_3_add),
             MarkerGenotypes(marker="marker_4", minor="G", major="T", chrom=3,
                             pos=230, genotypes=marker_4_add),
-        )
+        ]
 
         # The expected GENOTYPIC results
-        self.expected_genotypic_results = (
+        self.expected_genotypic_results = [
             MarkerGenotypes(marker="marker_1", minor="C", major="T", chrom=1,
                             pos=1, genotypes=marker_1_geno),
             MarkerGenotypes(marker="marker_2", minor="G", major="C", chrom=1,
@@ -581,7 +586,7 @@ class TestImpute2(unittest.TestCase):
                             pos=100, genotypes=marker_3_geno),
             MarkerGenotypes(marker="marker_4", minor="G", major="T", chrom=3,
                             pos=230, genotypes=marker_4_geno),
-        )
+        ]
 
     def tearDown(self):
         self.tmpdir.cleanup()
@@ -659,6 +664,7 @@ class TestImpute2(unittest.TestCase):
 
     def test_get_genotypes_dosage(self):
         """Tests the 'get_genotypes' function (dosage)."""
+        random.shuffle(self.expected_dosage_results)
         with Impute2Genotypes(self.impute2_file, self.sample_file) as imp_geno:
             for expected in self.expected_dosage_results:
                 # Getting the observed results
@@ -683,6 +689,7 @@ class TestImpute2(unittest.TestCase):
 
     def test_get_genotypes_additive(self):
         """Tests the 'get_genotypes' function (additive)."""
+        random.shuffle(self.expected_additive_results)
         with Impute2Genotypes(self.impute2_file, self.sample_file) as imp_geno:
             for expected in self.expected_additive_results:
                 # Getting the observed results
@@ -702,6 +709,7 @@ class TestImpute2(unittest.TestCase):
 
     def test_get_genotypes_genotypic(self):
         """Tests the 'get_genotypes' function (genotypic)."""
+        random.shuffle(self.expected_genotypic_results)
         with Impute2Genotypes(self.impute2_file, self.sample_file) as imp_geno:
             for expected in self.expected_genotypic_results:
                 # Getting the observed results
@@ -772,3 +780,218 @@ class TestImpute2(unittest.TestCase):
                 self.assertEqual(expected.minor, observed.minor)
                 self.assertEqual(expected.major, observed.major)
                 self.assertTrue(expected.genotypes.equals(observed.genotypes))
+
+
+class TestVCF(unittest.TestCase):
+    def setUp(self):
+        self.vcf_file = resource_filename(__name__,
+                                          "data/genotypes/input.vcf.gz")
+
+        # The expected results (additive)
+        marker_1_add = pd.DataFrame(
+                [("s1", 2.0), ("s2", 1.0), ("s3", 0.0), ("s4", 0.0)],
+                columns=["SampleID", "geno"],
+            ).set_index("SampleID")
+        marker_2_add = pd.DataFrame(
+                [("s1", 0.0), ("s2", np.nan), ("s3", 0.0), ("s4", 1.0)],
+                columns=["SampleID", "geno"],
+            ).set_index("SampleID")
+        marker_3_add = pd.DataFrame(
+                [("s1", 0.0), ("s2", 1.0), ("s3", 1.0), ("s4", np.nan)],
+                columns=["SampleID", "geno"],
+            ).set_index("SampleID")
+        marker_4_add = pd.DataFrame(
+                [("s1", 1.0), ("s2", 2.0), ("s3", 0.0), ("s4", 0.0)],
+                columns=["SampleID", "geno"],
+            ).set_index("SampleID")
+
+        # The expected results (genotypic)
+        marker_1_geno = pd.DataFrame(
+                [("s1", 0.0, 1.0), ("s2", 1.0, 0.0), ("s3", 0.0, 0.0),
+                 ("s4", 0.0, 0.0)],
+                columns=["SampleID", "geno_ab", "geno_bb"],
+            ).set_index("SampleID")
+        marker_2_geno = pd.DataFrame(
+                [("s1", 0.0, 0.0), ("s2", np.nan, np.nan), ("s3", 0.0, 0.0),
+                 ("s4", 1.0, 0.0)],
+                columns=["SampleID", "geno_ab", "geno_bb"],
+            ).set_index("SampleID")
+        marker_3_geno = pd.DataFrame(
+                [("s1", 0.0, 0.0), ("s2", 1.0, 0.0), ("s3", 1.0, 0.0),
+                 ("s4", np.nan, np.nan)],
+                columns=["SampleID", "geno_ab", "geno_bb"],
+            ).set_index("SampleID")
+        marker_4_geno = pd.DataFrame(
+                [("s1", 1.0, 0.0), ("s2", 0.0, 1.0), ("s3", 0.0, 0.0),
+                 ("s4", 0.0, 0.0)],
+                columns=["SampleID", "geno_ab", "geno_bb"],
+            ).set_index("SampleID")
+
+        # The expected ADDITIVE results
+        self.expected_additive_results = [
+            MarkerGenotypes(marker="1:1", minor="G", major="A", chrom=1,
+                            pos=1, genotypes=marker_1_add),
+            MarkerGenotypes(marker="marker_2", minor="C", major="T", chrom=1,
+                            pos=2, genotypes=marker_2_add),
+            MarkerGenotypes(marker="marker_3", minor="A", major="T", chrom=2,
+                            pos=100, genotypes=marker_3_add),
+            MarkerGenotypes(marker="marker_4", minor="A", major="C", chrom=3,
+                            pos=230, genotypes=marker_4_add),
+        ]
+
+        # The expected GENOTYPIC results
+        self.expected_genotypic_results = [
+            MarkerGenotypes(marker="1:1", minor="G", major="A", chrom=1,
+                            pos=1, genotypes=marker_1_geno),
+            MarkerGenotypes(marker="marker_2", minor="C", major="T", chrom=1,
+                            pos=2, genotypes=marker_2_geno),
+            MarkerGenotypes(marker="marker_3", minor="A", major="T", chrom=2,
+                            pos=100, genotypes=marker_3_geno),
+            MarkerGenotypes(marker="marker_4", minor="A", major="C", chrom=3,
+                            pos=230, genotypes=marker_4_geno),
+        ]
+
+    def test_init(self):
+        """Tests the creation of a VCFGenotypes instance."""
+        # Creating a new object
+        with VCFGenotypes(self.vcf_file) as vcf_geno:
+            samples = vcf_geno.samples
+
+        expected_samples = pd.Index(["s1", "s2", "s3", "s4"], name="SampleID")
+        self.assertTrue(expected_samples.equals(samples))
+
+    def test_repr(self):
+        """Tests the '__repr__' function."""
+        with VCFGenotypes(self.vcf_file) as geno:
+            self.assertEqual(
+                "VCFGenotypes(4 samples)",
+                str(geno),
+            )
+
+    def test_get_genotypes_dosage(self):
+        """Tests the 'get_genotypes' function (dosage)."""
+        with VCFGenotypes(self.vcf_file) as vcf_geno:
+            with self.assertRaises(ValueError) as cm:
+                vcf_geno.get_genotypes("chr1", 1, Representation.DOSAGE)
+        self.assertEqual(
+            "DOSAGE is an invalid representation for sequenced data (it is "
+            "usually used for imputed data)",
+            str(cm.exception),
+        )
+
+    def test_get_invalid_genotype(self):
+        """Tests when asking for a missing marker."""
+        with VCFGenotypes(self.vcf_file) as vcf_geno:
+            with self.assertRaises(ValueError) as cm:
+                vcf_geno.get_genotypes("chr1", 204123, Representation.ADDITIVE)
+        self.assertEqual(
+            "no marker positioned on chromosome chr1, position 204123",
+            str(cm.exception),
+        )
+
+    def test_get_multiallele_genotype(self):
+        """Tests when asking for a marker with more than two alleles."""
+        with VCFGenotypes(self.vcf_file) as vcf_geno:
+            with self.assertRaises(ValueError) as cm:
+                vcf_geno.get_genotypes("chr3", 240, Representation.ADDITIVE)
+        self.assertEqual(
+            "chr3: 240: more than two alleles",
+            str(cm.exception),
+        )
+
+    def test_get_genotypes_additive(self):
+        """Tests the 'get_genotypes' function (additive)."""
+        random.shuffle(self.expected_additive_results)
+        with VCFGenotypes(self.vcf_file) as vcf_geno:
+            for expected in self.expected_additive_results:
+                # Getting the observed results
+                observed = vcf_geno.get_genotypes(
+                    chrom="chr{}".format(expected.chrom),
+                    pos=expected.pos,
+                    representation=Representation.ADDITIVE,
+                )
+
+                # Comparing with the expected results
+                self.assertTrue(isinstance(observed, MarkerGenotypes))
+                self.assertEqual(expected.marker, observed.marker)
+                self.assertEqual(expected.chrom, observed.chrom)
+                self.assertEqual(expected.pos, observed.pos)
+                self.assertEqual(expected.minor, observed.minor)
+                self.assertEqual(expected.major, observed.major)
+                self.assertTrue(expected.genotypes.equals(observed.genotypes))
+
+    def test_get_genotypes_genotypic(self):
+        """Tests the 'get_genotypes' function (genotypic)."""
+        random.shuffle(self.expected_genotypic_results)
+        with VCFGenotypes(self.vcf_file) as vcf_geno:
+            for expected in self.expected_genotypic_results:
+                # Getting the observed results
+                observed = vcf_geno.get_genotypes(
+                    chrom="chr{}".format(expected.chrom),
+                    pos=expected.pos,
+                    representation=Representation.GENOTYPIC,
+                )
+
+                # Comparing with the expected results
+                self.assertTrue(isinstance(observed, MarkerGenotypes))
+                self.assertEqual(expected.marker, observed.marker)
+                self.assertEqual(expected.chrom, observed.chrom)
+                self.assertEqual(expected.pos, observed.pos)
+                self.assertEqual(expected.minor, observed.minor)
+                self.assertEqual(expected.major, observed.major)
+                self.assertTrue(expected.genotypes.equals(observed.genotypes))
+
+    def test_iter_marker_genotypes_dosage(self):
+        """Tests the 'get_genotypes' function (dosage)."""
+        observed = VCFGenotypes(self.vcf_file)
+        with self.assertRaises(ValueError) as cm:
+            next(observed.iter_marker_genotypes(Representation.DOSAGE))
+        self.assertEqual(
+            "DOSAGE is an invalid representation for sequenced data (it is "
+            "usually used for imputed data)",
+            str(cm.exception),
+        )
+
+    def test_iter_marker_genotypes_additive(self):
+        """Tests the 'iter_marker_genotypes' function (additive)."""
+        with VCFGenotypes(self.vcf_file) as vcf_geno:
+            zipped = zip(
+                vcf_geno.iter_marker_genotypes(Representation.ADDITIVE),
+                self.expected_additive_results,
+            )
+            for observed, expected in zipped:
+                self.assertTrue(isinstance(observed, MarkerGenotypes))
+                self.assertEqual(expected.marker, observed.marker)
+                self.assertEqual(expected.chrom, observed.chrom)
+                self.assertEqual(expected.pos, observed.pos)
+                self.assertEqual(expected.minor, observed.minor)
+                self.assertEqual(expected.major, observed.major)
+                self.assertTrue(expected.genotypes.equals(observed.genotypes))
+
+    def test_iter_marker_genotypes_genotypic(self):
+        """Tests the 'iter_marker_genotypes' function (genotypic)."""
+        with VCFGenotypes(self.vcf_file) as vcf_geno:
+            zipped = zip(
+                vcf_geno.iter_marker_genotypes(Representation.GENOTYPIC),
+                self.expected_genotypic_results,
+            )
+            for observed, expected in zipped:
+                self.assertTrue(isinstance(observed, MarkerGenotypes))
+                self.assertEqual(expected.marker, observed.marker)
+                self.assertEqual(expected.chrom, observed.chrom)
+                self.assertEqual(expected.pos, observed.pos)
+                self.assertEqual(expected.minor, observed.minor)
+                self.assertEqual(expected.major, observed.major)
+                self.assertTrue(expected.genotypes.equals(observed.genotypes))
+
+    def test_fetch_before_iter(self):
+        """Tests when fetching before iterating."""
+        with VCFGenotypes(self.vcf_file) as vcf_geno:
+            var = vcf_geno.get_genotypes("chr3", 230)
+            self.assertEqual("marker_4", var.marker)
+            var = next(vcf_geno.iter_marker_genotypes())
+            self.assertEqual("1:1", var.marker)
+            var = vcf_geno.get_genotypes("chr2", 100)
+            self.assertEqual("marker_3", var.marker)
+            var = next(vcf_geno.iter_marker_genotypes())
+            self.assertEqual("1:1", var.marker)
