@@ -95,7 +95,7 @@ class TestStatsCoxPH(unittest.TestCase):
             1.13120378638922, self.coxph.results.coef, places=6,
         )
         self.assertAlmostEqual(
-            0.30473046186896, self.coxph.results.std_err, places=6,
+            0.30473046186896, self.coxph.results.std_err,
         )
         self.assertAlmostEqual(
             3.09938525314605, self.coxph.results.hr, places=6,

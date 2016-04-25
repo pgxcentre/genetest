@@ -11,7 +11,6 @@
 import os
 import unittest
 from tempfile import TemporaryDirectory
-from itertools import zip_longest as zip
 
 import numpy as np
 import pandas as pd

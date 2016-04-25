@@ -9,7 +9,6 @@
 
 
 import unittest
-from itertools import zip_longest as zip
 
 import numpy as np
 import pandas as pd
@@ -59,8 +58,9 @@ class TestStatsLinear(unittest.TestCase):
         self.assertAlmostEqual(71.397823827102, self.ols.results.lower_ci)
         self.assertAlmostEqual(155.000018946058, self.ols.results.upper_ci)
         self.assertAlmostEqual(5.42702754529217, self.ols.results.t_value)
-        self.assertAlmostEqual(-np.log10(0.0000013285915771),
-                               -np.log10(self.ols.results.p_value))
+        self.assertAlmostEqual(
+            -np.log10(0.0000013285915771), -np.log10(self.ols.results.p_value),
+        )
         self.assertAlmostEqual(
             1 - (n - 1) * (1 - 0.35513322438349)/((n - 1) - p),
             self.ols.results.rsquared_adj,
@@ -85,8 +85,9 @@ class TestStatsLinear(unittest.TestCase):
         self.assertAlmostEqual(71.397823827102, self.ols.results.lower_ci)
         self.assertAlmostEqual(155.000018946058, self.ols.results.upper_ci)
         self.assertAlmostEqual(5.42702754529217, self.ols.results.t_value)
-        self.assertAlmostEqual(-np.log10(0.0000013285915771),
-                               -np.log10(self.ols.results.p_value))
+        self.assertAlmostEqual(
+            -np.log10(0.0000013285915771), -np.log10(self.ols.results.p_value),
+        )
         self.assertAlmostEqual(
             1 - (n - 1) * (1 - 0.35513322438349)/((n - 1) - p),
             self.ols.results.rsquared_adj,
@@ -114,8 +115,9 @@ class TestStatsLinear(unittest.TestCase):
         self.assertAlmostEqual(11.5865803512147, self.ols.results.lower_ci)
         self.assertAlmostEqual(39.7411017736316, self.ols.results.upper_ci)
         self.assertAlmostEqual(3.65351525807579, self.ols.results.t_value)
-        self.assertAlmostEqual(-np.log10(0.0005783767026428),
-                               -np.log10(self.ols.results.p_value))
+        self.assertAlmostEqual(
+            -np.log10(0.0005783767026428), -np.log10(self.ols.results.p_value),
+        )
         self.assertAlmostEqual(
             1 - (n - 1) * (1 - 0.20318728482079)/((n - 1) - p),
             self.ols.results.rsquared_adj,
@@ -140,8 +142,9 @@ class TestStatsLinear(unittest.TestCase):
         self.assertAlmostEqual(11.5865803512147, self.ols.results.lower_ci)
         self.assertAlmostEqual(39.7411017736316, self.ols.results.upper_ci)
         self.assertAlmostEqual(3.65351525807579, self.ols.results.t_value)
-        self.assertAlmostEqual(-np.log10(0.0005783767026428),
-                               -np.log10(self.ols.results.p_value))
+        self.assertAlmostEqual(
+            -np.log10(0.0005783767026428), -np.log10(self.ols.results.p_value),
+        )
         self.assertAlmostEqual(
             1 - (n - 1) * (1 - 0.20318728482079)/((n - 1) - p),
             self.ols.results.rsquared_adj,
