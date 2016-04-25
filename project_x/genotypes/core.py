@@ -182,6 +182,9 @@ class GenotypesContainer(object):
             return chrom
 
         chrom = chrom.upper()
+        if chrom.startswith("CHR"):
+            chrom = chrom[3:]
+
         if chrom == "X":
             return 23
         elif chrom == "Y":
