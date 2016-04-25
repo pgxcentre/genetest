@@ -12,3 +12,5 @@ project_x/version.py
 
 .coverage
 htmlcov
+
+.eggs
