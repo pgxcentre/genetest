@@ -57,7 +57,7 @@ def setup_package():
         version=VERSION,
         description="A package to process and analyze genotypic and "
                     "phenotypic data.",
-        long_description="This package provides tools to process and analyse " 
+        long_description="This package provides tools to process and analyse "
                          "genotypic and phenotypic data using different "
                          "statistical models. The 'genotypes' and "
                          "'phenotypes' sub-modules provide interfaces to "
