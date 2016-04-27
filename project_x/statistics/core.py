@@ -11,6 +11,7 @@
 
 
 import numpy as np
+import pandas as pd
 from patsy import dmatrices
 
 
@@ -57,6 +58,26 @@ class StatsModels(object):
 
         """
         return dmatrices(formula, data, return_type="dataframe")
+
+    @staticmethod
+    def merge_matrices_genotypes(y, X, genotypes):
+        """Merges the genotypes to X, remove missing values, and subset y.
+
+        Args:
+            y (pandas.DataFrame): The y dataframe.
+            X (pandas.DataFrame): The X dataframe.
+            genotypes (pandas.DataFrame): The genotypes dataframe.
+
+        Returns:
+            tuple: The y and X dataframes (with the genotypes merged).
+
+        """
+        new_X = pd.merge(
+            X, genotypes, left_index=True, right_index=True,
+        ).dropna()
+        new_y = y.loc[new_X.index, :]
+
+        return new_y, new_X
 
 
 class StatsResults(object):
