@@ -11,6 +11,7 @@
 
 
 import numpy as np
+from patsy import dmatrices
 
 
 __copyright__ = "Copyright 2016, Beaulieu-Saucier Pharmacogenomics Centre"
@@ -42,6 +43,20 @@ class StatsModels(object):
 
         """
         raise NotImplementedError()
+
+    @staticmethod
+    def create_matrices(formula, data):
+        """Creates the y and X matrices for a linear regression.
+
+        Args:
+            formula (str): The formula explaining the model.
+            data (pandas.DataFrame): The data to fit.
+
+        Returns:
+            tuple: y and X as pandas dataframes (according to the formula).
+
+        """
+        return dmatrices(formula, data, return_type="dataframe")
 
 
 class StatsResults(object):
