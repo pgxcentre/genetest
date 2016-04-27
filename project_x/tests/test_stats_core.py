@@ -92,9 +92,13 @@ class TestStatsLinear(unittest.TestCase):
 
     def test_merge_matrices_genotypes(self):
         """Tests the 'merge_matrices_genotypes' function."""
+        # Shuffling the rows
+        y = self.expected_y.iloc[np.random.permutation(len(self.expected_y))]
+        X = self.expected_X.iloc[np.random.permutation(len(self.expected_X))]
+
         # Merging the matrices with the genotypes
         new_y, new_X = self.core_model.merge_matrices_genotypes(
-            y=self.expected_y, X=self.expected_X, genotypes=self.genotypes,
+            y=y, X=X, genotypes=self.genotypes,
         )
 
         # Checking the results
