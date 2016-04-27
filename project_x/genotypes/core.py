@@ -94,6 +94,7 @@ class GenotypesContainer(object):
         """
         genotypes = pd.DataFrame({"geno": genotypes}, index=samples)
         genotypes.loc[genotypes.geno == -1, "geno"] = np.nan
+        genotypes.index.name = "sample_id"
         return genotypes
 
     @staticmethod

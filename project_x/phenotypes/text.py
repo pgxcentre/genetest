@@ -72,6 +72,9 @@ class TextPhenotypes(PhenotypesContainer):
             verify_integrity=True,
         )
 
+        # Renaming the index
+        self._phenotypes.index.name = "sample_id"
+
         # Saving the original sample names for later use (if required)
         if repeated_measurements:
             self._ori_sample_names = self._phenotypes[["_ori_sample_names"]]
