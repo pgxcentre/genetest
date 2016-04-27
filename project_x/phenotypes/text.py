@@ -45,9 +45,9 @@ class TextPhenotypes(PhenotypesContainer):
         # properly. We will save the old samples in a different column for
         # later.
         if repeated_measurements:
-            if "_ori_sample_names" in self._phenotypes.columns:
+            if "_ori_sample_names_" in self._phenotypes.columns:
                 raise ValueError("phenotypes should not contain a column "
-                                 "named '_ori_sample_names'")
+                                 "named '_ori_sample_names_'")
 
             # Recoding the samples
             sample_counter = defaultdict(int)
@@ -61,7 +61,7 @@ class TextPhenotypes(PhenotypesContainer):
                 sample_counter[sample] += 1
 
             # Saving the original values
-            self._phenotypes["_ori_sample_names"] = self._phenotypes[sample_c]
+            self._phenotypes["_ori_sample_names_"] = self._phenotypes[sample_c]
 
             # Changing the sample column
             self._phenotypes[sample_c] = sample_index
@@ -77,9 +77,9 @@ class TextPhenotypes(PhenotypesContainer):
 
         # Saving the original sample names for later use (if required)
         if repeated_measurements:
-            self._ori_sample_names = self._phenotypes[["_ori_sample_names"]]
+            self._ori_sample_names = self._phenotypes[["_ori_sample_names_"]]
             self._phenotypes = self._phenotypes.drop(
-                "_ori_sample_names",
+                "_ori_sample_names_",
                 axis=1,
             )
 

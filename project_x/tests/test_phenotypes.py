@@ -126,7 +126,7 @@ class TestText(unittest.TestCase):
              ("s3_0", "s3"),
              ("s3_1", "s3"),
              ("s3_2", "s3")],
-            columns=["sample", "_ori_sample_names"],
+            columns=["sample", "_ori_sample_names_"],
         ).set_index("sample")
         self.assertTrue(
             expected_ori_samples.equals(
