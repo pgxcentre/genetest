@@ -10,7 +10,6 @@
 # Commons, PO Box 1866, Mountain View, CA 94042, USA.
 
 
-from patsy import dmatrices
 import statsmodels.api as sm
 
 from ..core import StatsModels, StatsResults, StatsError
@@ -79,17 +78,3 @@ class StatsLinear(StatsModels):
         self.results.t_value = fitted.tvalues[result_col]
         self.results.p_value = fitted.pvalues[result_col]
         self.results.rsquared_adj = fitted.rsquared_adj
-
-    def from_formula(self, formula, data, result_col, condition_value_t=1000):
-        """Fit the model using a formula.
-
-        Args:
-            formula (str): The formula explaining the model.
-            data (pandas.DataFrame): The data to fit.
-            result_col (str): The variable for which the results are required.
-            condition_value_t (int): The condition value threshold (for
-                                     multicollinearity).
-
-        """
-        y, X = dmatrices(formula, data, return_type="dataframe")
-        self.fit(y, X, result_col, condition_value_t)
