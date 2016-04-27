@@ -7,6 +7,9 @@
 # Commons, PO Box 1866, Mountain View, CA 94042, USA.
 
 
+import logging
+
+
 try:
     from .version import genipe_version as __version__
 except ImportError:
@@ -17,3 +20,18 @@ __copyright__ = "Copyright 2016, Beaulieu-Saucier Pharmacogenomics Centre"
 __credits__ = ["Louis-Philippe Lemieux Perreault", "Marc-Andre Legault"]
 __license__ = "CC BY-NC 4.0"
 __status__ = "Development"
+
+
+# The log format
+_LOG_FORMAT = logging.Formatter(
+    fmt="[%(asctime)s %(name)s %(levelname)s] %(message)s",
+    datefmt="%Y-%m-%d %H:%M:%S",
+)
+
+
+def test(verbosity=1):
+    """Execute all the tests."""
+    import unittest
+    from .tests import test_suite
+
+    unittest.TextTestRunner(verbosity=verbosity).run(test_suite)
