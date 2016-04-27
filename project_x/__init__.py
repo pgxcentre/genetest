@@ -11,7 +11,7 @@ import logging
 
 
 try:
-    from .version import genipe_version as __version__
+    from .version import project_x_version as __version__
 except ImportError:
     __version__ = None
 
