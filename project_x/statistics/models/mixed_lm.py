@@ -11,6 +11,7 @@
 
 
 import numpy as np
+import pandas as pd
 import statsmodels.api as sm
 
 from ..core import StatsModels, StatsResults, StatsError
@@ -63,3 +64,34 @@ class StatsMixedLM(StatsModels):
         )
         self.results.z_value = fitted.tvalues[result_col]
         self.results.p_value = fitted.pvalues[result_col]
+
+    @staticmethod
+    def merge_matrices_genotypes(y, X, genotypes, ori_samples):
+        """Merges the genotypes to X, remove missing values, and subset y.
+
+        Args:
+            y (pandas.DataFrame): The y dataframe.
+            X (pandas.DataFrame): The X dataframe.
+            genotypes (pandas.DataFrame): The genotypes dataframe.
+            ori_samples (pandas.DataFrame): The original sample names.
+
+        Returns:
+            tuple: The y and X dataframes (with the genotypes merged) and the
+                   groups for the model (the sample names) as numpy.ndarray.
+
+        """
+        # Merging the old sample names and the genotypes
+        new_X = pd.merge(
+            left=pd.merge(X, ori_samples, left_index=True, right_index=True),
+            right=genotypes,
+            left_on="_ori_sample_names_",
+            right_index=True,
+        ).dropna().drop("_ori_sample_names_", axis=1)
+
+        # Keeping only the required X values
+        new_y = y.loc[new_X.index, :]
+
+        # Getting the sample order
+        groups = ori_samples.loc[new_X.index, "_ori_sample_names_"].values
+
+        return new_y, new_X, groups

@@ -36,6 +36,106 @@ class TestStatsMixedLM(unittest.TestCase):
             compression="bz2",
         )
 
+        # The genotypes
+        genotypes = pd.DataFrame(
+            [("s0", 0.0), ("s1", 1.0), ("s2", 0.0), ("s3", np.nan),
+             ("s4", 0.0), ("s5", 1.0), ("s6", 2.0), ("s7", np.nan),
+             ("s8", 0.0), ("s9", 0.0)],
+            columns=["sample_id", "geno"],
+        ).set_index("sample_id")
+        self.genotypes = genotypes.iloc[np.random.permutation(len(genotypes))]
+
+        # The "original" samples
+        samples = pd.DataFrame(
+            [("s0_1", "s0"), ("s0_2", "s0"), ("s0_3", "s0"), ("s1_1", "s1"),
+             ("s1_2", "s1"), ("s1_3", "s1"), ("s2_1", "s2"), ("s2_2", "s2"),
+             ("s2_3", "s2"), ("s3_1", "s3"), ("s3_2", "s3"), ("s3_3", "s3"),
+             ("s4_1", "s4"), ("s4_2", "s4"), ("s4_3", "s4"), ("s5_1", "s5"),
+             ("s5_2", "s5"), ("s5_3", "s5"), ("s6_1", "s6"), ("s6_2", "s6"),
+             ("s6_3", "s6"), ("s7_1", "s7"), ("s7_2", "s7"), ("s7_3", "s7"),
+             ("s8_1", "s8"), ("s8_2", "s8"), ("s8_3", "s8"), ("s9_1", "s9"),
+             ("s9_2", "s9"), ("s9_3", "s9")],
+            columns=["sample_id", "_ori_sample_names_"],
+        ).set_index("sample_id")
+        self.samples = samples.iloc[np.random.permutation(len(samples))]
+
+        # The values for y
+        y = pd.DataFrame(
+            [("s0_1", 3.0), ("s0_2", 3.4), ("s0_3", 3.4), ("s1_1", 3.4),
+             ("s1_2", 3.4), ("s1_3", 3.4), ("s2_1", 5.3), ("s2_2", 5.3),
+             ("s2_3", 5.3), ("s3_1", 6.0), ("s3_2", 6.0), ("s3_3", 6.0),
+             ("s4_1", 0.5), ("s4_2", 0.5), ("s4_3", 0.5), ("s5_1", 2.4),
+             ("s5_2", 2.4), ("s5_3", 2.4), ("s6_1", 5.6), ("s6_2", 5.6),
+             ("s6_3", 5.6), ("s7_1", 7.6), ("s7_2", 7.6), ("s7_3", 7.6),
+             ("s8_1", 0.3), ("s8_2", 0.3), ("s8_3", 0.3), ("s9_1", 1.9),
+             ("s9_2", 1.9), ("s9_3", 1.9)],
+            columns=["sample_id", "pheno"],
+        ).set_index("sample_id")
+        self.y = y.iloc[np.random.permutation(len(y))]
+
+        # The values for X
+        X = pd.DataFrame(
+            [("s0_1", 1.0, 0.0, 0.0, 12.0), ("s0_2", 1.0, 0.0, 0.0, 12.0),
+             ("s0_3", 1.0, 0.0, 0.0, 12.0), ("s1_1", 1.0, 1.0, 0.0, 30.8),
+             ("s1_2", 1.0, 1.0, 0.0, 30.8), ("s1_3", 1.0, 1.0, 0.0, 30.8),
+             ("s2_1", 1.0, 0.0, 0.0, 50.2), ("s2_2", 1.0, 0.0, 0.0, 50.2),
+             ("s2_3", 1.0, 0.0, 0.0, 50.2), ("s3_1", 1.0, 0.0, 1.0, 30.6),
+             ("s3_2", 1.0, 0.0, 1.0, 30.6), ("s3_3", 1.0, 0.0, 1.0, 30.6),
+             ("s4_1", 1.0, 1.0, 0.0, 40.0), ("s4_2", 1.0, 1.0, 0.0, 40.0),
+             ("s4_3", 1.0, 1.0, 0.0, 40.0), ("s5_1", 1.0, 0.0, 0.0, 80.5),
+             ("s5_2", 1.0, 0.0, 0.0, 80.5), ("s5_3", 1.0, 0.0, 0.0, 80.5),
+             ("s6_1", 1.0, 0.0, 0.0, 70.0), ("s6_2", 1.0, 0.0, 0.0, 70.0),
+             ("s6_3", 1.0, 0.0, 0.0, 70.0), ("s7_1", 1.0, 1.0, 0.0, 87.4),
+             ("s7_2", 1.0, 1.0, 0.0, 87.4), ("s7_3", 1.0, 1.0, 0.0, 87.4),
+             ("s8_1", 1.0, 0.0, 0.0, 63.0), ("s8_2", 1.0, 0.0, 0.0, 63.0),
+             ("s8_3", 1.0, 0.0, 0.0, 63.0), ("s9_1", 1.0, 0.0, 1.0, 54.3),
+             ("s9_2", 1.0, 0.0, 1.0, 54.3), ("s9_3", 1.0, 0.0, 1.0, 54.3)],
+            columns=["sample_id", "Intercept", "C(var2)[T.f2]",
+                     "C(var2)[T.f3]", "var1"],
+        ).set_index("sample_id")
+        self.X = X.iloc[np.random.permutation(len(X))]
+
+        # The expected y
+        self.expected_y = pd.DataFrame(
+            [("s0_1", 3.0), ("s0_2", 3.4), ("s0_3", 3.4), ("s1_1", 3.4),
+             ("s1_2", 3.4), ("s1_3", 3.4), ("s2_1", 5.3), ("s2_2", 5.3),
+             ("s2_3", 5.3), ("s4_1", 0.5), ("s4_2", 0.5), ("s4_3", 0.5),
+             ("s5_1", 2.4), ("s5_2", 2.4), ("s5_3", 2.4), ("s6_1", 5.6),
+             ("s6_2", 5.6), ("s6_3", 5.6), ("s8_1", 0.3), ("s8_2", 0.3),
+             ("s8_3", 0.3), ("s9_1", 1.9), ("s9_2", 1.9), ("s9_3", 1.9)],
+            columns=["sample_id", "pheno"],
+        ).set_index("sample_id")
+
+        # The expected X
+        self.expected_X = pd.DataFrame(
+            [("s0_1", 1.0, 0.0, 0.0, 12.0, 0.0),
+             ("s0_2", 1.0, 0.0, 0.0, 12.0, 0.0),
+             ("s0_3", 1.0, 0.0, 0.0, 12.0, 0.0),
+             ("s1_1", 1.0, 1.0, 0.0, 30.8, 1.0),
+             ("s1_2", 1.0, 1.0, 0.0, 30.8, 1.0),
+             ("s1_3", 1.0, 1.0, 0.0, 30.8, 1.0),
+             ("s2_1", 1.0, 0.0, 0.0, 50.2, 0.0),
+             ("s2_2", 1.0, 0.0, 0.0, 50.2, 0.0),
+             ("s2_3", 1.0, 0.0, 0.0, 50.2, 0.0),
+             ("s4_1", 1.0, 1.0, 0.0, 40.0, 0.0),
+             ("s4_2", 1.0, 1.0, 0.0, 40.0, 0.0),
+             ("s4_3", 1.0, 1.0, 0.0, 40.0, 0.0),
+             ("s5_1", 1.0, 0.0, 0.0, 80.5, 1.0),
+             ("s5_2", 1.0, 0.0, 0.0, 80.5, 1.0),
+             ("s5_3", 1.0, 0.0, 0.0, 80.5, 1.0),
+             ("s6_1", 1.0, 0.0, 0.0, 70.0, 2.0),
+             ("s6_2", 1.0, 0.0, 0.0, 70.0, 2.0),
+             ("s6_3", 1.0, 0.0, 0.0, 70.0, 2.0),
+             ("s8_1", 1.0, 0.0, 0.0, 63.0, 0.0),
+             ("s8_2", 1.0, 0.0, 0.0, 63.0, 0.0),
+             ("s8_3", 1.0, 0.0, 0.0, 63.0, 0.0),
+             ("s9_1", 1.0, 0.0, 1.0, 54.3, 0.0),
+             ("s9_2", 1.0, 0.0, 1.0, 54.3, 0.0),
+             ("s9_3", 1.0, 0.0, 1.0, 54.3, 0.0)],
+            columns=["sample_id", "Intercept", "C(var2)[T.f2]",
+                     "C(var2)[T.f3]", "var1", "geno"],
+        ).set_index("sample_id")
+
     def test_mixedlm_snp1_reml(self):
         """Tests mixedlm regression with the first SNP (using REML)."""
         # Preparing the matrices
@@ -328,3 +428,19 @@ class TestStatsMixedLM(unittest.TestCase):
         self.assertTrue(np.isnan(self.mixedlm.results.upper_ci))
         self.assertTrue(np.isnan(self.mixedlm.results.z_value))
         self.assertTrue(np.isnan(self.mixedlm.results.p_value))
+
+    def test_merge_matrices_genotypes(self):
+        """Tests the 'merge_matrices_genotypes' function for MixedLM."""
+        new_y, new_X, groups = self.mixedlm.merge_matrices_genotypes(
+            y=self.y, X=self.X, genotypes=self.genotypes,
+            ori_samples=self.samples,
+        )
+
+        # Checking the results
+        self.assertTrue(np.array_equal(new_y.index.values, new_X.index.values))
+        self.assertTrue(self.expected_y.equals(new_y.sortlevel()))
+        self.assertTrue(self.expected_X.equals(new_X.sortlevel()))
+        self.assertTrue(np.array_equal(
+            np.array([s[:2] for s in new_X.index.values]),
+            groups,
+        ))
