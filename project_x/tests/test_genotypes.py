@@ -788,6 +788,29 @@ class TestImpute2(unittest.TestCase):
                 self.assertEqual(expected.major, observed.major)
                 self.assertTrue(expected.genotypes.equals(observed.genotypes))
 
+    def test_different_probability_threshold(self):
+        """Tests with a different probability threshold."""
+        self.parameters["probability_threshold"] = 0.95
+        with Impute2Genotypes(**self.parameters) as imp_geno:
+            # Modifying the expected results
+            expected = self.expected_dosage_results[0]
+            expected.genotypes.iloc[[0, 3, 7], :] = np.nan
+
+            # Getting the results
+            observed = imp_geno.get_genotypes(
+                marker=expected.marker,
+                representation=Representation.DOSAGE,
+            )
+
+            # Comparing the results
+            self.assertTrue(isinstance(observed, MarkerGenotypes))
+            self.assertEqual(expected.marker, observed.marker)
+            self.assertEqual(expected.chrom, observed.chrom)
+            self.assertEqual(expected.pos, observed.pos)
+            self.assertEqual(expected.minor, observed.minor)
+            self.assertEqual(expected.major, observed.major)
+            self.assertTrue(expected.genotypes.equals(observed.genotypes))
+
 
 class TestVCF(unittest.TestCase):
     def setUp(self):
