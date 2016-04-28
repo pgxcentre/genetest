@@ -13,6 +13,7 @@ import gzip
 import pandas as pd
 from pysam import VariantFile
 
+from ..decorators import parameters
 from .core import GenotypesContainer, Representation, MarkerGenotypes
 
 
@@ -23,15 +24,16 @@ __license__ = "Attribution-NonCommercial 4.0 International (CC BY-NC 4.0)"
 __all__ = ["VCFGenotypes"]
 
 
+@parameters(required=("filename", ))
 class VCFGenotypes(GenotypesContainer):
-    def __init__(self, vcf_file):
+    def __init__(self, filename):
         """Instantiate a new VCFGenotypes object.
 
         Args:
-            vcf_file (str): The name of the VCF file.
+            filename (str): The name of the VCF file.
 
         """
-        self._vcf_file = vcf_file
+        self._vcf_file = filename
         self._vcf_reader = VariantFile(self._vcf_file)
 
         # Getting the samples for the file
