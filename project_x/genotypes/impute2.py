@@ -34,7 +34,7 @@ _Impute2Line = namedtuple("_Impute2Line",
 @parameters(required=("filename", "sample_filename"),
             optional={"probability_threshold": 0.9})
 class Impute2Genotypes(GenotypesContainer):
-    def __init__(self, filename, sample_filename, probability_threshold=None):
+    def __init__(self, filename, sample_filename, probability_threshold):
         """Instantiate a new Impute2Genotypes object.
 
         Args:
@@ -74,9 +74,7 @@ class Impute2Genotypes(GenotypesContainer):
             ).set_index("name", verify_integrity=True)
 
         # Saving the probability threshold
-        self.prob_t = self._optional_params["probability_threshold"]
-        if probability_threshold is not None:
-            self.prob_t = probability_threshold
+        self.prob_t = probability_threshold
 
     def close(self):
         if self._impute2_file:

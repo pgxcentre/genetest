@@ -592,6 +592,7 @@ class TestImpute2(unittest.TestCase):
         self.parameters = dict(
             filename=impute2_file,
             sample_filename=sample_file,
+            probability_threshold=0.9,
         )
 
     def tearDown(self):
