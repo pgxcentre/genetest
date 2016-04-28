@@ -27,6 +27,27 @@ class PhenotypesContainer(object):
     def close(self):
         raise NotImplementedError()
 
+    @classmethod
+    def get_required_parameters(cls):
+        """Returns the required parameters.
+
+        Returns:
+            tuple: The required parameters of the phenotype container.
+
+        """
+        return cls._required_params
+
+    @classmethod
+    def get_optional_parameters(cls):
+        """Returns the optional parameters.
+
+        Returns:
+            dict: The optional parameters (with default values) of the
+                  phenotype container.
+
+        """
+        return cls._optional_params
+
     def get_phenotypes(self):
         """Returns a dataframe of phenotypes.
 

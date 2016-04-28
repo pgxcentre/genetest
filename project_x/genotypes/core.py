@@ -49,6 +49,27 @@ class GenotypesContainer(object):
     def close(self):
         raise NotImplementedError()
 
+    @classmethod
+    def get_required_parameters(cls):
+        """Returns the required parameters.
+
+        Returns:
+            tuple: The required parameters of the genotype container.
+
+        """
+        return cls._required_params
+
+    @classmethod
+    def get_optional_parameters(cls):
+        """Returns the optional parameters.
+
+        Returns:
+            dict: The optional parameters (with default values) of the
+                  genotype container.
+
+        """
+        return cls._optional_params
+
     def get_genotypes(self, marker, representation=Representation.ADDITIVE):
         """Returns a dataframe of genotypes encoded using the provided model.
 
