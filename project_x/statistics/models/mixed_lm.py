@@ -36,7 +36,7 @@ class StatsMixedLM(StatsModels):
             p_value="p-value",
         )
 
-    def fit(self, y, X, result_col, groups, reml=True):
+    def fit(self, y, X, groups, result_col, reml=True):
         """Fit the model.
 
         Args:
