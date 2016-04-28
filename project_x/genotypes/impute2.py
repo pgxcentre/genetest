@@ -16,6 +16,7 @@ import numpy as np
 import pandas as pd
 from genipe.formats.index import get_index, get_open_func
 
+from ..decorators import parameters
 from .core import GenotypesContainer, Representation, MarkerGenotypes
 
 
@@ -30,17 +31,20 @@ _Impute2Line = namedtuple("_Impute2Line",
                           ["marker", "chrom", "pos", "a1", "a2", "prob"])
 
 
+@parameters(required=("filename", "sample_filename"),
+            optional={"probability_threshold": 0.9})
 class Impute2Genotypes(GenotypesContainer):
-    def __init__(self, impute2_file, sample_file):
+    def __init__(self, filename, sample_filename, probability_threshold=None):
         """Instantiate a new Impute2Genotypes object.
 
         Args:
-            impute2_file (str): The name of the IMPUTE2 file.
-            sample_file (str): The name of the sample file.
+            filename (str): The name of the IMPUTE2 file.
+            sample_filename (str): The name of the sample file.
+            probability_threshold (float): The probability threshold.
 
         """
         # Reading the samples
-        self.samples = pd.read_csv(sample_file, sep=" ", skiprows=2,
+        self.samples = pd.read_csv(sample_filename, sep=" ", skiprows=2,
                                    names=["fid", "iid", "missing", "father",
                                           "mother", "sex", "plink_geno"])
 
@@ -57,17 +61,22 @@ class Impute2Genotypes(GenotypesContainer):
                                                   verify_integrity=True)
 
         # The IMPUTE2 file
-        self._impute2_file = get_open_func(impute2_file)(impute2_file, "r")
+        self._impute2_file = get_open_func(filename)(filename, "r")
 
         # If we have an index, we read it
         self._impute2_index = None
-        if os.path.isfile(impute2_file + ".idx"):
+        if os.path.isfile(filename + ".idx"):
             self._impute2_index = get_index(
-                impute2_file,
+                filename,
                 cols=[0, 1, 2],
                 names=["chrom", "name", "pos"],
                 sep=" ",
             ).set_index("name", verify_integrity=True)
+
+        # Saving the probability threshold
+        self.prob_t = self._optional_params["probability_threshold"]
+        if probability_threshold is not None:
+            self.prob_t = probability_threshold
 
     def close(self):
         if self._impute2_file:
@@ -79,16 +88,13 @@ class Impute2Genotypes(GenotypesContainer):
             self.samples.shape[0],
         )
 
-    def get_genotypes(self, marker, representation=Representation.DOSAGE,
-                      prob_t=0.9):
+    def get_genotypes(self, marker, representation=Representation.DOSAGE):
         """Returns a dataframe of genotypes encoded using the provided model.
 
         Args:
             marker (str): A marker ID (e.g. rs123456).
             representation (str): A valid genotype representation format (e.g.
                                   genotypes.core.REPRESENTATION.ADDITIVE).
-            prob_t (float): The probability threshold for which genotypes will
-                            be set as missing.
 
         Returns:
             Genotypes: A named tuple containing the dataframe with the encoded
@@ -109,18 +115,14 @@ class Impute2Genotypes(GenotypesContainer):
         return self._create_genotypes(
             impute2_line=self._impute2_file.readline(),
             representation=representation,
-            prob_t=prob_t,
         )
 
-    def iter_marker_genotypes(self, representation=Representation.DOSAGE,
-                              prob_t=0.9):
+    def iter_marker_genotypes(self, representation=Representation.DOSAGE):
         """Returns a dataframe of genotypes encoded using the provided model.
 
         Args:
             representation (str): A valid genotype representation format (e.g.
                                   genotypes.core.REPRESENTATION.ADDITIVE).
-            prob_t (float): The probability threshold for which genotypes will
-                            be set as missing.
 
         Returns:
             Genotypes: A named tuple containing the dataframe with the encoded
@@ -134,18 +136,15 @@ class Impute2Genotypes(GenotypesContainer):
             yield self._create_genotypes(
                 impute2_line=line,
                 representation=representation,
-                prob_t=prob_t,
             )
 
-    def _create_genotypes(self, impute2_line, representation, prob_t):
+    def _create_genotypes(self, impute2_line, representation):
         """Creates the genotype dataframe from an IMPUTE2 line.
 
         Args:
             impute2_line (str): The IMPUTE2 line to process.
             representation (str): A valid genotype representation format (e.g.
                                   genotypes.core.REPRESENTATION.ADDITIVE).
-            prob_t (float): The probability threshold for which genotypes will
-                            be set as missing.
 
         Returns:
             Genotypes: A named tuple containing the dataframe with the encoded
@@ -158,7 +157,7 @@ class Impute2Genotypes(GenotypesContainer):
 
         # Creating the dosage data
         dosage = self.create_geno_df(
-            genotypes=self._compute_dosage(marker_info.prob, prob_t),
+            genotypes=self._compute_dosage(marker_info.prob, self.prob_t),
             samples=self.samples.index,
         )
 

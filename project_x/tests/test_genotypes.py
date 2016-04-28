@@ -441,8 +441,8 @@ class TestImpute2(unittest.TestCase):
         self.tmpdir = TemporaryDirectory(prefix="project_x_")
 
         # Creating a sample file
-        self.sample_file = os.path.join(self.tmpdir.name, "input.sample")
-        with open(self.sample_file, "w") as f:
+        sample_file = os.path.join(self.tmpdir.name, "input.sample")
+        with open(sample_file, "w") as f:
             print("ID_1 ID_2 missing father mother sex plink_pheno", file=f)
             print("0 0 0 D D D B", file=f)
             print("f0 i0 0 0 0 1 -9", file=f)
@@ -457,8 +457,8 @@ class TestImpute2(unittest.TestCase):
             print("f9 i9 0 0 0 2 -9", file=f)
 
         # Creating an IMPUTE2 file
-        self.impute2_file = os.path.join(self.tmpdir.name, "input.impute2")
-        with open(self.impute2_file, "w") as f:
+        impute2_file = os.path.join(self.tmpdir.name, "input.impute2")
+        with open(impute2_file, "w") as f:
             print("1 marker_1 1 T C 0.9 0.1 0 0.99 0.01 0 1 0 0 0 0.91 0.09 "
                   "1 0 0 1 0 0 0.8 0.2 0 0 0.1 0.9 0.01 0.98 0.01 "
                   "1 0 0", file=f)
@@ -473,7 +473,7 @@ class TestImpute2(unittest.TestCase):
                   "0.8 0.2 0 0.5 0.4 0.1", file=f)
 
         # Generating the index
-        get_index(self.impute2_file, cols=[0, 1, 2], sep=" ",
+        get_index(impute2_file, cols=[0, 1, 2], sep=" ",
                   names=["chrom", "name", "pos"])
 
         # The expected results (dosage)
@@ -588,12 +588,18 @@ class TestImpute2(unittest.TestCase):
                             pos=230, genotypes=marker_4_geno),
         ]
 
+        # The Impute2Genotypes parameters
+        self.parameters = dict(
+            filename=impute2_file,
+            sample_filename=sample_file,
+        )
+
     def tearDown(self):
         self.tmpdir.cleanup()
 
     def test_init(self):
         """Tests the creation of a Impute2Genotypes instance (with index)."""
-        with Impute2Genotypes(self.impute2_file, self.sample_file) as observed:
+        with Impute2Genotypes(**self.parameters) as observed:
             # We only check the samples, because they might be modified.
             self.assertEqual(
                 ["i{}".format(i) for i in range(10)],
@@ -602,8 +608,8 @@ class TestImpute2(unittest.TestCase):
 
     def test_init_no_index(self):
         """Tests the creation of a Impute2Genotypes instance (no index)."""
-        os.remove(self.impute2_file + ".idx")
-        with Impute2Genotypes(self.impute2_file, self.sample_file) as observed:
+        os.remove(self.parameters["filename"] + ".idx")
+        with Impute2Genotypes(**self.parameters) as observed:
             # We only check the samples, because they might be modified.
             self.assertEqual(
                 ["i{}".format(i) for i in range(10)],
@@ -612,7 +618,7 @@ class TestImpute2(unittest.TestCase):
 
     def test_init_duplicated_iid(self):
         """Tests the creation of the instance, but with duplicated IID."""
-        with open(self.sample_file, "w") as f:
+        with open(self.parameters["sample_filename"], "w") as f:
             print("ID_1 ID_2 missing father mother sex plink_pheno", file=f)
             print("0 0 0 D D D B", file=f)
             print("f0 i0 0 0 0 1 -9", file=f)
@@ -629,13 +635,13 @@ class TestImpute2(unittest.TestCase):
         expected = ["f{i}_i{i}".format(i=i) for i in range(10)]
         expected[5] = "f5_i0"
 
-        with Impute2Genotypes(self.impute2_file, self.sample_file) as observed:
+        with Impute2Genotypes(**self.parameters) as observed:
             # We only check the samples, because they might be modified.
             self.assertEqual(expected, list(observed.samples.index.values))
 
     def test_init_duplicated_fid_iid(self):
         """Tests the creation of the instance, but with duplicated FID/IID."""
-        with open(self.sample_file, "w") as f:
+        with open(self.parameters["sample_filename"], "w") as f:
             print("ID_1 ID_2 missing father mother sex plink_pheno", file=f)
             print("0 0 0 D D D B", file=f)
             print("f0 i0 0 0 0 1 -9", file=f)
@@ -651,12 +657,12 @@ class TestImpute2(unittest.TestCase):
 
         # This should raise a ValueError
         with self.assertRaises(ValueError):
-            with Impute2Genotypes(self.impute2_file, self.sample_file):
+            with Impute2Genotypes(**self.parameters):
                 pass
 
     def test_repr(self):
         """Tests the '__repr__' function."""
-        with Impute2Genotypes(self.impute2_file, self.sample_file) as geno:
+        with Impute2Genotypes(**self.parameters) as geno:
             self.assertEqual(
                 "Impute2Genotypes(10 samples)",
                 str(geno),
@@ -665,7 +671,7 @@ class TestImpute2(unittest.TestCase):
     def test_get_genotypes_dosage(self):
         """Tests the 'get_genotypes' function (dosage)."""
         random.shuffle(self.expected_dosage_results)
-        with Impute2Genotypes(self.impute2_file, self.sample_file) as imp_geno:
+        with Impute2Genotypes(**self.parameters) as imp_geno:
             for expected in self.expected_dosage_results:
                 # Getting the observed results
                 observed = imp_geno.get_genotypes(
@@ -690,7 +696,7 @@ class TestImpute2(unittest.TestCase):
     def test_get_genotypes_additive(self):
         """Tests the 'get_genotypes' function (additive)."""
         random.shuffle(self.expected_additive_results)
-        with Impute2Genotypes(self.impute2_file, self.sample_file) as imp_geno:
+        with Impute2Genotypes(**self.parameters) as imp_geno:
             for expected in self.expected_additive_results:
                 # Getting the observed results
                 observed = imp_geno.get_genotypes(
@@ -710,7 +716,7 @@ class TestImpute2(unittest.TestCase):
     def test_get_genotypes_genotypic(self):
         """Tests the 'get_genotypes' function (genotypic)."""
         random.shuffle(self.expected_genotypic_results)
-        with Impute2Genotypes(self.impute2_file, self.sample_file) as imp_geno:
+        with Impute2Genotypes(**self.parameters) as imp_geno:
             for expected in self.expected_genotypic_results:
                 # Getting the observed results
                 observed = imp_geno.get_genotypes(
@@ -729,7 +735,7 @@ class TestImpute2(unittest.TestCase):
 
     def test_iter_marker_genotypes_dosage(self):
         """Tests the 'iter_marker_genotypes' function (dosage)."""
-        with Impute2Genotypes(self.impute2_file, self.sample_file) as imp_geno:
+        with Impute2Genotypes(**self.parameters) as imp_geno:
             zipped = zip(
                 imp_geno.iter_marker_genotypes(Representation.DOSAGE),
                 self.expected_dosage_results,
@@ -751,7 +757,7 @@ class TestImpute2(unittest.TestCase):
 
     def test_iter_marker_genotypes_additive(self):
         """Tests the 'iter_marker_genotypes' function (additive)."""
-        with Impute2Genotypes(self.impute2_file, self.sample_file) as imp_geno:
+        with Impute2Genotypes(**self.parameters) as imp_geno:
             zipped = zip(
                 imp_geno.iter_marker_genotypes(Representation.ADDITIVE),
                 self.expected_additive_results,
@@ -767,7 +773,7 @@ class TestImpute2(unittest.TestCase):
 
     def test_iter_marker_genotypes_genotypic(self):
         """Tests the 'iter_marker_genotypes' function (genotypic)."""
-        with Impute2Genotypes(self.impute2_file, self.sample_file) as imp_geno:
+        with Impute2Genotypes(**self.parameters) as imp_geno:
             zipped = zip(
                 imp_geno.iter_marker_genotypes(Representation.GENOTYPIC),
                 self.expected_genotypic_results,
