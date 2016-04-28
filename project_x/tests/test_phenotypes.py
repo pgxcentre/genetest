@@ -40,8 +40,8 @@ class TestText(unittest.TestCase):
         self.tmpdir = TemporaryDirectory(prefix="project_x_")
 
         # The phenotype file
-        self.pheno_file = os.path.join(self.tmpdir.name, "pheno.txt")
-        with open(self.pheno_file, "w") as f:
+        pheno_file = os.path.join(self.tmpdir.name, "pheno.txt")
+        with open(pheno_file, "w") as f:
             print("sample", "V1", "V2", "V3", file=f)
             print("s1", "1", "1.2", "a", file=f)
             print("s2", "234", "34.3", "sdc", file=f)
@@ -67,21 +67,27 @@ class TestText(unittest.TestCase):
             columns=["sample", "V1", "V2", "V3"],
         ).set_index("sample")
 
+        # The TextPhenotypes parameters
+        self.parameters = dict(
+            filename=pheno_file,
+            sample_column="sample",
+            field_separator=" ",
+            missing_values=None,
+            repeated_measurements=False,
+        )
+
     def tearDown(self):
         self.tmpdir.cleanup()
 
     def test_normal_functionality(self):
         """Tests normal functionality."""
-        observed_pheno = TextPhenotypes(
-            fn=self.pheno_file,
-            sep=" ",
-        ).get_phenotypes()
+        observed_pheno = TextPhenotypes(**self.parameters).get_phenotypes()
 
         self.assertTrue(self.expected_pheno.equals(observed_pheno))
 
     def test_repeated_measurements(self):
         """Tests when there are repeated measurements available."""
-        with open(self.pheno_file, "w") as f:
+        with open(self.parameters["filename"], "w") as f:
             print("sample", "Time", "V1", "V2", "V3", file=f)
             print("s1", "13", "1", "1.2", "a", file=f)
             print("s1", "125", "1", "1.2", "a", file=f)
@@ -106,11 +112,11 @@ class TestText(unittest.TestCase):
             columns=["sample", "Time", "V1", "V2", "V3"],
         ).set_index("sample")
 
-        observed_pheno = TextPhenotypes(
-            fn=self.pheno_file,
-            sep=" ",
-            repeated_measurements=True,
-        )
+        # Changing the parameters
+        self.parameters["repeated_measurements"] = True
+
+        # Getting the observed phenotypes
+        observed_pheno = TextPhenotypes(**self.parameters)
 
         # Checking the values
         self.assertTrue(expected_pheno.equals(observed_pheno.get_phenotypes()))
@@ -136,11 +142,11 @@ class TestText(unittest.TestCase):
 
     def test_one_other_missing_value(self):
         """Tests when there are other missing values."""
-        observed_pheno = TextPhenotypes(
-            fn=self.pheno_file,
-            sep=" ",
-            missing_values="999999",
-        ).get_phenotypes()
+        # Changing the parameters
+        self.parameters["missing_values"] = "999999"
+
+        # Getting the observed phenotypes
+        observed_pheno = TextPhenotypes(**self.parameters).get_phenotypes()
 
         # Changing the expected phenotypes
         self.expected_pheno.loc["s4", "V3"] = np.nan
@@ -151,11 +157,11 @@ class TestText(unittest.TestCase):
 
     def test_multiple_missing_values(self):
         """Tests when there are multiple missing values."""
-        observed_pheno = TextPhenotypes(
-            fn=self.pheno_file,
-            sep=" ",
-            missing_values=["-999999", "999999"],
-        ).get_phenotypes()
+        # Changing the parameters
+        self.parameters["missing_values"] = ["-999999", "999999"]
+
+        # Getting the observed phenotypes
+        observed_pheno = TextPhenotypes(**self.parameters).get_phenotypes()
 
         # Changing the expected phenotypes
         self.expected_pheno.loc["s3", "V1"] = np.nan
@@ -167,11 +173,11 @@ class TestText(unittest.TestCase):
 
     def test_specific_column_missing_value(self):
         """Tests when there are specific missing values for some columns."""
-        observed_pheno = TextPhenotypes(
-            fn=self.pheno_file,
-            sep=" ",
-            missing_values={"V3": ["999999"]},
-        ).get_phenotypes()
+        # Changing the parameters
+        self.parameters["missing_values"] = {"V3": ["999999"]}
+
+        # Getting the observed phenotypes
+        observed_pheno = TextPhenotypes(**self.parameters).get_phenotypes()
 
         # Changing the expected phenotypes
         self.expected_pheno.loc["s4", "V3"] = np.nan
@@ -181,7 +187,7 @@ class TestText(unittest.TestCase):
 
     def test_string_representation(self):
         """Checks the string representation."""
-        with TextPhenotypes(fn=self.pheno_file, sep=" ") as text_pheno:
+        with TextPhenotypes(**self.parameters) as text_pheno:
             self.assertEqual(
                 "TextPhenotypes(9 samples, 3 variables)",
                 str(text_pheno),

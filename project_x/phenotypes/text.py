@@ -13,6 +13,7 @@ from collections import defaultdict
 
 import pandas as pd
 
+from ..decorators import parameters
 from .core import PhenotypesContainer
 
 
@@ -23,22 +24,30 @@ __license__ = "Attribution-NonCommercial 4.0 International (CC BY-NC 4.0)"
 __all__ = ["TextPhenotypes"]
 
 
+@parameters(required=("filename", ),
+            optional={"sample_column": "sample",
+                      "field_separator": "\t",
+                      "missing_values": None,
+                      "repeated_measurements": False})
 class TextPhenotypes(PhenotypesContainer):
-    def __init__(self, fn, sample_c="sample", sep="\t", missing_values=None,
-                 repeated_measurements=False):
+    def __init__(self, filename, sample_column, field_separator,
+                 missing_values, repeated_measurements):
         """Instantiate a new Impute2Genotypes object.
 
         Args:
-            fn (str): The name of the text file containing the phenotypes.
-            sample_c (str): The name of the column containing the sample
-                            identification number (to fit with the genotypes).
-            sep (str): The field separator (default is tabulation).
+            filename (str): The name of the text file containing the
+                            phenotypes.
+            sample_column (str): The name of the column containing the sample
+                                 identification number (to fit with the
+                                 genotypes).
+            field_separator (str): The field separator (default is tabulation).
             missing_values (str or list or dict): The missing value(s).
             repeated_measurements (bool): Are the data containing repeated
                                           measurements (e.g. for MixedLM).
 
         """
-        self._phenotypes = pd.read_csv(fn, sep=sep, na_values=missing_values)
+        self._phenotypes = pd.read_csv(filename, sep=field_separator,
+                                       na_values=missing_values)
 
         # If there are repeated measurements, the sample column will have
         # duplicated values. We need to recode this to be able to set the index
@@ -51,7 +60,7 @@ class TextPhenotypes(PhenotypesContainer):
 
             # Recoding the samples
             sample_counter = defaultdict(int)
-            sample_index = [s for s in self._phenotypes[sample_c]]
+            sample_index = [s for s in self._phenotypes[sample_column]]
             for i in range(len(sample_index)):
                 sample = sample_index[i]
                 sample_index[i] = "{}_{}".format(
@@ -61,14 +70,16 @@ class TextPhenotypes(PhenotypesContainer):
                 sample_counter[sample] += 1
 
             # Saving the original values
-            self._phenotypes["_ori_sample_names_"] = self._phenotypes[sample_c]
+            self._phenotypes["_ori_sample_names_"] = self._phenotypes[
+                sample_column
+            ]
 
             # Changing the sample column
-            self._phenotypes[sample_c] = sample_index
+            self._phenotypes[sample_column] = sample_index
 
         # Setting the index
         self._phenotypes = self._phenotypes.set_index(
-            sample_c,
+            sample_column,
             verify_integrity=True,
         )
 
