@@ -21,7 +21,7 @@ __copyright__ = "Copyright 2016, Beaulieu-Saucier Pharmacogenomics Centre"
 __license__ = "Attribution-NonCommercial 4.0 International (CC BY-NC 4.0)"
 
 
-__all__ = ["GenotypesContainer"]
+__all__ = ["GenotypesContainer", "Representation", "MarkerGenotypes"]
 
 
 # Genotype representation
