@@ -86,6 +86,9 @@ class AnalysisConfiguration(object):
             config=section,
         )
 
+        # Checking for the invalid sections
+        self.check_invalid_options(config=section, section="Genotypes")
+
     def get_genotypes_arguments(self):
         """Returns the genotypes arguments."""
         return self._geno_arguments
@@ -140,6 +143,9 @@ class AnalysisConfiguration(object):
             config=section,
         )
 
+        # Checking for the invalid sections
+        self.check_invalid_options(config=section, section="Phenotypes")
+
     def get_phenotypes_arguments(self):
         """Returns the phenotypes arguments."""
         return self._pheno_arguments
@@ -191,3 +197,22 @@ class AnalysisConfiguration(object):
                 current_args[arg_name] = config.pop(arg_name)
             else:
                 current_args[arg_name] = arg_value
+
+    @staticmethod
+    def check_invalid_options(config, section):
+        """Checks if there are invalid options left in a configuration section.
+
+        Note
+        ----
+            An invalid option is an option that is left after all options were
+            parsed (both required and optional).
+
+        """
+        if len(config) > 0:
+            raise ValueError(
+                "Invalid options were found in the '{}' section of the "
+                "configuration file:\n  - {}".format(
+                    section,
+                    "\n  - ".join(sorted(config.keys())),
+                )
+            )
