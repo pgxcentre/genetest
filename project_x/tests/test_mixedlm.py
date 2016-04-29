@@ -16,7 +16,7 @@ from patsy import dmatrices
 from pkg_resources import resource_filename
 
 from ..statistics.core import StatsError
-from ..statistics.models.mixed_lm import StatsMixedLM
+from ..statistics.models.mixedlm import StatsMixedLM
 
 
 __copyright__ = "Copyright 2016, Beaulieu-Saucier Pharmacogenomics Centre"
