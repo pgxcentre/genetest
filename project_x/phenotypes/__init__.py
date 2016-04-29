@@ -10,10 +10,22 @@
 # Commons, PO Box 1866, Mountain View, CA 94042, USA.
 
 
+from .text import TextPhenotypes
+
+
 __copyright__ = "Copyright 2016, Beaulieu-Saucier Pharmacogenomics Centre"
 __license__ = "CC BY-NC 4.0"
 
 
+__all__ = ["available_formats", "format_map"]
+
+
 available_formats = dict(
     text="Normal text file (TSV, CSV, etc).",
+)
+
+
+# The format map (which maps the name to the class)
+format_map = dict(
+    text=TextPhenotypes,
 )
