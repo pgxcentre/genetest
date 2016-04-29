@@ -14,16 +14,16 @@ __copyright__ = "Copyright 2016, Beaulieu-Saucier Pharmacogenomics Centre"
 __license__ = "CC BY-NC 4.0"
 
 
-__all__ = ["parameters"]
+__all__ = ["arguments"]
 
 
-class parameters(object):
-    """A decorator to add required and optional parameters to a class."""
+class arguments(object):
+    """A decorator to add required and optional arguments to a class."""
     def __init__(self, required, optional={}):
-        self._required_parameters = required
-        self._optional_parameters = optional
+        self._required_arguments = required
+        self._optional_arguments = optional
 
     def __call__(self, cls):
-        cls._required_params = self._required_parameters
-        cls._optional_params = self._optional_parameters
+        cls._required_args = self._required_arguments
+        cls._optional_args = self._optional_arguments
         return cls

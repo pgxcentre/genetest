@@ -11,7 +11,7 @@
 
 from pyplink import PyPlink
 
-from ..decorators import parameters
+from ..decorators import arguments
 from .core import GenotypesContainer, Representation, MarkerGenotypes
 
 
@@ -22,7 +22,7 @@ __license__ = "Attribution-NonCommercial 4.0 International (CC BY-NC 4.0)"
 __all__ = ["PlinkGenotypes"]
 
 
-@parameters(required=("prefix", ))
+@arguments(required=("prefix", ))
 class PlinkGenotypes(GenotypesContainer):
     def __init__(self, prefix):
         """Instantiate a new PlinkGenotypes object.

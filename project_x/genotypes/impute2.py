@@ -16,7 +16,7 @@ import numpy as np
 import pandas as pd
 from genipe.formats.index import get_index, get_open_func
 
-from ..decorators import parameters
+from ..decorators import arguments
 from .core import GenotypesContainer, Representation, MarkerGenotypes
 
 
@@ -31,8 +31,8 @@ _Impute2Line = namedtuple("_Impute2Line",
                           ["marker", "chrom", "pos", "a1", "a2", "prob"])
 
 
-@parameters(required=("filename", "sample_filename"),
-            optional={"probability_threshold": 0.9})
+@arguments(required=("filename", "sample_filename"),
+           optional={"probability_threshold": 0.9})
 class Impute2Genotypes(GenotypesContainer):
     def __init__(self, filename, sample_filename, probability_threshold):
         """Instantiate a new Impute2Genotypes object.
