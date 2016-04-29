@@ -38,6 +38,28 @@ class AnalysisConfiguration(object):
         with open(filename, "r") as f:
             self._configuration.read_file(f)
 
+        # Getting the required and available sections
+        required_sections = {"Genotypes", "Phenotypes"}
+        available_sections = set(self._configuration.sections())
+
+        # Checking if there are missing required sections
+        missing_sections = required_sections - available_sections
+        if len(missing_sections) > 0:
+            raise ValueError(
+                "Missing section(s) from the configuration file: {}.".format(
+                    ", ".join(sorted(missing_sections)),
+                )
+            )
+
+        # Checking if there are extra sections
+        extra_sections = available_sections - required_sections
+        if len(extra_sections) > 0:
+            raise ValueError(
+                "Invalid section(s) in the configuration file: {}.".format(
+                    ", ".join(sorted(extra_sections)),
+                )
+            )
+
         # Configuring the Genotypes component
         self.configure_genotypes()
 
@@ -47,8 +69,6 @@ class AnalysisConfiguration(object):
     def configure_genotypes(self):
         """Configures the genotypes component."""
         # Getting the genotype section of the configuration file
-        if not self._configuration.has_section("Genotypes"):
-            raise ValueError("No section 'Genotypes' in configuration file.")
         section = self._configuration["Genotypes"]
 
         # Getting the format of the genotypes
@@ -104,8 +124,6 @@ class AnalysisConfiguration(object):
     def configure_phenotypes(self):
         """Configures the phenotypes component."""
         # Getting the phenotype section of the configuration file
-        if not self._configuration.has_section("Phenotypes"):
-            raise ValueError("No section 'Phenotypes' in configuration file.")
         section = self._configuration["Phenotypes"]
 
         # Getting the format of the phenotypes
@@ -210,9 +228,9 @@ class AnalysisConfiguration(object):
         """
         if len(config) > 0:
             raise ValueError(
-                "Invalid options were found in the '{}' section of the "
-                "configuration file:\n  - {}".format(
+                "Invalid options found in the '{}' section of the "
+                "configuration file: {}.".format(
                     section,
-                    "\n  - ".join(sorted(config.keys())),
+                    ", ".join(sorted(config.keys())),
                 )
             )
