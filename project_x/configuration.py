@@ -57,7 +57,7 @@ class AnalysisConfiguration(object):
                              "section should contain the 'format' option "
                              "specifying the format of the genotypes "
                              "container.")
-        geno_format = section["format"]
+        geno_format = section.pop("format")
 
         # Checking if the format is valid
         if geno_format not in geno_formats:
@@ -111,7 +111,12 @@ class AnalysisConfiguration(object):
                              "section should contain the 'format' option "
                              "specifying the format of the phenotypes "
                              "container.")
-        pheno_format = section["format"]
+        pheno_format = section.pop("format")
+
+        # Checking if the format is valid
+        if pheno_format not in pheno_formats:
+            raise ValueError("Invalid 'format' for the 'Phenotypes' section "
+                             "of the configuration file.")
 
         # Getting the object to gather required and optional values
         self._pheno_container = pheno_map[pheno_format]
@@ -167,7 +172,7 @@ class AnalysisConfiguration(object):
                     "configuration file.".format(config["format"], section,
                                                  name)
                 )
-            args[name] = config[name]
+            args[name] = config.pop(name)
 
     @staticmethod
     def retrieve_optional_arguments(optional_args, current_args, config):
@@ -182,4 +187,7 @@ class AnalysisConfiguration(object):
 
         """
         for arg_name, arg_value in optional_args.items():
-            current_args[arg_name] = config.get(arg_name, arg_value)
+            if arg_name in config:
+                current_args[arg_name] = config.pop(arg_name)
+            else:
+                current_args[arg_name] = arg_value
