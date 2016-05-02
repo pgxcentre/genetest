@@ -34,17 +34,6 @@ class StatsModels(object):
         """
         raise NotImplementedError()
 
-    def from_formula(self, formula, data, result_col):
-        """Fit the model using a formula.
-
-        Args:
-            formula (str): The formula explaining the model.
-            data (pandas.DataFrame): The data to fit.
-            result_col (str): The variable for which the results are required.
-
-        """
-        raise NotImplementedError()
-
     @staticmethod
     def create_matrices(formula, data):
         """Creates the y and X matrices for a linear regression.
