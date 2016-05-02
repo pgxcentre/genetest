@@ -27,7 +27,12 @@ class TestStatsLinear(unittest.TestCase):
     """Tests the 'StatsLinear' class."""
     @classmethod
     def setUpClass(cls):
-        cls.ols = StatsLinear()
+        cls.ols = StatsLinear(
+            outcome="pheno1",
+            predictors=["age", "var1", "C(gender)", "geno"],
+            interaction=None,
+            condition_value_t=1000,
+        )
 
     def setUp(self):
         self.data = pd.read_csv(
@@ -36,17 +41,55 @@ class TestStatsLinear(unittest.TestCase):
             compression="bz2",
         )
 
-    def test_linear_snp1(self):
-        """Tests linear regression with the first SNP."""
+    def test_linear_snp1_full(self):
+        """Tests linear regression with the first SNP (full)."""
+        # Preparing the data
+        pheno = self.data[["pheno1", "age", "var1", "gender"]]
+        geno = self.data[["snp1"]].rename(columns={"snp1": "geno"})
+
+        # Permuting the genotypes
+        geno = geno.iloc[np.random.permutation(geno.shape[0]), :]
+
         # Preparing the matrices
-        y, X = dmatrices(
-            "pheno1 ~ age + var1 + C(gender) + snp1",
-            self.data,
-            return_type="dataframe",
-        )
+        y, X = self.ols.create_matrices(pheno)
+        self.assertFalse("geno" in X.columns)
+
+        # Merging with genotype
+        y, X = self.ols.merge_matrices_genotypes(y, X, geno)
 
         # Fitting
-        self.ols.fit(y, X, result_col="snp1")
+        self.ols.fit(y, X)
+
+        # The number of observation and parameters that were fitted
+        n = X.shape[0]
+        p = X.shape[1] - 1
+
+        # Checking the results (according to SAS)
+        self.assertAlmostEqual(113.19892138658, self.ols.results.coef)
+        self.assertAlmostEqual(20.8583649966504, self.ols.results.std_err)
+        self.assertAlmostEqual(71.397823827102, self.ols.results.lower_ci)
+        self.assertAlmostEqual(155.000018946058, self.ols.results.upper_ci)
+        self.assertAlmostEqual(5.42702754529217, self.ols.results.t_value)
+        self.assertAlmostEqual(
+            -np.log10(0.0000013285915771), -np.log10(self.ols.results.p_value),
+        )
+        self.assertAlmostEqual(
+            1 - (n - 1) * (1 - 0.35513322438349)/((n - 1) - p),
+            self.ols.results.rsquared_adj,
+        )
+
+    def test_linear_snp1(self):
+        """Tests linear regression with the first SNP."""
+        # Preparing the data
+        data = self.data[["pheno1", "age", "var1", "gender", "snp1"]].rename(
+            columns={"snp1": "geno"},
+        )
+
+        # Preparing the matrices
+        y, X = self.ols.create_matrices(data, create_dummy=False)
+
+        # Fitting
+        self.ols.fit(y, X)
 
         # The number of observation and parameters that were fitted
         n = X.shape[0]
@@ -68,15 +111,16 @@ class TestStatsLinear(unittest.TestCase):
 
     def test_linear_snp2(self):
         """Tests linear regression with the second SNP."""
-        # Preparing the matrices
-        y, X = dmatrices(
-            "pheno1 ~ age + var1 + C(gender) + snp2",
-            self.data,
-            return_type="dataframe",
+        # Preparing the data
+        data = self.data[["pheno1", "age", "var1", "gender", "snp2"]].rename(
+            columns={"snp2": "geno"},
         )
 
+        # Preparing the matrices
+        y, X = self.ols.create_matrices(data, create_dummy=False)
+
         # Fitting
-        self.ols.fit(y, X, result_col="snp2")
+        self.ols.fit(y, X)
 
         # The number of observation and parameters that were fitted
         n = X.shape[0]
@@ -98,15 +142,16 @@ class TestStatsLinear(unittest.TestCase):
 
     def test_linear_snp3(self):
         """Tests linear regression with the third SNP."""
-        # Preparing the matrices
-        y, X = dmatrices(
-            "pheno1 ~ age + var1 + C(gender) + snp3",
-            self.data,
-            return_type="dataframe",
+        # Preparing the data
+        data = self.data[["pheno1", "age", "var1", "gender", "snp3"]].rename(
+            columns={"snp3": "geno"},
         )
 
+        # Preparing the matrices
+        y, X = self.ols.create_matrices(data, create_dummy=False)
+
         # Fitting
-        self.ols.fit(y, X, result_col="snp3")
+        self.ols.fit(y, X)
 
         # The number of observation and parameters that were fitted
         n = X.shape[0]
@@ -126,15 +171,16 @@ class TestStatsLinear(unittest.TestCase):
 
     def test_linear_snp4(self):
         """Tests linear regression with the fourth SNP."""
-        # Preparing the matrices
-        y, X = dmatrices(
-            "pheno1 ~ age + var1 + C(gender) + snp4",
-            self.data,
-            return_type="dataframe",
+        # Preparing the data
+        data = self.data[["pheno1", "age", "var1", "gender", "snp4"]].rename(
+            columns={"snp4": "geno"},
         )
 
+        # Preparing the matrices
+        y, X = self.ols.create_matrices(data, create_dummy=False)
+
         # Fitting
-        self.ols.fit(y, X, result_col="snp4")
+        self.ols.fit(y, X)
 
         # The number of observation and parameters that were fitted
         n = X.shape[0]
@@ -154,16 +200,17 @@ class TestStatsLinear(unittest.TestCase):
 
     def test_linear_snp5(self):
         """Tests linear regression with the fifth SNP (raises StatsError)."""
-        # Preparing the matrices
-        y, X = dmatrices(
-            "pheno1 ~ age + var1 + C(gender) + snp5",
-            self.data,
-            return_type="dataframe",
+        # Preparing the data
+        data = self.data[["pheno1", "age", "var1", "gender", "snp5"]].rename(
+            columns={"snp5": "geno"},
         )
+
+        # Preparing the matrices
+        y, X = self.ols.create_matrices(data, create_dummy=False)
 
         # Fitting
         with self.assertRaises(StatsError) as cm:
-            self.ols.fit(y, X, result_col="snp5")
+            self.ols.fit(y, X)
 
         # Checking the error message
         self.assertEqual(

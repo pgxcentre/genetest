@@ -12,6 +12,7 @@
 
 import statsmodels.api as sm
 
+from ...decorators import arguments
 from ..core import StatsModels, StatsResults, StatsError
 
 
@@ -22,9 +23,27 @@ __license__ = "Attribution-NonCommercial 4.0 International (CC BY-NC 4.0)"
 __all__ = ["StatsLinear"]
 
 
+@arguments(required=("outcome", "predictors"),
+           optional={"interaction": None,
+                     "condition_value_t": 1000})
 class StatsLinear(StatsModels):
-    def __init__(self):
-        """Initializes a 'StatsLinear' instance."""
+    def __init__(self, outcome, predictors, interaction, condition_value_t):
+        """Initializes a 'StatsLinear' instance.
+
+        Args:
+            outcome (str): The outcome of the model.
+            predictors (list): The list of predictor variables in the model.
+            interaction (list): The list of interaction variable to add to the
+                                model with the genotype.
+            condition_value_t (int): The condition value threshold (for
+                                     multicollinearity).
+
+        """
+        # Creating the model
+        self._create_model(outcomes=[outcome], predictors=predictors,
+                           interaction=interaction, intercept=True)
+
+        # Creating the result object
         self.results = StatsResults(
             coef="Linear regression coefficient",
             std_err="Standard error of the regression coefficient",
@@ -35,15 +54,18 @@ class StatsLinear(StatsModels):
             rsquared_adj="adjusted r-squared",
         )
 
-    def fit(self, y, X, result_col, condition_value_t=1000):
+        # Saving the condition value threshold
+        self._condition_value_t = condition_value_t
+
+        # Saving the interaction term
+        self._inter = interaction
+
+    def fit(self, y, X):
         """Fit the model.
 
         Args:
             y (pandas.DataFrame): The vector of endogenous variable.
             X (pandas.DataFrame): The matrix of exogenous variables.
-            result_col (str): The variable for which the results are required.
-            condition_value_t (int): The condition value threshold (for
-                                     multicollinearity).
 
         """
         # Resetting the statistics
@@ -56,7 +78,7 @@ class StatsLinear(StatsModels):
         # Checking the condition number (according to StatsModels, condition
         # number higher than 1000 indicate that there are strong
         # multicollinearity or other numerical problems)
-        if fitted.condition_number > condition_value_t:
+        if fitted.condition_number > self._condition_value_t:
             raise StatsError("condition number is large, {}".format(
                 fitted.condition_number,
             ))
@@ -70,11 +92,11 @@ class StatsLinear(StatsModels):
             ))
 
         # Saving the statistics
-        self.results.coef = fitted.params[result_col]
-        self.results.std_err = fitted.bse[result_col]
+        self.results.coef = fitted.params[self._result_col]
+        self.results.std_err = fitted.bse[self._result_col]
         self.results.lower_ci, self.results.upper_ci = tuple(
-            fitted.conf_int().loc[result_col, :].values
+            fitted.conf_int().loc[self._result_col, :].values
         )
-        self.results.t_value = fitted.tvalues[result_col]
-        self.results.p_value = fitted.pvalues[result_col]
+        self.results.t_value = fitted.tvalues[self._result_col]
+        self.results.p_value = fitted.pvalues[self._result_col]
         self.results.rsquared_adj = fitted.rsquared_adj
