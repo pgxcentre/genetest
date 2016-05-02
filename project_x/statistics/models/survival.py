@@ -14,6 +14,7 @@ import numpy as np
 import pandas as pd
 from lifelines import CoxPHFitter
 
+from ...decorators import arguments
 from ..core import StatsModels, StatsResults, StatsError
 
 
@@ -24,9 +25,28 @@ __license__ = "Attribution-NonCommercial 4.0 International (CC BY-NC 4.0)"
 __all__ = ["StatsCoxPH"]
 
 
+@arguments(required=("time_to_event", "event", "predictors"),
+           optional={"interaction": None,
+                     "normalize": False})
 class StatsCoxPH(StatsModels):
-    def __init__(self):
-        """Initializes a 'StatsCoxPH' instance."""
+    def __init__(self, time_to_event, event, predictors, interaction,
+                 normalize):
+        """Initializes a 'StatsCoxPH' instance.
+
+        Args:
+            time_to_event (str): The name of the variable containing the time
+                                 at which the event occurred.
+            event (str): The name of the variable containing the event.
+            predictors (list): The list of predictor variables in the model.
+            interaction (list): The list of interaction variable to add to the
+                                model with the genotype.
+
+        """
+        # Creating the model
+        self._create_model(outcomes=[time_to_event, event],
+                           predictors=predictors, interaction=interaction,
+                           intercept=True)
+
         self.results = StatsResults(
             coef="Cox proportional hazard regression coefficient",
             std_err="Standard error of the regression coefficient",
@@ -37,16 +57,22 @@ class StatsCoxPH(StatsModels):
             p_value="p-value",
         )
 
-    def fit(self, y, X, tte, event, result_col, normalize=False):
+        # Saving the two variables for time to event and event
+        self._tte = time_to_event
+        self._event = event
+
+        # Saving the interaction term
+        self._inter = interaction
+
+        # Saving the normalization status
+        self._normalize = normalize
+
+    def fit(self, y, X):
         """Fit the model.
 
         Args:
             y (pandas.DataFrame): The vector of endogenous variable.
             X (pandas.DataFrame): The matrix of exogenous variables.
-            tte (str): The name of the column containing the time to event.
-            event (str): The name of the column containing the event.
-            result_col (str): The variable for which the results are required.
-            normalize (bool): Is normalization is required? (default is False).
 
         """
         # Resetting the statistics
@@ -56,16 +82,16 @@ class StatsCoxPH(StatsModels):
         data = pd.merge(y, X, left_index=True, right_index=True)
 
         # Creating the model
-        model = CoxPHFitter(normalize=normalize)
+        model = CoxPHFitter(normalize=self._normalize)
 
         # Fitting the model
         try:
-            model.fit(data, tte, event_col=event)
+            model.fit(data, self._tte, event_col=self._event)
         except np.linalg.linalg.LinAlgError as e:
             raise StatsError(str(e))
 
         # Gathering the results for the required column
-        results = model.summary.loc[result_col, :]
+        results = model.summary.loc[self._result_col, :]
 
         # Saving the statistics
         self.results.coef = results.coef
@@ -75,3 +101,28 @@ class StatsCoxPH(StatsModels):
         self.results.hr_upper_ci = np.exp(results["upper 0.95"])
         self.results.z_value = results.z
         self.results.p_value = results.p
+
+    def create_matrices(self, data, create_dummy=True):
+        """Creates the y and X matrices for a linear regression.
+
+        Args:
+            data (pandas.DataFrame): The data to fit.
+            create_dummy (bool): If True, a dummy column will be added for the
+                                 genotypes.
+
+        Returns:
+            tuple: y and X as pandas dataframes (according to the formula).
+
+        Note
+        ----
+            This method calls the super method, but remove the 'Intercept'
+            column (since it's not required by lifelines).
+
+        """
+        y, X = super().create_matrices(data, create_dummy=create_dummy)
+
+        # Removing the 'Intercept' column
+        if 'Intercept' in X.columns:
+            X = X.drop("Intercept", axis=1)
+
+        return y, X

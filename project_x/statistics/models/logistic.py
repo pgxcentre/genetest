@@ -41,6 +41,7 @@ class StatsLogistic(StatsModels):
         self._create_model(outcomes=[outcome], predictors=predictors,
                            interaction=interaction, intercept=True)
 
+        # Creating the result object
         self.results = StatsResults(
             coef="Logistic regression coefficient",
             std_err="Standard error of the regression coefficient",

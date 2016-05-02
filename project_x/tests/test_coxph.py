@@ -12,7 +12,6 @@ import unittest
 
 import numpy as np
 import pandas as pd
-from patsy import dmatrices
 from pkg_resources import resource_filename
 
 from ..statistics.core import StatsError
@@ -27,7 +26,13 @@ class TestStatsCoxPH(unittest.TestCase):
     """Tests the 'StatsCoxPH' class."""
     @classmethod
     def setUpClass(cls):
-        cls.coxph = StatsCoxPH()
+        cls.coxph = StatsCoxPH(
+            time_to_event="tte",
+            event="event",
+            predictors=["age", "var1", "C(gender)", "geno"],
+            interaction=None,
+            normalize=False,
+        )
 
     def setUp(self):
         self.data = pd.read_csv(
@@ -36,20 +41,59 @@ class TestStatsCoxPH(unittest.TestCase):
             compression="bz2",
         )
 
-    def test_coxph_snp1(self):
-        """Tests coxph regression with the first SNP."""
-        # Preparing the matrices
-        y, X = dmatrices(
-            "tte + event ~ age + var1 + C(gender) + snp1",
-            self.data,
-            return_type="dataframe",
-        )
+    def test_coxph_snp1_full(self):
+        """Tests coxph regression with the first SNP (full)."""
+        # Preparing the data
+        pheno = self.data[["tte", "event", "age", "var1", "gender"]]
+        geno = self.data[["snp1"]].rename(columns={"snp1": "geno"})
 
-        # Dropping the intercept (for linefiles)
-        X = X.drop("Intercept", axis=1)
+        # Permuting the genotypes
+        geno = geno.iloc[np.random.permutation(geno.shape[0]), :]
+
+        # Preparing the matrices
+        y, X = self.coxph.create_matrices(pheno)
+
+        # Merging with genotype
+        y, X = self.coxph.merge_matrices_genotypes(y, X, geno)
 
         # Fitting
-        self.coxph.fit(y, X, tte="tte", event="event", result_col="snp1")
+        self.coxph.fit(y, X)
+
+        # Checking the results (according to SAS)
+        self.assertAlmostEqual(
+            -3.49771655666559, self.coxph.results.coef, places=2,
+        )
+        self.assertAlmostEqual(
+            1.05740411066576, self.coxph.results.std_err, places=4,
+        )
+        self.assertAlmostEqual(
+            0.0302664162224589, self.coxph.results.hr, places=4,
+        )
+        self.assertAlmostEqual(
+            0.0038097544883423, self.coxph.results.hr_lower_ci, places=5,
+        )
+        self.assertAlmostEqual(
+            0.24045012710247, self.coxph.results.hr_upper_ci, places=5,
+        )
+        self.assertAlmostEqual(
+            10.9417613148234, self.coxph.results.z_value**2, places=2,
+        )
+        self.assertAlmostEqual(
+            -np.log10(0.0009402074852055),
+            -np.log10(self.coxph.results.p_value), places=2,
+        )
+
+    def test_coxph_snp1(self):
+        """Tests coxph regression with the first SNP."""
+        # Preparing the data
+        data = self.data[["tte", "event", "age", "var1", "gender", "snp1"]]
+        data = data.rename(columns={"snp1": "geno"})
+
+        # Preparing the matrices
+        y, X = self.coxph.create_matrices(data, create_dummy=False)
+
+        # Fitting
+        self.coxph.fit(y, X)
 
         # Checking the results (according to SAS)
         self.assertAlmostEqual(
@@ -77,18 +121,15 @@ class TestStatsCoxPH(unittest.TestCase):
 
     def test_coxph_snp2(self):
         """Tests coxph regression with the second SNP."""
-        # Preparing the matrices
-        y, X = dmatrices(
-            "tte + event ~ age + var1 + C(gender) + snp2",
-            self.data,
-            return_type="dataframe",
-        )
+        # Preparing the data
+        data = self.data[["tte", "event", "age", "var1", "gender", "snp2"]]
+        data = data.rename(columns={"snp2": "geno"})
 
-        # Dropping the intercept (for linefiles)
-        X = X.drop("Intercept", axis=1)
+        # Preparing the matrices
+        y, X = self.coxph.create_matrices(data, create_dummy=False)
 
         # Fitting
-        self.coxph.fit(y, X, tte="tte", event="event", result_col="snp2")
+        self.coxph.fit(y, X)
 
         # Checking the results (according to SAS)
         self.assertAlmostEqual(
@@ -116,18 +157,15 @@ class TestStatsCoxPH(unittest.TestCase):
 
     def test_coxph_snp3(self):
         """Tests coxph regression with the third SNP."""
-        # Preparing the matrices
-        y, X = dmatrices(
-            "tte + event ~ age + var1 + C(gender) + snp3",
-            self.data,
-            return_type="dataframe",
-        )
+        # Preparing the data
+        data = self.data[["tte", "event", "age", "var1", "gender", "snp3"]]
+        data = data.rename(columns={"snp3": "geno"})
 
-        # Dropping the intercept (for linefiles)
-        X = X.drop("Intercept", axis=1)
+        # Preparing the matrices
+        y, X = self.coxph.create_matrices(data, create_dummy=False)
 
         # Fitting
-        self.coxph.fit(y, X, tte="tte", event="event", result_col="snp3")
+        self.coxph.fit(y, X)
 
         # Checking the results (according to SAS)
         self.assertAlmostEqual(
@@ -154,19 +192,16 @@ class TestStatsCoxPH(unittest.TestCase):
 
     def test_coxph_snp4(self):
         """Tests coxph regression with the third SNP."""
-        # Preparing the matrices
-        y, X = dmatrices(
-            "tte + event ~ age + var1 + C(gender) + snp4",
-            self.data,
-            return_type="dataframe",
-        )
+        # Preparing the data
+        data = self.data[["tte", "event", "age", "var1", "gender", "snp4"]]
+        data = data.rename(columns={"snp4": "geno"})
 
-        # Dropping the intercept (for linefiles)
-        X = X.drop("Intercept", axis=1)
+        # Preparing the matrices
+        y, X = self.coxph.create_matrices(data, create_dummy=False)
 
         # Fitting
         with self.assertRaises(StatsError):
-            self.coxph.fit(y, X, tte="tte", event="event", result_col="snp4")
+            self.coxph.fit(y, X)
 
         # Checking the results (according to SAS)
         self.assertTrue(np.isnan(self.coxph.results.coef))
