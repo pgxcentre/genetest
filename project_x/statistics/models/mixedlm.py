@@ -14,6 +14,7 @@ import numpy as np
 import pandas as pd
 import statsmodels.api as sm
 
+from ...decorators import arguments
 from ..core import StatsModels, StatsResults, StatsError
 
 
@@ -24,9 +25,17 @@ __license__ = "Attribution-NonCommercial 4.0 International (CC BY-NC 4.0)"
 __all__ = ["StatsMixedLM"]
 
 
+@arguments(required=("outcome", "predictors"),
+           optional={"interaction": None,
+                     "reml": True})
 class StatsMixedLM(StatsModels):
-    def __init__(self):
+    def __init__(self, outcome, predictors, interaction, reml):
         """Initializes a 'StatsMixedLM' instance."""
+        # Creating the model
+        self._create_model(outcomes=[outcome], predictors=predictors,
+                           interaction=interaction, intercept=True)
+
+        # Creating the result object
         self.results = StatsResults(
             coef="MixedLM regression coefficient",
             std_err="Standard error of the regression coefficient",
@@ -36,13 +45,19 @@ class StatsMixedLM(StatsModels):
             p_value="p-value",
         )
 
-    def fit(self, y, X, groups, result_col, reml=True):
+        # Saving the REML boolean
+        self._reml = reml
+
+        # Saving the interaction term
+        self._inter = interaction
+
+    def fit(self, y, X, groups):
         """Fit the model.
 
         Args:
             y (pandas.DataFrame): The vector of endogenous variable.
             X (pandas.DataFrame): The matrix of exogenous variables.
-            result_col (str): The variable for which the results are required.
+            groups (numpy.ndarray): The samples (for repeated measurements).
 
         """
         # Resetting the statistics
@@ -52,21 +67,20 @@ class StatsMixedLM(StatsModels):
         model = sm.MixedLM(y, X, groups)
 
         try:
-            fitted = model.fit(reml=reml)
+            fitted = model.fit(reml=self._reml)
         except np.linalg.linalg.LinAlgError as e:
             raise StatsError(str(e))
 
         # Saving the statistics
-        self.results.coef = fitted.params[result_col]
-        self.results.std_err = fitted.bse[result_col]
+        self.results.coef = fitted.params[self._result_col]
+        self.results.std_err = fitted.bse[self._result_col]
         self.results.lower_ci, self.results.upper_ci = tuple(
-            fitted.conf_int().loc[result_col, :].values
+            fitted.conf_int().loc[self._result_col, :].values
         )
-        self.results.z_value = fitted.tvalues[result_col]
-        self.results.p_value = fitted.pvalues[result_col]
+        self.results.z_value = fitted.tvalues[self._result_col]
+        self.results.p_value = fitted.pvalues[self._result_col]
 
-    @staticmethod
-    def merge_matrices_genotypes(y, X, genotypes, ori_samples):
+    def merge_matrices_genotypes(self, y, X, genotypes, ori_samples):
         """Merges the genotypes to X, remove missing values, and subset y.
 
         Args:
