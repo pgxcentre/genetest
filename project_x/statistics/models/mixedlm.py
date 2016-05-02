@@ -31,10 +31,6 @@ __all__ = ["StatsMixedLM"]
 class StatsMixedLM(StatsModels):
     def __init__(self, outcome, predictors, interaction, reml):
         """Initializes a 'StatsMixedLM' instance."""
-        # Creating the model
-        self._create_model(outcomes=[outcome], predictors=predictors,
-                           interaction=interaction, intercept=True)
-
         # Creating the result object
         self.results = StatsResults(
             coef="MixedLM regression coefficient",
@@ -48,8 +44,9 @@ class StatsMixedLM(StatsModels):
         # Saving the REML boolean
         self._reml = reml
 
-        # Saving the interaction term
-        self._inter = interaction
+        # Executing the super init class
+        super().__init__(outcomes=[outcome], predictors=predictors,
+                         interaction=interaction, intercept=True)
 
     def fit(self, y, X, groups):
         """Fit the model.

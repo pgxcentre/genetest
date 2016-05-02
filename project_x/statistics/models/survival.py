@@ -61,11 +61,13 @@ class StatsCoxPH(StatsModels):
         self._tte = time_to_event
         self._event = event
 
-        # Saving the interaction term
-        self._inter = interaction
-
         # Saving the normalization status
         self._normalize = normalize
+
+        # Executing the super init class
+        super().__init__(outcomes=[time_to_event, event],
+                         predictors=predictors,
+                         interaction=interaction, intercept=True)
 
     def fit(self, y, X):
         """Fit the model.

@@ -37,10 +37,6 @@ class StatsLogistic(StatsModels):
                                 model with the genotype.
 
         """
-        # Creating the model
-        self._create_model(outcomes=[outcome], predictors=predictors,
-                           interaction=interaction, intercept=True)
-
         # Creating the result object
         self.results = StatsResults(
             coef="Logistic regression coefficient",
@@ -51,8 +47,9 @@ class StatsLogistic(StatsModels):
             p_value="p-value",
         )
 
-        # Saving the interaction term
-        self._inter = interaction
+        # Executing the super init class
+        super().__init__(outcomes=[outcome], predictors=predictors,
+                         interaction=interaction, intercept=True)
 
     def fit(self, y, X):
         """Fit the model.

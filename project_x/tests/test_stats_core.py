@@ -79,7 +79,12 @@ class TestStatsLinear(unittest.TestCase):
         ).set_index("sample_id")
 
         # Creating an instance of StatsModels core object
-        self.core_model = StatsModels()
+        self.core_model = StatsModels(
+            outcomes=["test"],
+            predictors=["var1", "var2", "var3"],
+            interaction=None,
+            intercept=True,
+        )
 
     def test__create_model(self):
         """Tests the '_create_model' function."""

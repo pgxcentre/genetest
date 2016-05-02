@@ -23,6 +23,23 @@ __all__ = ["StatsModels", "StatsResults", "StatsError"]
 
 
 class StatsModels(object):
+    def __init__(self, outcomes, predictors, interaction, intercept):
+        """Initializes a 'StatsLinear' instance.
+
+        Args:
+            outcome (str): The outcome of the model.
+            predictors (list): The list of predictor variables in the model.
+            interaction (list): The list of interaction variable to add to the
+                                model with the genotype.
+
+        """
+        # Creating the model
+        self._create_model(outcomes=outcomes, predictors=predictors,
+                           interaction=interaction, intercept=intercept)
+
+        # Saving the interaction term
+        self._inter = interaction
+
     def fit(self, y, X, result_col):
         """Fit the model.
 

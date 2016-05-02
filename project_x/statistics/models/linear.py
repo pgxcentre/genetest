@@ -39,10 +39,6 @@ class StatsLinear(StatsModels):
                                      multicollinearity).
 
         """
-        # Creating the model
-        self._create_model(outcomes=[outcome], predictors=predictors,
-                           interaction=interaction, intercept=True)
-
         # Creating the result object
         self.results = StatsResults(
             coef="Linear regression coefficient",
@@ -57,8 +53,9 @@ class StatsLinear(StatsModels):
         # Saving the condition value threshold
         self._condition_value_t = condition_value_t
 
-        # Saving the interaction term
-        self._inter = interaction
+        # Executing the super init class
+        super().__init__(outcomes=[outcome], predictors=predictors,
+                         interaction=interaction, intercept=True)
 
     def fit(self, y, X):
         """Fit the model.
