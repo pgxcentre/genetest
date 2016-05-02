@@ -22,10 +22,6 @@ __license__ = "Attribution-NonCommercial 4.0 International (CC BY-NC 4.0)"
 
 class TestStatsLinear(unittest.TestCase):
     """Tests the 'StatsLinear' class."""
-    @classmethod
-    def setUpClass(cls):
-        cls.core_model = StatsModels()
-
     def setUp(self):
         # The data
         data = pd.DataFrame(
@@ -82,31 +78,95 @@ class TestStatsLinear(unittest.TestCase):
                      "C(var2)[T.f3]", "var1", "geno"],
         ).set_index("sample_id")
 
-    def test_create_matrices(self):
-        """Tests the 'create_matrices' function."""
-        # Creating the matrices
-        y, X = self.core_model.create_matrices(
-            formula="pheno ~ var1 + C(var2)",
-            data=self.data,
+        # Creating an instance of StatsModels core object
+        self.core_model = StatsModels()
+
+    def test__create_model(self):
+        """Tests the '_create_model' function."""
+        self.core_model._create_model(
+            outcomes=["y"],
+            predictors=["var1", "C(var2)"],
+            interaction=None,
+            intercept=True,
         )
 
-        # Checking the results
-        self.assertTrue(np.array_equal(y.index.values, X.index.values))
-        self.assertTrue(self.expected_y.equals(y.sortlevel()))
-        self.assertTrue(self.expected_X.equals(X.sortlevel()))
-
-    def test_merge_matrices_genotypes(self):
-        """Tests the 'merge_matrices_genotypes' function."""
-        # Shuffling the rows
-        y = self.expected_y.iloc[np.random.permutation(len(self.expected_y))]
-        X = self.expected_X.iloc[np.random.permutation(len(self.expected_X))]
-
-        # Merging the matrices with the genotypes
-        new_y, new_X = self.core_model.merge_matrices_genotypes(
-            y=y, X=X, genotypes=self.genotypes,
+        # Checking the model (by looking at the formula)
+        self.assertEqual(
+            "y ~ geno + var1 + C(var2)",
+            self.core_model.get_model_description(),
         )
 
-        # Checking the results
-        self.assertTrue(np.array_equal(new_y.index.values, new_X.index.values))
-        self.assertTrue(self.expected_new_y.equals(new_y.sortlevel()))
-        self.assertTrue(self.expected_new_X.equals(new_X.sortlevel()))
+        # Checking the resulting column
+        self.assertEqual("geno", self.core_model._result_col)
+
+    def test__create_model_no_intercept(self):
+        """Tests the '_create_model' function with no intercept."""
+        self.core_model._create_model(
+            outcomes=["y"],
+            predictors=["var1", "C(var2)"],
+            interaction=None,
+            intercept=False,
+        )
+
+        # Checking the model (by looking at the formula)
+        self.assertEqual(
+            "y ~ 0 + geno + var1 + C(var2)",
+            self.core_model.get_model_description(),
+        )
+
+        # Checking the resulting column
+        self.assertEqual("geno", self.core_model._result_col)
+
+    def test__create_model_with_interaction(self):
+        """Tests the '_create_model' function with an interaction."""
+        self.core_model._create_model(
+            outcomes=["y"],
+            predictors=["var1", "C(var2)"],
+            interaction="var1",
+            intercept=False,
+        )
+
+        # Checking the model (by looking at the formula)
+        self.assertEqual(
+            "y ~ 0 + geno + var1 + C(var2) + geno:var1",
+            self.core_model.get_model_description(),
+        )
+
+        # Checking the resulting column
+        self.assertEqual("geno:var1", self.core_model._result_col)
+
+    def test__create_model_with_interaction2(self):
+        """Tests with an interaction (categorical)."""
+        self.core_model._create_model(
+            outcomes=["y"],
+            predictors=["var1", "C(var2)"],
+            interaction="C(var2)",
+            intercept=True,
+        )
+
+        # Checking the model (by looking at the formula)
+        self.assertEqual(
+            "y ~ geno + var1 + C(var2) + geno:C(var2)",
+            self.core_model.get_model_description(),
+        )
+
+        # Checking the resulting column
+        self.assertEqual("geno:C(var2)", self.core_model._result_col)
+
+    def test__create_model_with_interaction_not_in_predictors(self):
+        """Tests with an interaction but not in predictors list."""
+        self.core_model._create_model(
+            outcomes=["y"],
+            predictors=["var1", "C(var2)"],
+            interaction="var3",
+            intercept=True,
+        )
+
+        # Checking the model (by looking at the formula)
+        self.assertEqual(
+            "y ~ geno + var1 + C(var2) + var3 + geno:var3",
+            self.core_model.get_model_description(),
+        )
+
+        # Checking the resulting column
+        self.assertEqual("geno:var3", self.core_model._result_col)
