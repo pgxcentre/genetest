@@ -12,7 +12,6 @@ import unittest
 
 import numpy as np
 import pandas as pd
-from patsy import dmatrices
 from pkg_resources import resource_filename
 
 from ..statistics.core import StatsError
