@@ -159,7 +159,7 @@ class StatsModels(object):
         # Creating dummy columns (if required)
         if create_dummy:
             data = data.copy(deep=True)
-            data["geno"] = np.empty(data.shape[0])
+            data["geno"] = np.zeros(data.shape[0])
 
         # Getting the matrices
         y, X = patsy.dmatrices(self._model, data, return_type="dataframe")
