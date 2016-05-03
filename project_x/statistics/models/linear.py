@@ -23,9 +23,9 @@ __license__ = "Attribution-NonCommercial 4.0 International (CC BY-NC 4.0)"
 __all__ = ["StatsLinear"]
 
 
-@arguments(required=("outcome", "predictors"),
-           optional={"interaction": None,
-                     "condition_value_t": 1000})
+@arguments(required=(("outcome", str), ("predictors", [str])),
+           optional={"interaction": (str, None),
+                     "condition_value_t": (int, 1000)})
 class StatsLinear(StatsModels):
     def __init__(self, outcome, predictors, interaction, condition_value_t):
         """Initializes a 'StatsLinear' instance.

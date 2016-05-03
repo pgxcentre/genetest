@@ -48,6 +48,16 @@ class PhenotypesContainer(object):
         """
         return cls._optional_args
 
+    @classmethod
+    def get_arguments_type(cls):
+        """Returns the arguments type.
+
+        Returns:
+            dict: The type of each arguments (both required and optional).
+
+        """
+        return cls._args_type
+
     def get_phenotypes(self):
         """Returns a dataframe of phenotypes.
 

@@ -72,6 +72,16 @@ class StatsModels(object):
         """
         return cls._optional_args
 
+    @classmethod
+    def get_arguments_type(cls):
+        """Returns the arguments type.
+
+        Returns:
+            dict: The type of each arguments (both required and optional).
+
+        """
+        return cls._args_type
+
     def _create_model(self, outcomes, predictors, interaction=None,
                       intercept=True):
         """Creates a statistical model.
@@ -152,7 +162,11 @@ class StatsModels(object):
             data["geno"] = np.empty(data.shape[0])
 
         # Getting the matrices
+        print(data.shape)
         y, X = patsy.dmatrices(self._model, data, return_type="dataframe")
+        print(data.shape)
+        print(y.shape)
+        print(X.shape)
 
         # Deleting the dummy columns (if required)
         if create_dummy:

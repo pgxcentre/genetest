@@ -25,9 +25,9 @@ __license__ = "Attribution-NonCommercial 4.0 International (CC BY-NC 4.0)"
 __all__ = ["StatsMixedLM"]
 
 
-@arguments(required=("outcome", "predictors"),
-           optional={"interaction": None,
-                     "reml": True})
+@arguments(required=(("outcome", str), ("predictors", [str])),
+           optional={"interaction": (str, None),
+                     "reml": (bool, True)})
 class StatsMixedLM(StatsModels):
     def __init__(self, outcome, predictors, interaction, reml):
         """Initializes a 'StatsMixedLM' instance."""

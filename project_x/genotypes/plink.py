@@ -22,7 +22,7 @@ __license__ = "Attribution-NonCommercial 4.0 International (CC BY-NC 4.0)"
 __all__ = ["PlinkGenotypes"]
 
 
-@arguments(required=("prefix", ))
+@arguments(required=(("prefix", str), ))
 class PlinkGenotypes(GenotypesContainer):
     def __init__(self, prefix):
         """Instantiate a new PlinkGenotypes object.

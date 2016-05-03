@@ -31,8 +31,8 @@ _Impute2Line = namedtuple("_Impute2Line",
                           ["marker", "chrom", "pos", "a1", "a2", "prob"])
 
 
-@arguments(required=("filename", "sample_filename"),
-           optional={"probability_threshold": 0.9})
+@arguments(required=(("filename", str), ("sample_filename", str)),
+           optional={"probability_threshold": (float, 0.9)})
 class Impute2Genotypes(GenotypesContainer):
     def __init__(self, filename, sample_filename, probability_threshold):
         """Instantiate a new Impute2Genotypes object.

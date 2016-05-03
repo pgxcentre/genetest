@@ -24,7 +24,7 @@ __license__ = "Attribution-NonCommercial 4.0 International (CC BY-NC 4.0)"
 __all__ = ["VCFGenotypes"]
 
 
-@arguments(required=("filename", ))
+@arguments(required=(("filename", str), ))
 class VCFGenotypes(GenotypesContainer):
     def __init__(self, filename):
         """Instantiate a new VCFGenotypes object.

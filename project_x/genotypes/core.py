@@ -70,6 +70,16 @@ class GenotypesContainer(object):
         """
         return cls._optional_args
 
+    @classmethod
+    def get_arguments_type(cls):
+        """Returns the arguments type.
+
+        Returns:
+            dict: The type of each arguments (both required and optional).
+
+        """
+        return cls._args_type
+
     def get_genotypes(self, marker, representation=Representation.ADDITIVE):
         """Returns a dataframe of genotypes encoded using the provided model.
 

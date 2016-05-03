@@ -25,9 +25,10 @@ __license__ = "Attribution-NonCommercial 4.0 International (CC BY-NC 4.0)"
 __all__ = ["StatsCoxPH"]
 
 
-@arguments(required=("time_to_event", "event", "predictors"),
-           optional={"interaction": None,
-                     "normalize": False})
+@arguments(required=(("time_to_event", str), ("event", str),
+                     ("predictors", [str])),
+           optional={"interaction": (str, None),
+                     "normalize": (bool, False)})
 class StatsCoxPH(StatsModels):
     def __init__(self, time_to_event, event, predictors, interaction,
                  normalize):
