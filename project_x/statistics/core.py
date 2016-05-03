@@ -189,7 +189,7 @@ class StatsModels(object):
             new_col = [term for term in X.columns
                        if term.startswith(self._inter)][0]
             assert "geno:" + new_col == inter_term[0]
-            self._inter = new_col
+            self._inter_col = new_col
 
             # Dropping the column
             if create_dummy:
@@ -222,7 +222,7 @@ class StatsModels(object):
         # Check if there is interaction
         if self._inter is not None:
             # There is, so we multiply
-            new_X[self._result_col] = new_X.geno * new_X[self._inter]
+            new_X[self._result_col] = new_X.geno * new_X[self._inter_col]
 
         return new_y, new_X
 
