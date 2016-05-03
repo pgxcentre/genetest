@@ -20,10 +20,20 @@ __all__ = ["arguments"]
 class arguments(object):
     """A decorator to add required and optional arguments to a class."""
     def __init__(self, required, optional={}):
-        self._required_arguments = required
-        self._optional_arguments = optional
+        # Saving the required and optional arguments
+        self._required_arguments = tuple(req[0] for req in required)
+        self._optional_arguments = {k: v[1] for k, v in optional.items()}
+
+        # Saving all the arguments type
+        self._arguments_type = {k: v[0] for k, v in optional.items()}
+        for req in required:
+            self._arguments_type[req[0]] = req[1]
 
     def __call__(self, cls):
+        # Saving the arguments information into the decorated class
         cls._required_args = self._required_arguments
         cls._optional_args = self._optional_arguments
+        cls._args_type = self._arguments_type
+
+        # Returning the class
         return cls
