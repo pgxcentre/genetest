@@ -10,8 +10,17 @@
 # Commons, PO Box 1866, Mountain View, CA 94042, USA.
 
 
+from .models.linear import StatsLinear
+from .models.survival import StatsCoxPH
+from .models.mixedlm import StatsMixedLM
+from .models.logistic import StatsLogistic
+
+
 __copyright__ = "Copyright 2016, Beaulieu-Saucier Pharmacogenomics Centre"
 __license__ = "CC BY-NC 4.0"
+
+
+__all__ = ["available_models"]
 
 
 available_models = dict(
@@ -19,4 +28,13 @@ available_models = dict(
     logistic="Logistic regression (GLM with binomial distribution).",
     mixedlm="Linear mixed effect model (random intercept).",
     coxph="Cox's proportional hazard regression (survival analysis).",
+)
+
+
+# The model map (which maps the name to the class)
+model_map = dict(
+    linear=StatsLinear,
+    logistic=StatsLogistic,
+    mixedlm=StatsMixedLM,
+    coxph=StatsCoxPH,
 )

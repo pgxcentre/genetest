@@ -16,6 +16,7 @@ from .genotypes import available_formats as geno_formats, \
                        format_map as geno_map
 from .phenotypes import available_formats as pheno_formats, \
                         format_map as pheno_map
+from .statistics import available_models as stats_models, model_map
 
 
 __copyright__ = "Copyright 2016, Beaulieu-Saucier Pharmacogenomics Centre"
@@ -39,7 +40,7 @@ class AnalysisConfiguration(object):
             self._configuration.read_file(f)
 
         # Getting the required and available sections
-        required_sections = {"Genotypes", "Phenotypes"}
+        required_sections = {"Genotypes", "Phenotypes", "Statistics"}
         available_sections = set(self._configuration.sections())
 
         # Checking if there are missing required sections
@@ -65,6 +66,9 @@ class AnalysisConfiguration(object):
 
         # Configuring the Phenotypes component
         self.configure_phenotypes()
+
+        # Configuring the Statistics component
+        self.configure_statistics()
 
     def configure_genotypes(self):
         """Configures the genotypes component."""
@@ -95,6 +99,7 @@ class AnalysisConfiguration(object):
         self.retrieve_required_arguments(
             names=self._geno_container.get_required_arguments(),
             args=self._geno_arguments,
+            args_type=self._geno_container.get_arguments_type(),
             config=section,
             section="Genotypes",
         )
@@ -102,6 +107,7 @@ class AnalysisConfiguration(object):
         # Getting the optional arguments
         self.retrieve_optional_arguments(
             optional_args=self._geno_container.get_optional_arguments(),
+            args_type=self._geno_container.get_arguments_type(),
             current_args=self._geno_arguments,
             config=section,
         )
@@ -150,6 +156,7 @@ class AnalysisConfiguration(object):
         self.retrieve_required_arguments(
             names=self._pheno_container.get_required_arguments(),
             args=self._pheno_arguments,
+            args_type=self._pheno_container.get_arguments_type(),
             config=section,
             section="Phenotypes",
         )
@@ -157,6 +164,7 @@ class AnalysisConfiguration(object):
         # Getting the optional arguments
         self.retrieve_optional_arguments(
             optional_args=self._pheno_container.get_optional_arguments(),
+            args_type=self._pheno_container.get_arguments_type(),
             current_args=self._pheno_arguments,
             config=section,
         )
@@ -176,14 +184,73 @@ class AnalysisConfiguration(object):
         """Returns the phenotypes container."""
         return self._pheno_container
 
+    def configure_statistics(self):
+        """Configures the statistics component."""
+        # Getting the statistics section of the configuration file
+        section = self._configuration["Statistics"]
+
+        # Getting the statistical model
+        if "model" not in section:
+            raise ValueError("In the configuration file, the 'Statistics' "
+                             "section should contain the 'model' option "
+                             "specifying the statistical model required in "
+                             "the analysis.")
+        statistical_model = section.pop("model")
+
+        # Checking if the format is valid
+        if statistical_model not in stats_models:
+            raise ValueError("Invalid 'model' for the 'Statistics' section "
+                             "of the configuration file.")
+
+        # Getting the object to gather required and optional values
+        self._stats_container = model_map[statistical_model]
+
+        # Creating the dictionary that will contain all the arguments
+        self._stats_arguments = {}
+        self._stats_model = statistical_model
+
+        # Gathering all the required arguments
+        self.retrieve_required_arguments(
+            names=self._stats_container.get_required_arguments(),
+            args=self._stats_arguments,
+            args_type=self._stats_container.get_arguments_type(),
+            config=section,
+            section="Statistics",
+        )
+
+        # Getting the optional arguments
+        self.retrieve_optional_arguments(
+            optional_args=self._stats_container.get_optional_arguments(),
+            args_type=self._stats_container.get_arguments_type(),
+            current_args=self._stats_arguments,
+            config=section,
+        )
+
+        # Checking for the invalid sections
+        self.check_invalid_options(config=section, section="Statistics")
+
+    def get_statistics_arguments(self):
+        """Returns the phenotypes arguments."""
+        return self._stats_arguments
+
+    def get_statistics_format(self):
+        """Returns the phenotypes format."""
+        return self._stats_model
+
+    def get_statistics_container(self):
+        """Returns the phenotypes container."""
+        return self._stats_container
+
     @staticmethod
-    def retrieve_required_arguments(names, args, config, section):
+    def retrieve_required_arguments(names, args, args_type, config, section):
         """Retrieves required arguments from a configuration section.
 
         Args:
             names (tuple): An tuple containing the names of the required
                            arguments to fetch.
             args (dict): The current arguments.
+            args_type (dict): A dictionary containing the type of each
+                              arguments.
             config (dict): The configuration section in which to retrieve the
                            required arguments.
             section (str): The name of the configuration section.
@@ -196,15 +263,23 @@ class AnalysisConfiguration(object):
                     "configuration file.".format(config["format"], section,
                                                  name)
                 )
-            args[name] = config.pop(name)
+
+            # Saving the argument
+            args[name] = AnalysisConfiguration.set_type_to_argument(
+                arg=config.pop(name),
+                arg_type=args_type[name],
+            )
 
     @staticmethod
-    def retrieve_optional_arguments(optional_args, current_args, config):
+    def retrieve_optional_arguments(optional_args, args_type, current_args,
+                                    config):
         """Retrieves the optional arguments (with default valule).
 
         Args:
             optional_args (dict): The available optional arguments with their
                                   default value(s).
+            args_type (dict): A dictionary containing the type of each
+                              arguments.
             current_args (dict): The current arguments.
             config (dict): The configuration in which the values are to be
                            gathered (if present).
@@ -212,9 +287,37 @@ class AnalysisConfiguration(object):
         """
         for arg_name, arg_value in optional_args.items():
             if arg_name in config:
-                current_args[arg_name] = config.pop(arg_name)
+                arg = AnalysisConfiguration.set_type_to_argument(
+                    arg=config.pop(arg_name),
+                    arg_type=args_type[arg_name],
+                )
+                current_args[arg_name] = arg
             else:
                 current_args[arg_name] = arg_value
+
+    @staticmethod
+    def set_type_to_argument(arg, arg_type):
+        """Sets the type to the argument.
+
+        Args:
+            arg (str): The argument.
+            arg_type (type): The type of the argument.
+
+        Returns:
+            type: The argument casted to the required type.
+
+        Note
+        ----
+            If the argument type is a list, the first (an only) element of that
+            list is the type. The argument is split by coma and then each
+            element is casted to the required type.
+
+        """
+        if isinstance(arg_type, list):
+            return [arg_type[0](v) for v in arg.split(",")]
+        else:
+            return arg_type(arg)
+
 
     @staticmethod
     def check_invalid_options(config, section):
