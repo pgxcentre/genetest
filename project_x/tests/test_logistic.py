@@ -31,6 +31,16 @@ class TestStatsLogistic(unittest.TestCase):
             predictors=["age", "var1", "C(gender)", "geno"],
             interaction=None,
         )
+        cls.logistic_inter = StatsLogistic(
+            outcome="pheno2",
+            predictors=["age", "var1", "C(gender)", "geno"],
+            interaction="var1",
+        )
+        cls.logistic_inter_cat = StatsLogistic(
+            outcome="pheno2",
+            predictors=["age", "var1", "C(gender)", "geno"],
+            interaction="C(gender)",
+        )
 
     def setUp(self):
         self.data = pd.read_csv(
@@ -81,6 +91,95 @@ class TestStatsLogistic(unittest.TestCase):
             -np.log10(self.logistic.results.p_value), places=5,
         )
 
+    def test_logistic_inter_snp1_inter_full(self):
+        """Tests logistic regression with the first SNP (interaction, full)."""
+        # Preparing the data
+        pheno = self.data[["pheno2", "age", "var1", "gender"]]
+        geno = self.data[["snp1"]].rename(
+            columns={"snp1": "geno"},
+        )
+
+        # Permuting the genotypes
+        geno = geno.iloc[np.random.permutation(geno.shape[0]), :]
+
+        # Preparing the matrices
+        y, X = self.logistic_inter.create_matrices(pheno)
+        self.assertFalse("geno" in X.columns)
+
+        # Merging with genotype
+        y, X = self.logistic_inter.merge_matrices_genotypes(y, X, geno)
+
+        # Fitting
+        self.logistic_inter.fit(y, X)
+
+        # Checking the results (according to SAS)
+        self.assertAlmostEqual(
+            0.001531148296819, self.logistic_inter.results.coef, places=6,
+        )
+        self.assertAlmostEqual(
+            0.0423504567007674, self.logistic_inter.results.std_err,
+        )
+        self.assertAlmostEqual(
+            -0.0814742215655, self.logistic_inter.results.lower_ci, places=6,
+        )
+        self.assertAlmostEqual(
+            0.08453651815914, self.logistic_inter.results.upper_ci,
+        )
+        self.assertAlmostEqual(
+            0.0013071285938734, self.logistic_inter.results.z_value**2,
+            places=6,
+        )
+        self.assertAlmostEqual(
+            0.97115937855364, self.logistic_inter.results.p_value, places=5,
+        )
+
+    def test_logistic_inter_snp1_inter_category_full(self):
+        """Tests logistic regression first SNP (inter, full, category)."""
+        # Preparing the data
+        pheno = self.data[["pheno2", "age", "var1", "gender"]]
+        geno = self.data[["snp1"]].rename(
+            columns={"snp1": "geno"},
+        )
+
+        # Permuting the genotypes
+        geno = geno.iloc[np.random.permutation(geno.shape[0]), :]
+
+        # Preparing the matrices
+        y, X = self.logistic_inter_cat.create_matrices(pheno)
+        self.assertFalse("geno" in X.columns)
+
+        # Merging with genotype
+        y, X = self.logistic_inter_cat.merge_matrices_genotypes(y, X, geno)
+
+        # Fitting
+        self.logistic_inter_cat.fit(y, X)
+
+        # Checking the results (according to SAS)
+        self.assertAlmostEqual(
+            -0.0089544870073693, self.logistic_inter_cat.results.coef,
+            places=4,
+        )
+        self.assertAlmostEqual(
+            1.19878325025509, self.logistic_inter_cat.results.std_err,
+            places=5,
+        )
+        self.assertAlmostEqual(
+            -2.35852648277723, self.logistic_inter_cat.results.lower_ci,
+            places=4,
+        )
+        self.assertAlmostEqual(
+            2.34061750876249, self.logistic_inter_cat.results.upper_ci,
+            places=5,
+        )
+        self.assertAlmostEqual(
+            0.0000557956175619, self.logistic_inter_cat.results.z_value**2,
+            places=6,
+        )
+        self.assertAlmostEqual(
+            0.99404013987338, self.logistic_inter_cat.results.p_value,
+            places=5,
+        )
+
     def test_logistic_snp1(self):
         """Tests logistic regression with the first SNP."""
         # Preparing the data
@@ -113,6 +212,40 @@ class TestStatsLogistic(unittest.TestCase):
         self.assertAlmostEqual(
             -np.log10(0.0001756548178104),
             -np.log10(self.logistic.results.p_value), places=5,
+        )
+
+    def test_logistic_snp1_inter(self):
+        """Tests logistic regression with the first SNP (interaction)."""
+        # Preparing the data
+        data = self.data[["pheno2", "age", "var1", "gender", "snp1"]].rename(
+            columns={"snp1": "geno"},
+        )
+
+        # Preparing the matrices
+        y, X = self.logistic_inter.create_matrices(data, create_dummy=False)
+
+        # Fitting
+        self.logistic_inter.fit(y, X)
+
+        # Checking the results (according to SAS)
+        self.assertAlmostEqual(
+            0.0015311482968189, self.logistic_inter.results.coef, places=6,
+        )
+        self.assertAlmostEqual(
+            0.0423504567007674, self.logistic_inter.results.std_err,
+        )
+        self.assertAlmostEqual(
+            -0.0814742215655, self.logistic_inter.results.lower_ci, places=6,
+        )
+        self.assertAlmostEqual(
+            0.08453651815914, self.logistic_inter.results.upper_ci,
+        )
+        self.assertAlmostEqual(
+            0.0013071285938733, self.logistic_inter.results.z_value**2,
+            places=6,
+        )
+        self.assertAlmostEqual(
+            0.9711593785536400, self.logistic_inter.results.p_value, places=5,
         )
 
     def test_logistic_snp2(self):
@@ -149,6 +282,40 @@ class TestStatsLogistic(unittest.TestCase):
             -np.log10(self.logistic.results.p_value), places=5,
         )
 
+    def test_logistic_snp2_inter(self):
+        """Tests logistic regression with the second SNP (interaction)."""
+        # Preparing the data
+        data = self.data[["pheno2", "age", "var1", "gender", "snp2"]].rename(
+            columns={"snp2": "geno"},
+        )
+
+        # Preparing the matrices
+        y, X = self.logistic_inter.create_matrices(data, create_dummy=False)
+
+        # Fitting
+        self.logistic_inter.fit(y, X)
+
+        # Checking the results (according to SAS)
+        self.assertAlmostEqual(
+            0.0239292800721822, self.logistic_inter.results.coef, places=5,
+        )
+        self.assertAlmostEqual(
+            0.0342619407842591, self.logistic_inter.results.std_err, places=6,
+        )
+        self.assertAlmostEqual(
+            -0.0432228899054096, self.logistic_inter.results.lower_ci,
+            places=5,
+        )
+        self.assertAlmostEqual(
+            0.09108145004977, self.logistic_inter.results.upper_ci, places=5,
+        )
+        self.assertAlmostEqual(
+            0.48779275460699, self.logistic_inter.results.z_value**2, places=3,
+        )
+        self.assertAlmostEqual(
+            0.48491356159603, self.logistic_inter.results.p_value, places=4,
+        )
+
     def test_logistic_snp3(self):
         """Tests logistic regression with the third SNP (raises StatsError)."""
         # Preparing the data
@@ -170,3 +337,25 @@ class TestStatsLogistic(unittest.TestCase):
         self.assertTrue(np.isnan(self.logistic.results.upper_ci))
         self.assertTrue(np.isnan(self.logistic.results.z_value))
         self.assertTrue(np.isnan(self.logistic.results.p_value))
+
+    def test_logistic_snp3_inter(self):
+        """Tests logistic regression third SNP (raises StatsError, inter)."""
+        # Preparing the data
+        data = self.data[["pheno2", "age", "var1", "gender", "snp3"]].rename(
+            columns={"snp3": "geno"},
+        )
+
+        # Preparing the matrices
+        y, X = self.logistic_inter.create_matrices(data, create_dummy=False)
+
+        # Fitting
+        with self.assertRaises(StatsError):
+            self.logistic_inter.fit(y, X)
+
+        # All the value should be NaN
+        self.assertTrue(np.isnan(self.logistic_inter.results.coef))
+        self.assertTrue(np.isnan(self.logistic_inter.results.std_err))
+        self.assertTrue(np.isnan(self.logistic_inter.results.lower_ci))
+        self.assertTrue(np.isnan(self.logistic_inter.results.upper_ci))
+        self.assertTrue(np.isnan(self.logistic_inter.results.z_value))
+        self.assertTrue(np.isnan(self.logistic_inter.results.p_value))
