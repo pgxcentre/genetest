@@ -162,11 +162,7 @@ class StatsModels(object):
             data["geno"] = np.empty(data.shape[0])
 
         # Getting the matrices
-        print(data.shape)
         y, X = patsy.dmatrices(self._model, data, return_type="dataframe")
-        print(data.shape)
-        print(y.shape)
-        print(X.shape)
 
         # Deleting the dummy columns (if required)
         if create_dummy:
