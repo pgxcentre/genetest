@@ -102,6 +102,11 @@ class StatsMixedLM(StatsModels):
         # Keeping only the required X values
         new_y = y.loc[new_X.index, :]
 
+        # Check if there is interaction
+        if self._inter is not None:
+            # There is, so we multiply
+            new_X[self._result_col] = new_X.geno * new_X[self._inter_col]
+
         # Getting the sample order
         groups = ori_samples.loc[new_X.index, "_ori_sample_names_"].values
 
