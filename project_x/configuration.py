@@ -314,9 +314,19 @@ class AnalysisConfiguration(object):
         """
         if isinstance(arg_type, list):
             return [arg_type[0](v) for v in arg.split(",")]
+
+        elif arg_type is bool:
+            if arg.upper() in {"F", "FALSE", "NO", "N"}:
+                return False
+            elif arg.upper() in {"T", "TRUE", "YES", "Y"}:
+                return True
+            else:
+                raise ValueError(
+                    "'{}' is not a valid boolean (True/False)".format(arg)
+                )
+
         else:
             return arg_type(arg)
-
 
     @staticmethod
     def check_invalid_options(config, section):
