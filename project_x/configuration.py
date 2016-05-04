@@ -259,9 +259,8 @@ class AnalysisConfiguration(object):
         for name in names:
             if name not in config:
                 raise ValueError(
-                    "The '{}' {} component requires the '{}' parameter in the "
-                    "configuration file.".format(config["format"], section,
-                                                 name)
+                    "The {} component requires the '{}' parameter in the "
+                    "configuration file.".format(section, name)
                 )
 
             # Saving the argument
