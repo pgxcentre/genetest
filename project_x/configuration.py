@@ -230,15 +230,15 @@ class AnalysisConfiguration(object):
         self.check_invalid_options(config=section, section="Statistics")
 
     def get_statistics_arguments(self):
-        """Returns the phenotypes arguments."""
+        """Returns the statistics arguments."""
         return self._stats_arguments
 
-    def get_statistics_format(self):
-        """Returns the phenotypes format."""
+    def get_statistics_model(self):
+        """Returns the statistics model."""
         return self._stats_model
 
     def get_statistics_container(self):
-        """Returns the phenotypes container."""
+        """Returns the statistics container."""
         return self._stats_container
 
     @staticmethod

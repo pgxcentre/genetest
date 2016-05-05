@@ -254,5 +254,5 @@ class TestAnalysisConfiguration(unittest.TestCase):
         self.assertEqual(["age", "weight"], observed_stats_args["predictors"])
         self.assertTrue(observed_stats_args["interaction"] is None)
         self.assertTrue(observed_stats_args["normalize"])
-        self.assertEqual("coxph", conf.get_statistics_format())
+        self.assertEqual("coxph", conf.get_statistics_model())
         self.assertTrue(conf.get_statistics_container() is StatsCoxPH)
