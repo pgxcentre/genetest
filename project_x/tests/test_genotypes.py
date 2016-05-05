@@ -274,18 +274,36 @@ class TestPlink(unittest.TestCase):
                             pos=230, genotypes=marker_4_geno),
         ]
 
+        # The parameters
+        self.parameters = dict(
+            prefix=self.prefix,
+            representation=Representation.ADDITIVE,
+        )
+
     def tearDown(self):
         self.tmpdir.cleanup()
 
     def test_init(self):
         """Tests the creation of a PlinkGenotypes instance."""
-        observed = PlinkGenotypes(self.prefix)
+        observed = PlinkGenotypes(**self.parameters)
 
         # We don't check the BED and the BIM file, since they come from
         # PyPlink. We only check the FAM file, because it might be modified.
         self.assertEqual(
             ["i{}".format(i) for i in range(10)],
             list(observed.fam.index.values),
+        )
+
+    def test_dosage_representation(self):
+        """Tests when the instance is initialize DOSAGE as representation."""
+        self.parameters["representation"] = Representation.DOSAGE
+        with self.assertRaises(ValueError) as cm:
+            PlinkGenotypes(**self.parameters)
+
+        self.assertEqual(
+            "DOSAGE is an invalid representation for genotyped data (it is "
+            "usually used for imputed data)",
+            str(cm.exception),
         )
 
     def test_init_duplicated_iid(self):
@@ -303,7 +321,7 @@ class TestPlink(unittest.TestCase):
             print("f8 i8 0 0 1 -9", file=fam)
             print("f9 i9 0 0 2 -9", file=fam)
 
-        observed = PlinkGenotypes(self.prefix)
+        observed = PlinkGenotypes(**self.parameters)
 
         # The FAM index should now be fid_iid
         expected = ["f{i}_i{i}".format(i=i) for i in range(10)]
@@ -327,11 +345,11 @@ class TestPlink(unittest.TestCase):
 
         # This should raise a ValueError
         with self.assertRaises(ValueError):
-            PlinkGenotypes(self.prefix)
+            PlinkGenotypes(**self.parameters)
 
     def test_repr(self):
         """Tests the '__repr__' function (and as context manager)."""
-        with PlinkGenotypes(self.prefix) as plink_geno:
+        with PlinkGenotypes(**self.parameters) as plink_geno:
             self.assertEqual(
                 "PlinkGenotypes(10 samples; 4 markers)",
                 str(plink_geno),
@@ -339,14 +357,13 @@ class TestPlink(unittest.TestCase):
 
     def test_get_genotypes_additive(self):
         """Tests the 'get_genotypes' function (additive)."""
-        plink_geno = PlinkGenotypes(self.prefix)
+        plink_geno = PlinkGenotypes(**self.parameters)
 
         random.shuffle(self.expected_additive_results)
         for expected in self.expected_additive_results:
             # Getting the observed results
             observed = plink_geno.get_genotypes(
                 marker=expected.marker,
-                representation=Representation.ADDITIVE,
             )
 
             # Comparing with the expected results
@@ -360,14 +377,14 @@ class TestPlink(unittest.TestCase):
 
     def test_get_genotypes_genotypic(self):
         """Tests the 'get_genotypes' function (genotypic)."""
-        plink_geno = PlinkGenotypes(self.prefix)
+        self.parameters["representation"] = Representation.GENOTYPIC
+        plink_geno = PlinkGenotypes(**self.parameters)
 
         random.shuffle(self.expected_genotypic_results)
         for expected in self.expected_genotypic_results:
             # Getting the observed results
             observed = plink_geno.get_genotypes(
                 marker=expected.marker,
-                representation=Representation.GENOTYPIC,
             )
 
             # Comparing the expected results
@@ -379,23 +396,12 @@ class TestPlink(unittest.TestCase):
             self.assertEqual(expected.major, observed.major)
             self.assertTrue(expected.genotypes.equals(observed.genotypes))
 
-    def test_get_genotypes_dosage(self):
-        """Tests the 'get_genotypes' function (dosage)."""
-        observed = PlinkGenotypes(self.prefix)
-        with self.assertRaises(ValueError) as cm:
-            observed.get_genotypes("marker_1", Representation.DOSAGE)
-        self.assertEqual(
-            "DOSAGE is an invalid representation for genotyped data (it is "
-            "usually used for imputed data)",
-            str(cm.exception),
-        )
-
     def test_iter_marker_genotypes_additive(self):
         """Tests the 'iter_marker_genotypes' function (additive)."""
-        plink_geno = PlinkGenotypes(self.prefix)
+        plink_geno = PlinkGenotypes(**self.parameters)
 
         zipped = zip(
-            plink_geno.iter_marker_genotypes(Representation.ADDITIVE),
+            plink_geno.iter_marker_genotypes(),
             self.expected_additive_results,
         )
         for observed, expected in zipped:
@@ -409,10 +415,11 @@ class TestPlink(unittest.TestCase):
 
     def test_iter_marker_genotypes_genotypic(self):
         """Tests the 'iter_marker_genotypes' function (genotypic)."""
-        plink_geno = PlinkGenotypes(self.prefix)
+        self.parameters["representation"] = Representation.GENOTYPIC
+        plink_geno = PlinkGenotypes(**self.parameters)
 
         zipped = zip(
-            plink_geno.iter_marker_genotypes(Representation.GENOTYPIC),
+            plink_geno.iter_marker_genotypes(),
             self.expected_genotypic_results,
         )
         for observed, expected in zipped:
@@ -423,17 +430,6 @@ class TestPlink(unittest.TestCase):
             self.assertEqual(expected.minor, observed.minor)
             self.assertEqual(expected.major, observed.major)
             self.assertTrue(expected.genotypes.equals(observed.genotypes))
-
-    def test_iter_marker_genotypes_dosage(self):
-        """Tests the 'get_genotypes' function (dosage)."""
-        observed = PlinkGenotypes(self.prefix)
-        with self.assertRaises(ValueError) as cm:
-            next(observed.iter_marker_genotypes(Representation.DOSAGE))
-        self.assertEqual(
-            "DOSAGE is an invalid representation for genotyped data (it is "
-            "usually used for imputed data)",
-            str(cm.exception),
-        )
 
 
 class TestImpute2(unittest.TestCase):
@@ -592,6 +588,7 @@ class TestImpute2(unittest.TestCase):
         self.parameters = dict(
             filename=impute2_file,
             sample_filename=sample_file,
+            representation=Representation.DOSAGE,
             probability_threshold=0.9,
         )
 
@@ -677,7 +674,6 @@ class TestImpute2(unittest.TestCase):
                 # Getting the observed results
                 observed = imp_geno.get_genotypes(
                     marker=expected.marker,
-                    representation=Representation.DOSAGE,
                 )
 
                 # Comparing with the expected results
@@ -696,13 +692,13 @@ class TestImpute2(unittest.TestCase):
 
     def test_get_genotypes_additive(self):
         """Tests the 'get_genotypes' function (additive)."""
+        self.parameters["representation"] = Representation.ADDITIVE
         random.shuffle(self.expected_additive_results)
         with Impute2Genotypes(**self.parameters) as imp_geno:
             for expected in self.expected_additive_results:
                 # Getting the observed results
                 observed = imp_geno.get_genotypes(
                     marker=expected.marker,
-                    representation=Representation.ADDITIVE,
                 )
 
                 # Comparing with the expected results
@@ -716,13 +712,13 @@ class TestImpute2(unittest.TestCase):
 
     def test_get_genotypes_genotypic(self):
         """Tests the 'get_genotypes' function (genotypic)."""
+        self.parameters["representation"] = Representation.GENOTYPIC
         random.shuffle(self.expected_genotypic_results)
         with Impute2Genotypes(**self.parameters) as imp_geno:
             for expected in self.expected_genotypic_results:
                 # Getting the observed results
                 observed = imp_geno.get_genotypes(
                     marker=expected.marker,
-                    representation=Representation.GENOTYPIC,
                 )
 
                 # Comparing with the expected results
@@ -738,7 +734,7 @@ class TestImpute2(unittest.TestCase):
         """Tests the 'iter_marker_genotypes' function (dosage)."""
         with Impute2Genotypes(**self.parameters) as imp_geno:
             zipped = zip(
-                imp_geno.iter_marker_genotypes(Representation.DOSAGE),
+                imp_geno.iter_marker_genotypes(),
                 self.expected_dosage_results,
             )
             for observed, expected in zipped:
@@ -758,9 +754,10 @@ class TestImpute2(unittest.TestCase):
 
     def test_iter_marker_genotypes_additive(self):
         """Tests the 'iter_marker_genotypes' function (additive)."""
+        self.parameters["representation"] = Representation.ADDITIVE
         with Impute2Genotypes(**self.parameters) as imp_geno:
             zipped = zip(
-                imp_geno.iter_marker_genotypes(Representation.ADDITIVE),
+                imp_geno.iter_marker_genotypes(),
                 self.expected_additive_results,
             )
             for observed, expected in zipped:
@@ -774,9 +771,10 @@ class TestImpute2(unittest.TestCase):
 
     def test_iter_marker_genotypes_genotypic(self):
         """Tests the 'iter_marker_genotypes' function (genotypic)."""
+        self.parameters["representation"] = Representation.GENOTYPIC
         with Impute2Genotypes(**self.parameters) as imp_geno:
             zipped = zip(
-                imp_geno.iter_marker_genotypes(Representation.GENOTYPIC),
+                imp_geno.iter_marker_genotypes(),
                 self.expected_genotypic_results,
             )
             for observed, expected in zipped:
@@ -799,7 +797,6 @@ class TestImpute2(unittest.TestCase):
             # Getting the results
             observed = imp_geno.get_genotypes(
                 marker=expected.marker,
-                representation=Representation.DOSAGE,
             )
 
             # Comparing the results
@@ -814,8 +811,7 @@ class TestImpute2(unittest.TestCase):
 
 class TestVCF(unittest.TestCase):
     def setUp(self):
-        self.vcf_file = resource_filename(__name__,
-                                          "data/genotypes/input.vcf.gz")
+        vcf_file = resource_filename(__name__, "data/genotypes/input.vcf.gz")
 
         # The expected results (additive)
         marker_1_add = pd.DataFrame(
@@ -881,10 +877,16 @@ class TestVCF(unittest.TestCase):
                             pos=230, genotypes=marker_4_geno),
         ]
 
+        # The Impute2Genotypes parameters
+        self.parameters = dict(
+            filename=vcf_file,
+            representation=Representation.ADDITIVE,
+        )
+
     def test_init(self):
         """Tests the creation of a VCFGenotypes instance."""
         # Creating a new object
-        with VCFGenotypes(self.vcf_file) as vcf_geno:
+        with VCFGenotypes(**self.parameters) as vcf_geno:
             samples = vcf_geno.samples
 
         expected_samples = pd.Index(["s1", "s2", "s3", "s4"], name="SampleID")
@@ -892,17 +894,18 @@ class TestVCF(unittest.TestCase):
 
     def test_repr(self):
         """Tests the '__repr__' function."""
-        with VCFGenotypes(self.vcf_file) as geno:
+        with VCFGenotypes(**self.parameters) as geno:
             self.assertEqual(
                 "VCFGenotypes(4 samples)",
                 str(geno),
             )
 
-    def test_get_genotypes_dosage(self):
-        """Tests the 'get_genotypes' function (dosage)."""
-        with VCFGenotypes(self.vcf_file) as vcf_geno:
-            with self.assertRaises(ValueError) as cm:
-                vcf_geno.get_genotypes("chr1", 1, Representation.DOSAGE)
+    def test_dosage_representation(self):
+        """Tests when the instance is initialize DOSAGE as representation."""
+        self.parameters["representation"] = Representation.DOSAGE
+        with self.assertRaises(ValueError) as cm:
+            VCFGenotypes(**self.parameters)
+
         self.assertEqual(
             "DOSAGE is an invalid representation for sequenced data (it is "
             "usually used for imputed data)",
@@ -911,9 +914,9 @@ class TestVCF(unittest.TestCase):
 
     def test_get_invalid_genotype(self):
         """Tests when asking for a missing marker."""
-        with VCFGenotypes(self.vcf_file) as vcf_geno:
+        with VCFGenotypes(**self.parameters) as vcf_geno:
             with self.assertRaises(ValueError) as cm:
-                vcf_geno.get_genotypes("chr1", 204123, Representation.ADDITIVE)
+                vcf_geno.get_genotypes("chr1", 204123)
         self.assertEqual(
             "no marker positioned on chromosome chr1, position 204123",
             str(cm.exception),
@@ -921,9 +924,9 @@ class TestVCF(unittest.TestCase):
 
     def test_get_multiallele_genotype(self):
         """Tests when asking for a marker with more than two alleles."""
-        with VCFGenotypes(self.vcf_file) as vcf_geno:
+        with VCFGenotypes(**self.parameters) as vcf_geno:
             with self.assertRaises(ValueError) as cm:
-                vcf_geno.get_genotypes("chr3", 240, Representation.ADDITIVE)
+                vcf_geno.get_genotypes("chr3", 240)
         self.assertEqual(
             "chr3: 240: more than two alleles",
             str(cm.exception),
@@ -932,13 +935,12 @@ class TestVCF(unittest.TestCase):
     def test_get_genotypes_additive(self):
         """Tests the 'get_genotypes' function (additive)."""
         random.shuffle(self.expected_additive_results)
-        with VCFGenotypes(self.vcf_file) as vcf_geno:
+        with VCFGenotypes(**self.parameters) as vcf_geno:
             for expected in self.expected_additive_results:
                 # Getting the observed results
                 observed = vcf_geno.get_genotypes(
                     chrom="chr{}".format(expected.chrom),
                     pos=expected.pos,
-                    representation=Representation.ADDITIVE,
                 )
 
                 # Comparing with the expected results
@@ -952,14 +954,14 @@ class TestVCF(unittest.TestCase):
 
     def test_get_genotypes_genotypic(self):
         """Tests the 'get_genotypes' function (genotypic)."""
+        self.parameters["representation"] = Representation.GENOTYPIC
         random.shuffle(self.expected_genotypic_results)
-        with VCFGenotypes(self.vcf_file) as vcf_geno:
+        with VCFGenotypes(**self.parameters) as vcf_geno:
             for expected in self.expected_genotypic_results:
                 # Getting the observed results
                 observed = vcf_geno.get_genotypes(
                     chrom="chr{}".format(expected.chrom),
                     pos=expected.pos,
-                    representation=Representation.GENOTYPIC,
                 )
 
                 # Comparing with the expected results
@@ -971,22 +973,11 @@ class TestVCF(unittest.TestCase):
                 self.assertEqual(expected.major, observed.major)
                 self.assertTrue(expected.genotypes.equals(observed.genotypes))
 
-    def test_iter_marker_genotypes_dosage(self):
-        """Tests the 'get_genotypes' function (dosage)."""
-        observed = VCFGenotypes(self.vcf_file)
-        with self.assertRaises(ValueError) as cm:
-            next(observed.iter_marker_genotypes(Representation.DOSAGE))
-        self.assertEqual(
-            "DOSAGE is an invalid representation for sequenced data (it is "
-            "usually used for imputed data)",
-            str(cm.exception),
-        )
-
     def test_iter_marker_genotypes_additive(self):
         """Tests the 'iter_marker_genotypes' function (additive)."""
-        with VCFGenotypes(self.vcf_file) as vcf_geno:
+        with VCFGenotypes(**self.parameters) as vcf_geno:
             zipped = zip(
-                vcf_geno.iter_marker_genotypes(Representation.ADDITIVE),
+                vcf_geno.iter_marker_genotypes(),
                 self.expected_additive_results,
             )
             for observed, expected in zipped:
@@ -1000,9 +991,10 @@ class TestVCF(unittest.TestCase):
 
     def test_iter_marker_genotypes_genotypic(self):
         """Tests the 'iter_marker_genotypes' function (genotypic)."""
-        with VCFGenotypes(self.vcf_file) as vcf_geno:
+        self.parameters["representation"] = Representation.GENOTYPIC
+        with VCFGenotypes(**self.parameters) as vcf_geno:
             zipped = zip(
-                vcf_geno.iter_marker_genotypes(Representation.GENOTYPIC),
+                vcf_geno.iter_marker_genotypes(),
                 self.expected_genotypic_results,
             )
             for observed, expected in zipped:
@@ -1016,7 +1008,7 @@ class TestVCF(unittest.TestCase):
 
     def test_fetch_before_iter(self):
         """Tests when fetching before iterating."""
-        with VCFGenotypes(self.vcf_file) as vcf_geno:
+        with VCFGenotypes(**self.parameters) as vcf_geno:
             var = vcf_geno.get_genotypes("chr3", 230)
             self.assertEqual("marker_4", var.marker)
             var = next(vcf_geno.iter_marker_genotypes())

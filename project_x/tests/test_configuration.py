@@ -227,9 +227,10 @@ class TestAnalysisConfiguration(unittest.TestCase):
 
         # Checking the genotypes
         observed_geno_args = conf.get_genotypes_arguments()
-        self.assertEqual(3, len(observed_geno_args))
+        self.assertEqual(4, len(observed_geno_args))
         self.assertEqual("fn", observed_geno_args["filename"])
         self.assertEqual("sample_fn", observed_geno_args["sample_filename"])
+        self.assertEqual("dosage", observed_geno_args["representation"])
         self.assertEqual(0.95, observed_geno_args["probability_threshold"])
         self.assertEqual("impute2", conf.get_genotypes_format())
         self.assertTrue(conf.get_genotypes_container() is Impute2Genotypes)
