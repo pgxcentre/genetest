@@ -32,17 +32,25 @@ _Impute2Line = namedtuple("_Impute2Line",
 
 
 @arguments(required=(("filename", str), ("sample_filename", str)),
-           optional={"probability_threshold": (float, 0.9)})
+           optional={"representation": (str, Representation.DOSAGE),
+                     "probability_threshold": (float, 0.9)})
 class Impute2Genotypes(GenotypesContainer):
-    def __init__(self, filename, sample_filename, probability_threshold):
+    def __init__(self, filename, sample_filename, representation,
+                 probability_threshold):
         """Instantiate a new Impute2Genotypes object.
 
         Args:
             filename (str): The name of the IMPUTE2 file.
             sample_filename (str): The name of the sample file.
+            representation (str): A valid genotype representation format (e.g.
+                                  genotypes.core.Representation.ADDITIVE).
             probability_threshold (float): The probability threshold.
 
         """
+        # Checking the representation
+        self.check_representation(representation)
+        self._representation = representation
+
         # Reading the samples
         self.samples = pd.read_csv(sample_filename, sep=" ", skiprows=2,
                                    names=["fid", "iid", "missing", "father",
@@ -86,13 +94,11 @@ class Impute2Genotypes(GenotypesContainer):
             self.samples.shape[0],
         )
 
-    def get_genotypes(self, marker, representation=Representation.DOSAGE):
+    def get_genotypes(self, marker):
         """Returns a dataframe of genotypes encoded using the provided model.
 
         Args:
             marker (str): A marker ID (e.g. rs123456).
-            representation (str): A valid genotype representation format (e.g.
-                                  genotypes.core.REPRESENTATION.ADDITIVE).
 
         Returns:
             Genotypes: A named tuple containing the dataframe with the encoded
@@ -100,8 +106,6 @@ class Impute2Genotypes(GenotypesContainer):
                        will be the sample IDs), the minor and major alleles.
 
         """
-        self.check_representation(representation)
-
         if self._impute2_index is None:
             raise NotImplementedError("Not implemented when IMPUTE2 file is "
                                       "not indexed (see genipe)")
@@ -112,15 +116,10 @@ class Impute2Genotypes(GenotypesContainer):
         # Returning the genotypes
         return self._create_genotypes(
             impute2_line=self._impute2_file.readline(),
-            representation=representation,
         )
 
-    def iter_marker_genotypes(self, representation=Representation.DOSAGE):
+    def iter_marker_genotypes(self):
         """Returns a dataframe of genotypes encoded using the provided model.
-
-        Args:
-            representation (str): A valid genotype representation format (e.g.
-                                  genotypes.core.REPRESENTATION.ADDITIVE).
 
         Returns:
             Genotypes: A named tuple containing the dataframe with the encoded
@@ -128,21 +127,17 @@ class Impute2Genotypes(GenotypesContainer):
                        will be the sample IDs), the minor and major alleles.
 
         """
-        self.check_representation(representation)
 
         for line in self._impute2_file:
             yield self._create_genotypes(
                 impute2_line=line,
-                representation=representation,
             )
 
-    def _create_genotypes(self, impute2_line, representation):
+    def _create_genotypes(self, impute2_line):
         """Creates the genotype dataframe from an IMPUTE2 line.
 
         Args:
             impute2_line (str): The IMPUTE2 line to process.
-            representation (str): A valid genotype representation format (e.g.
-                                  genotypes.core.REPRESENTATION.ADDITIVE).
 
         Returns:
             Genotypes: A named tuple containing the dataframe with the encoded
@@ -167,7 +162,7 @@ class Impute2Genotypes(GenotypesContainer):
         )
 
         # Returning the value as DOSAGE representation
-        if representation == Representation.DOSAGE:
+        if self._representation == Representation.DOSAGE:
             return MarkerGenotypes(
                 genotypes=dosage,
                 marker=marker_info.marker,
@@ -181,7 +176,7 @@ class Impute2Genotypes(GenotypesContainer):
         geno = self.dosage2additive(dosage)
 
         # Returning the value as ADDITIVE representation
-        if representation == Representation.ADDITIVE:
+        if self._representation == Representation.ADDITIVE:
             return MarkerGenotypes(
                 genotypes=geno,
                 marker=marker_info.marker,
@@ -192,7 +187,7 @@ class Impute2Genotypes(GenotypesContainer):
             )
 
         # Returning the value as GENOTYPIC representation
-        if representation == Representation.GENOTYPIC:
+        if self._representation == Representation.GENOTYPIC:
             return MarkerGenotypes(
                 genotypes=self.additive2genotypic(geno),
                 chrom=self.encode_chrom(marker_info.chrom),

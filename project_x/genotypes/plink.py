@@ -22,15 +22,26 @@ __license__ = "Attribution-NonCommercial 4.0 International (CC BY-NC 4.0)"
 __all__ = ["PlinkGenotypes"]
 
 
-@arguments(required=(("prefix", str), ))
+@arguments(required=(("prefix", str), ),
+           optional={"representation": (str, Representation.ADDITIVE)})
 class PlinkGenotypes(GenotypesContainer):
-    def __init__(self, prefix):
+    def __init__(self, prefix, representation):
         """Instantiate a new PlinkGenotypes object.
 
         Args:
             prefix (str): the prefix of the Plink binary files.
+            representation (str): A valid genotype representation format (e.g.
+                                  genotypes.core.REPRESENTATION.ADDITIVE).
 
         """
+        # Checking the representation
+        self.check_representation(representation)
+        if representation == Representation.DOSAGE:
+            raise ValueError("{} is an invalid representation for genotyped "
+                             "data (it is usually used for imputed "
+                             "data)".format(representation.upper()))
+        self._representation = representation
+
         self.bed = PyPlink(prefix)
         self.bim = self.bed.get_bim()
         self.fam = self.bed.get_fam()
@@ -56,13 +67,11 @@ class PlinkGenotypes(GenotypesContainer):
             self.bed.get_nb_markers(),
         )
 
-    def get_genotypes(self, marker, representation=Representation.ADDITIVE):
+    def get_genotypes(self, marker):
         """Returns a dataframe of genotypes encoded using the provided model.
 
         Args:
             marker (str): A marker ID (e.g. rs123456).
-            representation (str): A valid genotype representation format (e.g.
-                                  genotypes.core.REPRESENTATION.ADDITIVE).
 
         Returns:
             Genotypes: A named tuple containing the dataframe with the encoded
@@ -80,26 +89,14 @@ class PlinkGenotypes(GenotypesContainer):
             sample family ID and individual ID (i.e. fid_iid).
 
         """
-        # Checking the genotype representation
-        self.check_representation(representation)
-        if representation == Representation.DOSAGE:
-            raise ValueError("{} is an invalid representation for genotyped "
-                             "data (it is usually used for imputed "
-                             "data)".format(representation.upper()))
-
         # Returning the genotypes
         return self._create_genotypes(
             marker=marker,
             genotypes=self.bed.get_geno_marker(marker),
-            representation=representation,
         )
 
-    def iter_marker_genotypes(self, representation=Representation.ADDITIVE):
+    def iter_marker_genotypes(self):
         """Returns a dataframe of genotypes encoded using the provided model.
-
-        Args:
-            representation (str): A valid genotype representation format (e.g.
-                                  genotypes.core.REPRESENTATION.ADDITIVE).
 
         Returns:
             Genotypes: A named tuple containing the dataframe with the encoded
@@ -112,28 +109,19 @@ class PlinkGenotypes(GenotypesContainer):
             sample family ID and individual ID (i.e. fid_iid).
 
         """
-        # Checking the genotype representation
-        self.check_representation(representation)
-        if representation == Representation.DOSAGE:
-            raise ValueError("{} is an invalid representation for genotyped "
-                             "data (it is usually used for imputed "
-                             "data)".format(representation.upper()))
-
         # Iterating over all markers
         for marker, genotypes in self.bed.iter_geno():
             yield self._create_genotypes(
                 marker=marker,
                 genotypes=genotypes,
-                representation=representation,
             )
 
-    def _create_genotypes(self, marker, genotypes, representation):
+    def _create_genotypes(self, marker, genotypes):
         """Creates the genotype dataframe from an binary Plink file.
 
         Args:
             marker (str): The name of the marker.
             genotypes (numpy.ndarray): The genotypes.
-            representation (str): The final genotype representation to use.
 
         Returns:
             pandas.DataFrame: The genotypes in the required representation.
@@ -152,14 +140,14 @@ class PlinkGenotypes(GenotypesContainer):
         )
 
         # Returning the value as ADDITIVE representation
-        if representation == Representation.ADDITIVE:
+        if self._representation == Representation.ADDITIVE:
             return MarkerGenotypes(genotypes=additive, marker=marker,
                                    chrom=self.bim.loc[marker, "chrom"],
                                    pos=self.bim.loc[marker, "pos"],
                                    major=major, minor=minor)
 
         # Returning the value as GENOTYPIC representation
-        if representation == Representation.GENOTYPIC:
+        if self._representation == Representation.GENOTYPIC:
             return MarkerGenotypes(genotypes=self.additive2genotypic(additive),
                                    chrom=self.bim.loc[marker, "chrom"],
                                    pos=self.bim.loc[marker, "pos"],

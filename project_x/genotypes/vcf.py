@@ -24,15 +24,26 @@ __license__ = "Attribution-NonCommercial 4.0 International (CC BY-NC 4.0)"
 __all__ = ["VCFGenotypes"]
 
 
-@arguments(required=(("filename", str), ))
+@arguments(required=(("filename", str), ),
+           optional={"representation": (str, Representation.ADDITIVE)})
 class VCFGenotypes(GenotypesContainer):
-    def __init__(self, filename):
+    def __init__(self, filename, representation):
         """Instantiate a new VCFGenotypes object.
 
         Args:
             filename (str): The name of the VCF file.
+            representation (str): A valid genotype representation format (e.g.
+                                  genotypes.core.REPRESENTATION.ADDITIVE).
 
         """
+        # Checking the representation
+        self.check_representation(representation)
+        if representation == Representation.DOSAGE:
+            raise ValueError("{} is an invalid representation for sequenced "
+                             "data (it is usually used for imputed "
+                             "data)".format(representation.upper()))
+        self._representation = representation
+
         self._vcf_file = filename
         self._vcf_reader = VariantFile(self._vcf_file)
 
@@ -64,15 +75,12 @@ class VCFGenotypes(GenotypesContainer):
             self.samples.shape[0],
         )
 
-    def get_genotypes(self, chrom, pos,
-                      representation=Representation.ADDITIVE):
+    def get_genotypes(self, chrom, pos):
         """Returns a dataframe of genotypes encoded using the provided model.
 
         Args:
             chrom (str): The chromosome on which the marker is located.
             pos (int): The position of the marker.
-            representation (str): A valid genotype representation format (e.g.
-                                  genotypes.core.REPRESENTATION.ADDITIVE).
 
         Returns:
             Genotypes: A named tuple containing the dataframe with the encoded
@@ -86,13 +94,6 @@ class VCFGenotypes(GenotypesContainer):
             marker by using its name.
 
         """
-        # Checking the genotype representation
-        self.check_representation(representation)
-        if representation == Representation.DOSAGE:
-            raise ValueError("{} is an invalid representation for sequenced "
-                             "data (it is usually used for imputed "
-                             "data)".format(representation.upper()))
-
         # The parser has fetched once
         self._has_fetched = True
 
@@ -109,17 +110,10 @@ class VCFGenotypes(GenotypesContainer):
             raise ValueError("{}: {}: more than two "
                              "alleles".format(chrom, pos))
 
-        return self._create_genotypes(
-            vcf_line=vcf_line,
-            representation=representation,
-        )
+        return self._create_genotypes(vcf_line=vcf_line)
 
-    def iter_marker_genotypes(self, representation=Representation.ADDITIVE):
+    def iter_marker_genotypes(self):
         """Returns a dataframe of genotypes encoded using the provided model.
-
-        Args:
-            representation (str): A valid genotype representation format (e.g.
-                                  genotypes.core.REPRESENTATION.ADDITIVE).
 
         Returns:
             Genotypes: A named tuple containing the dataframe with the encoded
@@ -132,13 +126,6 @@ class VCFGenotypes(GenotypesContainer):
             sample family ID and individual ID (i.e. fid_iid).
 
         """
-        # Checking the genotype representation
-        self.check_representation(representation)
-        if representation == Representation.DOSAGE:
-            raise ValueError("{} is an invalid representation for sequenced "
-                             "data (it is usually used for imputed "
-                             "data)".format(representation.upper()))
-
         # The parser has fetched, so we need to close it and reopen it
         if self._has_fetched:
             self._vcf_reader.close()
@@ -151,17 +138,13 @@ class VCFGenotypes(GenotypesContainer):
             if len(vcf_line.alts) > 1:
                 continue
 
-            yield self._create_genotypes(
-                vcf_line=vcf_line,
-                representation=representation,
-            )
+            yield self._create_genotypes(vcf_line=vcf_line)
 
-    def _create_genotypes(self, vcf_line, representation):
+    def _create_genotypes(self, vcf_line):
         """Creates the genotype dataframe from an binary Plink file.
 
         Args:
             vcf_line (vcf.model._Record): The VCF line to process.
-            representation (str): The final genotype representation to use.
 
         Returns:
             pandas.DataFrame: The genotypes in the required representation.
@@ -189,13 +172,13 @@ class VCFGenotypes(GenotypesContainer):
             marker = "{chrom}:{pos}".format(chrom=chrom, pos=pos)
 
         # Returning the value as ADDITIVE representation
-        if representation == Representation.ADDITIVE:
+        if self._representation == Representation.ADDITIVE:
             return MarkerGenotypes(genotypes=additive, marker=marker,
                                    chrom=chrom, pos=pos, major=major,
                                    minor=minor)
 
         # Returning the value as GENOTYPIC representation
-        if representation == Representation.GENOTYPIC:
+        if self._representation == Representation.GENOTYPIC:
             return MarkerGenotypes(genotypes=self.additive2genotypic(additive),
                                    chrom=chrom, pos=pos, marker=marker,
                                    major=major, minor=minor)
