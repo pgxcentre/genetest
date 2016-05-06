@@ -77,7 +77,8 @@ class StatsMixedLM(StatsModels):
         self.results.z_value = fitted.tvalues[self._result_col]
         self.results.p_value = fitted.pvalues[self._result_col]
 
-    def merge_matrices_genotypes(self, y, X, genotypes, ori_samples):
+    def merge_matrices_genotypes(self, y, X, genotypes, ori_samples,
+                                 compute_interaction=True):
         """Merges the genotypes to X, remove missing values, and subset y.
 
         Args:
@@ -85,6 +86,8 @@ class StatsMixedLM(StatsModels):
             X (pandas.DataFrame): The X dataframe.
             genotypes (pandas.DataFrame): The genotypes dataframe.
             ori_samples (pandas.DataFrame): The original sample names.
+            compute_interaction (bool): If True, interaction will be computed
+                                        with the genotype.
 
         Returns:
             tuple: The y and X dataframes (with the genotypes merged) and the
@@ -103,7 +106,7 @@ class StatsMixedLM(StatsModels):
         new_y = y.loc[new_X.index, :]
 
         # Check if there is interaction
-        if self._inter is not None:
+        if compute_interaction and self._inter is not None:
             # There is, so we multiply
             new_X[self._result_col] = new_X.geno * new_X[self._inter_col]
 

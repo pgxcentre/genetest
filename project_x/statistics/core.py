@@ -197,13 +197,16 @@ class StatsModels(object):
 
         return y, X
 
-    def merge_matrices_genotypes(self, y, X, genotypes):
+    def merge_matrices_genotypes(self, y, X, genotypes,
+                                 compute_interaction=True):
         """Merges the genotypes to X, remove missing values, and subset y.
 
         Args:
             y (pandas.DataFrame): The y dataframe.
             X (pandas.DataFrame): The X dataframe.
             genotypes (pandas.DataFrame): The genotypes dataframe.
+            compute_interaction (bool): If True, interaction will be computed
+                                        with the genotype.
 
         Returns:
             tuple: The y and X dataframes (with the genotypes merged).
@@ -220,7 +223,7 @@ class StatsModels(object):
         new_y = y.loc[new_X.index, :]
 
         # Check if there is interaction
-        if self._inter is not None:
+        if compute_interaction and self._inter is not None:
             # There is, so we multiply
             new_X[self._result_col] = new_X.geno * new_X[self._inter_col]
 
