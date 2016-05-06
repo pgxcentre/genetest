@@ -231,3 +231,21 @@ class GenotypesContainer(object):
 
         except:
             raise ValueError("{}: invalid chromosome".format(chrom))
+
+    def get_nb_samples(self):
+        """Returns the number of samples.
+
+        Returns:
+            int: The number of samples.
+
+        """
+        raise NotImplementedError()
+
+    def get_nb_markers(self):
+        """Returns the number of markers.
+
+        Returns:
+            int: The number of markers.
+
+        """
+        raise NotImplementedError()

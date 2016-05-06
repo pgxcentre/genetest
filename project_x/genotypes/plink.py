@@ -63,8 +63,8 @@ class PlinkGenotypes(GenotypesContainer):
     def __repr__(self):
         """The string representation."""
         return "PlinkGenotypes({:,d} samples; {:,d} markers)".format(
-            self.bed.get_nb_samples(),
-            self.bed.get_nb_markers(),
+            self.get_nb_samples(),
+            self.get_nb_markers(),
         )
 
     def get_genotypes(self, marker):
@@ -152,3 +152,21 @@ class PlinkGenotypes(GenotypesContainer):
                                    chrom=self.bim.loc[marker, "chrom"],
                                    pos=self.bim.loc[marker, "pos"],
                                    marker=marker, major=major, minor=minor)
+
+    def get_nb_samples(self):
+        """Returns the number of samples.
+
+        Returns:
+            int: The number of samples.
+
+        """
+        return self.bed.get_nb_samples()
+
+    def get_nb_markers(self):
+        """Returns the number of markers.
+
+        Returns:
+            int: The number of markers.
+
+        """
+        return self.bed.get_nb_markers()

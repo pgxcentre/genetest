@@ -17,13 +17,12 @@ from itertools import zip_longest as zip
 import numpy as np
 import pandas as pd
 from pyplink import PyPlink
-from genipe.formats.index import get_index
 from pkg_resources import resource_filename
 
 from ..genotypes.core import GenotypesContainer, Representation, \
                              MarkerGenotypes
 from ..genotypes.plink import PlinkGenotypes
-from ..genotypes.impute2 import Impute2Genotypes
+from ..genotypes.impute2 import Impute2Genotypes, get_index
 from ..genotypes.vcf import VCFGenotypes
 
 
@@ -662,7 +661,7 @@ class TestImpute2(unittest.TestCase):
         """Tests the '__repr__' function."""
         with Impute2Genotypes(**self.parameters) as geno:
             self.assertEqual(
-                "Impute2Genotypes(10 samples)",
+                "Impute2Genotypes(10 samples, 4 markers)",
                 str(geno),
             )
 

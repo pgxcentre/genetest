@@ -72,7 +72,7 @@ class VCFGenotypes(GenotypesContainer):
     def __repr__(self):
         """The string representation."""
         return "VCFGenotypes({:,d} samples)".format(
-            self.samples.shape[0],
+            self.get_nb_samples(),
         )
 
     def get_genotypes(self, chrom, pos):
@@ -210,3 +210,21 @@ class VCFGenotypes(GenotypesContainer):
 
         # Returning the additive format
         return sum(geno)
+
+    def get_nb_samples(self):
+        """Returns the number of samples.
+
+        Returns:
+            int: The number of samples.
+
+        """
+        return self.samples.shape[0] 
+
+    def get_nb_markers(self):
+        """Returns the number of markers.
+
+        Returns:
+            int: The number of markers.
+
+        """
+        return None
