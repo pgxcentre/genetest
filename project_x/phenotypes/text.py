@@ -94,14 +94,17 @@ class TextPhenotypes(PhenotypesContainer):
                 axis=1,
             )
 
+        # Saving the repeated measurements
+        self._repeated = repeated_measurements
+
     def close(self):
         pass
 
     def __repr__(self):
         """The string representation."""
         return "TextPhenotypes({:,d} samples, {:,d} variables)".format(
-            self._phenotypes.shape[0],
-            self._phenotypes.shape[1],
+            self.get_nb_samples(),
+            self.get_nb_variables(),
         )
 
     def get_phenotypes(self):
@@ -115,5 +118,44 @@ class TextPhenotypes(PhenotypesContainer):
         return self._phenotypes
 
     def get_original_sample_names(self):
-        """Returns the original samples (different if repeated measurements."""
-        return self._ori_sample_names
+        """Returns the original samples (different if repeated measurements).
+
+        Returns:
+            pandas.DataFrame: The original sample names.
+
+        """
+        if self._repeated:
+            return self._ori_sample_names
+        raise ValueError("The phenotypes doesn't contain repeated "
+                         "measurements")
+
+    def get_nb_samples(self):
+        """Returns the number of samples.
+
+        Returns:
+            int: The number of samples.
+
+        """
+        if self._repeated:
+            return len(self._ori_sample_names._ori_sample_names_.unique())
+        else:
+            return self._phenotypes.shape[0]
+
+    def get_nb_variables(self):
+        """Returns the number of variables.
+
+        Returns:
+            int: The number of variables.
+
+        """
+        return self._phenotypes.shape[1]
+
+    def is_repeated(self):
+        """Check if the phenotypes contain repeated measurements.
+
+        Returns:
+            bool: True if the data contains repeated measurements, False
+                  otherwise.
+
+        """
+        return self._repeated

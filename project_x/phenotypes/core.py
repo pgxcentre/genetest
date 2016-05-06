@@ -67,3 +67,31 @@ class PhenotypesContainer(object):
 
         """
         raise NotImplementedError()
+
+    def get_nb_samples(self):
+        """Returns the number of samples.
+
+        Returns:
+            int: The number of samples.
+
+        """
+        raise NotImplementedError()
+
+    def get_nb_variables(self):
+        """Returns the number of variables.
+
+        Returns:
+            int: The number of variables.
+
+        """
+        raise NotImplementedError()
+
+    def is_repeated(self):
+        """Check if the phenotypes contain repeated measurements.
+
+        Returns:
+            bool: True if the data contains repeated measurements, False
+                  otherwise.
+
+        """
+        raise NotImplementedError()

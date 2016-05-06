@@ -81,9 +81,16 @@ class TestText(unittest.TestCase):
 
     def test_normal_functionality(self):
         """Tests normal functionality."""
-        observed_pheno = TextPhenotypes(**self.parameters).get_phenotypes()
+        observed_pheno = TextPhenotypes(**self.parameters)
 
-        self.assertTrue(self.expected_pheno.equals(observed_pheno))
+        self.assertTrue(
+            self.expected_pheno.equals(observed_pheno.get_phenotypes())
+        )
+        self.assertEqual(9, observed_pheno.get_nb_samples())
+        self.assertFalse(observed_pheno.is_repeated())
+
+        with self.assertRaises(ValueError):
+            observed_pheno.get_original_sample_names()
 
     def test_repeated_measurements(self):
         """Tests when there are repeated measurements available."""
@@ -120,6 +127,8 @@ class TestText(unittest.TestCase):
 
         # Checking the values
         self.assertTrue(expected_pheno.equals(observed_pheno.get_phenotypes()))
+        self.assertEqual(3, observed_pheno.get_nb_samples())
+        self.assertTrue(observed_pheno.is_repeated())
 
         # Checking the original values
         expected_ori_samples = pd.DataFrame(
