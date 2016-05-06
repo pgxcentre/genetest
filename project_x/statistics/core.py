@@ -232,12 +232,23 @@ class StatsModels(object):
 
 class StatsResults(object):
     def __init__(self, **kwargs):
+        # Creating the empty '_index_of' dictionary
+        self.__dict__["_index_of"] = {}
+
+        # Removing the 'print_order', if any
+        if "print_order" in kwargs:
+            self._print_order = kwargs.pop("print_order")
+            if set(self._print_order) != set(kwargs.keys()):
+                raise ValueError("Missing statistics in the print order")
+        else:
+            self._print_order = sorted(kwargs.keys())
+
         # '_index_of' has all the possible statistics
-        self.__dict__["_index_of"] = {
-            name: i for i, name in enumerate(kwargs.keys())
+        self._index_of = {
+            name: i for i, name in enumerate(self._print_order)
         }
 
-        # Saving the description of each column
+        # Saving the description of each statistics
         self._description = kwargs
 
         # Creating the array that will contain the values
@@ -257,6 +268,14 @@ class StatsResults(object):
     def reset(self):
         """Resets the statistics (sets all the values to NaN)."""
         self._results[:] = np.nan
+
+    def get_statistic_names(self):
+        """Returns the print order of the statistics."""
+        return self._print_order
+
+    def get_statistics(self):
+        """Returns the statistics."""
+        return self._results
 
 
 class StatsError(Exception):

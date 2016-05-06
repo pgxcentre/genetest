@@ -48,6 +48,8 @@ class StatsLinear(StatsModels):
             t_value="t-statistics",
             p_value="p-value",
             rsquared_adj="adjusted r-squared",
+            print_order=["coef", "std_err", "lower_ci", "upper_ci", "t_value",
+                         "p_value", "rsquared_adj"]
         )
 
         # Saving the condition value threshold

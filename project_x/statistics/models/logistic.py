@@ -45,6 +45,8 @@ class StatsLogistic(StatsModels):
             upper_ci="Upper 95% confidence interval",
             z_value="z-statistics",
             p_value="p-value",
+            print_order=["coef", "std_err", "lower_ci", "upper_ci", "z_value",
+                         "p_value"]
         )
 
         # Executing the super init class

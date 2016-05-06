@@ -56,6 +56,8 @@ class StatsCoxPH(StatsModels):
             hr_upper_ci="Upper 95% confidence interval of the hazard ratio",
             z_value="z-statistics",
             p_value="p-value",
+            print_order=["coef", "std_err", "hr", "hr_lower_ci", "hr_upper_ci",
+                         "z_value", "p_value"]
         )
 
         # Saving the two variables for time to event and event
