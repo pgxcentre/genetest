@@ -215,12 +215,14 @@ class TestAnalysisConfiguration(unittest.TestCase):
         conf = os.path.join(self.tmpdir.name, "conf.txt")
         with open(conf, "w") as f:
             print("[Phenotypes]\nformat=text\nfilename=dummy_file\n"
-                  "repeated_measurements=No\nmissing_values=-9", file=f)
+                  "field_separator=\\t\nrepeated_measurements=No\n"
+                  "missing_values=-9", file=f)
             print("[Genotypes]\nformat=impute2\nfilename=fn\n"
                   "sample_filename=sample_fn\n"
                   "probability_threshold=0.95", file=f)
             print("[Statistics]\nmodel=coxph\ntime_to_event=tte\nevent=e\n"
-                  "predictors=age,weight\nnormalize=yes", file=f)
+                  "predictors=Age,weight\nnormalize=yes\n"
+                  "interaction=None", file=f)
 
         # Getting the configuration
         conf = AnalysisConfiguration(conf)
@@ -251,7 +253,7 @@ class TestAnalysisConfiguration(unittest.TestCase):
         self.assertEqual(5, len(observed_stats_args))
         self.assertEqual("tte", observed_stats_args["time_to_event"])
         self.assertEqual("e", observed_stats_args["event"])
-        self.assertEqual(["age", "weight"], observed_stats_args["predictors"])
+        self.assertEqual(["Age", "weight"], observed_stats_args["predictors"])
         self.assertTrue(observed_stats_args["interaction"] is None)
         self.assertTrue(observed_stats_args["normalize"])
         self.assertEqual("coxph", conf.get_statistics_model())
