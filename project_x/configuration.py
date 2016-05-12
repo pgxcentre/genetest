@@ -325,8 +325,16 @@ class AnalysisConfiguration(object):
                     "'{}' is not a valid boolean (True/False)".format(arg)
                 )
 
-        else:
-            return arg_type(arg)
+        elif arg_type is str:
+            # We want to catch the None
+            if arg.upper() == "NONE":
+                return None
+
+            # We want to catch the \t
+            if arg == r"\t":
+                return "\t"
+
+        return arg_type(arg)
 
     @staticmethod
     def check_invalid_options(config, section):
