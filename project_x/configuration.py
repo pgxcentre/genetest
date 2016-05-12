@@ -23,7 +23,7 @@ __copyright__ = "Copyright 2016, Beaulieu-Saucier Pharmacogenomics Centre"
 __license__ = "CC BY-NC 4.0"
 
 
-__all__ = ["AnalysisConfiguration"]
+__all__ = ["AnalysisConfiguration", "create_skeleton"]
 
 
 class AnalysisConfiguration(object):
@@ -354,3 +354,59 @@ class AnalysisConfiguration(object):
                     ", ".join(sorted(config.keys())),
                 )
             )
+
+
+def create_skeleton():
+    """Creates the skeleton of a configuration file INI."""
+    # The phenotypes
+    _pretty_print_section(
+        section_name="Phenotypes",
+        container_map=pheno_map,
+        container_type="format",
+    )
+
+    # The genotypes
+    _pretty_print_section(
+        section_name="Genotypes",
+        container_map=geno_map,
+        container_type="format",
+    )
+
+    # The statistical model
+    _pretty_print_section(
+        section_name="Statistics",
+        container_map=model_map,
+        container_type="model",
+    )
+
+
+def _pretty_print_section(section_name, container_map, container_type):
+    """Pretty prints a section of the configuration file.
+
+    Args:
+        section_name (str): The name of the section.
+        container_map (dict): A dictionary containing all containers for this
+                              configuration section.
+        container_type (str): The type of container (either 'format' for
+                              genotypes and phenotypes, or 'model' for
+                              statistics).
+
+    """
+    print("[{}]".format(section_name))
+    for pheno in sorted(container_map.keys()):
+        print()
+        print("#" * (11 + len(pheno) + len(container_type)))
+        print("# The '{}' {} #".format(pheno, container_type))
+        print("#" * (11 + len(pheno) + len(container_type)))
+        print("{}='{}'".format(container_type, pheno))
+        container = container_map[pheno]
+
+        # Printing the required arguments
+        for arg in container.get_required_arguments():
+            print("{}=".format(arg))
+
+        # Printing the option arguments
+        optional = container.get_optional_arguments()
+        for arg in sorted(optional.keys()):
+            print("# {}={}".format(arg, repr(optional[arg])))
+    print("\n")
