@@ -39,8 +39,9 @@ class StatsCoxPH(StatsModels):
                                  at which the event occurred.
             event (str): The name of the variable containing the event.
             predictors (list): The list of predictor variables in the model.
-            interaction (list): The list of interaction variable to add to the
-                                model with the genotype.
+            interaction (str): The interaction variable to add to the model
+                               with the genotype.
+            normalize (bool): Whether to normalize or not.
 
         """
         # Creating the model

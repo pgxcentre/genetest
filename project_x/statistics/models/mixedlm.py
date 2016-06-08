@@ -27,10 +27,23 @@ __all__ = ["StatsMixedLM"]
 
 @arguments(required=(("outcome", str), ("predictors", [str])),
            optional={"interaction": (str, None),
-                     "reml": (bool, True)})
+                     "reml": (bool, True),
+                     "p_threshold": (float, 1e-4)})
 class StatsMixedLM(StatsModels):
-    def __init__(self, outcome, predictors, interaction, reml):
-        """Initializes a 'StatsMixedLM' instance."""
+    def __init__(self, outcome, predictors, interaction, reml, p_threshold):
+        """Initializes a 'StatsMixedLM' instance.
+
+        Args:
+            outcome (str): The outcome of the model.
+            predictors (list): The list of predictor variables in the model.
+            interaction (str): The interaction variable to add to the model
+                               with the genotype.
+            reml (bool): Whether to use REML or ML for the test.
+            p_threshold (float): The p-value threshold for which the real
+                                 MixedLM will be computed (instead of the
+                                 approximation).
+
+        """
         # Creating the result object
         self.results = StatsResults(
             coef="MixedLM regression coefficient",

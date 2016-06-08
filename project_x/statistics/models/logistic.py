@@ -33,8 +33,8 @@ class StatsLogistic(StatsModels):
         Args:
             outcome (str): The outcome of the model.
             predictors (list): The list of predictor variables in the model.
-            interaction (list): The list of interaction variable to add to the
-                                model with the genotype.
+            interaction (str): The interaction variable to add to the model
+                               with the genotype.
 
         """
         # Creating the result object
