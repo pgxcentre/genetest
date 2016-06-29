@@ -112,7 +112,7 @@ class StatsCoxPH(StatsModels):
         """Creates the y and X matrices for a linear regression.
 
         Args:
-            data (pandas.DataFrame): The data to fit.
+            data (project_x.phenotypes.core.PhenotypesContainer): The data.
             create_dummy (bool): If True, a dummy column will be added for the
                                  genotypes.
 

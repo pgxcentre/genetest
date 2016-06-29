@@ -145,10 +145,10 @@ class StatsModels(object):
         return self._model.describe()
 
     def create_matrices(self, data, create_dummy=True):
-        """Creates the y and X matrices for a linear regression.
+        """Creates the y and X matrices for a statistical analysis.
 
         Args:
-            data (pandas.DataFrame): The data to fit.
+            data (project_x.phenotypes.core.PhenotypesContainer): The data.
             create_dummy (bool): If True, a dummy column will be added for the
                                  genotypes.
 
@@ -156,13 +156,16 @@ class StatsModels(object):
             tuple: y and X as pandas dataframes (according to the formula).
 
         """
+        # We get the phenotypes
+        pheno = data.get_phenotypes().dropna()
+
         # Creating dummy columns (if required)
         if create_dummy:
-            data = data.copy(deep=True)
-            data["geno"] = np.zeros(data.shape[0])
+            pheno = pheno.copy(deep=True)
+            pheno["geno"] = np.zeros(pheno.shape[0])
 
         # Getting the matrices
-        y, X = patsy.dmatrices(self._model, data, return_type="dataframe")
+        y, X = patsy.dmatrices(self._model, pheno, return_type="dataframe")
 
         # Deleting the dummy columns (if required)
         if create_dummy:
