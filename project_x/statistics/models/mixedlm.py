@@ -10,6 +10,9 @@
 # Commons, PO Box 1866, Mountain View, CA 94042, USA.
 
 
+import re
+
+import patsy
 import numpy as np
 import pandas as pd
 import statsmodels.api as sm
@@ -56,27 +59,57 @@ class StatsMixedLM(StatsModels):
                          "p_value"]
         )
 
+        # The original samples and the grouping
+        self._ori_samples = None
+        self._groups = None
+
         # Saving the REML boolean
         self._reml = reml
+
+        # Creating a variable to save the estimated random effects (for the
+        # mixedlm optimization called two-step LMM)
+        self._re = None
+
+        # Saving the p-value threshold
+        self._p_threshold = p_threshold
 
         # Executing the super init class
         super().__init__(outcomes=[outcome], predictors=predictors,
                          interaction=interaction, intercept=True)
 
-    def fit(self, y, X, groups):
+    def fit(self, y, X):
         """Fit the model.
 
         Args:
             y (pandas.DataFrame): The vector of endogenous variable.
             X (pandas.DataFrame): The matrix of exogenous variables.
-            groups (numpy.ndarray): The samples (for repeated measurements).
 
         """
         # Resetting the statistics
         self.results.reset()
 
+        # We perform the optimization if there is no interaction
+        if not self._inter:
+            # Creating the matrices (for random effects and genotypes)
+            t_y, t_X = patsy.dmatrices(
+                "RE ~ geno",
+                pd.merge(self._re, self._original_genotypes, left_index=True,
+                         right_index=True),
+                return_type="dataframe",
+            )
+
+            # Fitting the linear model
+            fitted = sm.OLS(t_y, t_X).fit()
+
+            # We keep only the p value
+            self.results.p_value = fitted.pvalues["geno"]
+
+            # Should we perform the standard LMM?
+            if self.results.p_value >= self._p_threshold:
+                return
+
         # Creating the OLS model from StatsModels and fitting it
-        model = sm.MixedLM(y, X, groups)
+        model = sm.MixedLM(y, X, self._groups)
 
         try:
             fitted = model.fit(reml=self._reml)
@@ -92,7 +125,61 @@ class StatsMixedLM(StatsModels):
         self.results.z_value = fitted.tvalues[self._result_col]
         self.results.p_value = fitted.pvalues[self._result_col]
 
-    def merge_matrices_genotypes(self, y, X, genotypes, ori_samples,
+    def create_matrices(self, data, create_dummy=True):
+        """Creates the y and X matrices for a mixedlm analysis.
+
+        Args:
+            data (project_x.phenotypes.core.PhenotypesContainer): The data.
+            create_dummy (bool): If True, a dummy column will be added for the
+                                 genotypes.
+
+        Returns:
+            tuple: y and X as pandas dataframes (according to the formula).
+
+        For the optimization, we required to run the MixedLM on the phenotypes
+        only (i.e. no genotypes) and to save the estimated random slopes (as
+        describe in Sikorska et al. 2015 doi:10.1038/ejhg.2015.1).
+
+        """
+        # Saving the original samples
+        self._ori_samples = data.get_original_sample_names()
+
+        # First, we get the matrix
+        y, X = super().create_matrices(data=data, create_dummy=create_dummy)
+
+        # TODO: Check if this is true
+        # If we have interaction, the optimization doesn't old
+        if self._inter is not None:
+            return y, X
+
+        # FIXME: This is a quick fix, because of an error in statsmodels. When
+        # fitting a MixedLM from y and X (instead of from formula), we get the
+        # following AttributeError: 'PandasData' object has no attribute
+        # 'exog_re_names'. We need to fit using a formula (after removing the
+        # geno term).
+        formula = re.sub(r"geno( \+ )?", "", self.get_model_description())
+        if formula.endswith(" + "):
+            formula = formula[:-3]
+
+        # We merge the y and X matrices
+        full_data = pd.merge(data.get_phenotypes().dropna(), self._ori_samples,
+                             left_index=True, right_index=True)
+
+        # We get the original samples
+        self._groups = full_data._ori_sample_names_
+
+        # Fitting the model
+        model = sm.MixedLM.from_formula(formula, full_data,
+                                        groups=self._groups)
+        fitted = model.fit(reml=self._reml)
+
+        # Extracting the random effects
+        self._re = fitted.random_effects.rename(columns={"Intercept": "RE"})
+
+        # Returning the matrices
+        return y, X
+
+    def merge_matrices_genotypes(self, y, X, genotypes,
                                  compute_interaction=True):
         """Merges the genotypes to X, remove missing values, and subset y.
 
@@ -100,22 +187,26 @@ class StatsMixedLM(StatsModels):
             y (pandas.DataFrame): The y dataframe.
             X (pandas.DataFrame): The X dataframe.
             genotypes (pandas.DataFrame): The genotypes dataframe.
-            ori_samples (pandas.DataFrame): The original sample names.
             compute_interaction (bool): If True, interaction will be computed
                                         with the genotype.
 
         Returns:
-            tuple: The y and X dataframes (with the genotypes merged) and the
-                   groups for the model (the sample names) as numpy.ndarray.
+            tuple: The y and X dataframes (with the genotypes merged).
 
         """
+        # We save the original genotypes
+        self._original_genotypes = genotypes
+
         # Merging the old sample names and the genotypes
         new_X = pd.merge(
-            left=pd.merge(X, ori_samples, left_index=True, right_index=True),
-            right=genotypes,
+            pd.merge(X, self._ori_samples, left_index=True, right_index=True),
+            genotypes,
             left_on="_ori_sample_names_",
             right_index=True,
-        ).dropna().drop("_ori_sample_names_", axis=1)
+        ).dropna()
+
+        # Saving the groups
+        self._groups = new_X._ori_sample_names_
 
         # Keeping only the required X values
         new_y = y.loc[new_X.index, :]
@@ -125,7 +216,4 @@ class StatsMixedLM(StatsModels):
             # There is, so we multiply
             new_X[self._result_col] = new_X.geno * new_X[self._inter_col]
 
-        # Getting the sample order
-        groups = ori_samples.loc[new_X.index, "_ori_sample_names_"].values
-
-        return new_y, new_X, groups
+        return new_y, new_X.drop("_ori_sample_names_", axis=1)
