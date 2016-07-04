@@ -46,23 +46,36 @@ class TestStatsLinear(unittest.TestCase):
         )
 
     def setUp(self):
+        # The data
         self.data = pd.read_csv(
             resource_filename(__name__, "data/statistics/linear.txt.bz2"),
             sep="\t",
             compression="bz2",
         )
 
+        # A dummy class for the 'get_phenotypes' function
+        class DummyContainer(object):
+            def set_phenotypes(self, data):
+                self.data = data
+
+            def get_phenotypes(self):
+                return self.data
+        self.dummy = DummyContainer()
+
     def test_linear_snp1_full(self):
         """Tests linear regression with the first SNP (full)."""
         # Preparing the data
-        pheno = self.data[["pheno1", "age", "var1", "gender"]]
+        pheno = self.data.loc[:, ["pheno1", "age", "var1", "gender"]]
         geno = self.data[["snp1"]].rename(columns={"snp1": "geno"})
 
         # Permuting the genotypes
         geno = geno.iloc[np.random.permutation(geno.shape[0]), :]
 
+        # Adding the data to the object
+        self.dummy.set_phenotypes(pheno)
+
         # Preparing the matrices
-        y, X = self.ols.create_matrices(pheno)
+        y, X = self.ols.create_matrices(self.dummy)
         self.assertFalse("geno" in X.columns)
 
         # Merging with genotype
@@ -92,14 +105,17 @@ class TestStatsLinear(unittest.TestCase):
     def test_linear_snp1_inter_full(self):
         """Tests linear regression for first SNP (interaction, full)."""
         # Preparing the data
-        pheno = self.data[["pheno1", "age", "var1", "gender"]]
+        pheno = self.data.loc[:, ["pheno1", "age", "var1", "gender"]]
         geno = self.data[["snp1"]].rename(columns={"snp1": "geno"})
 
         # Permuting the genotypes
         geno = geno.iloc[np.random.permutation(geno.shape[0]), :]
 
+        # Adding the data to the object
+        self.dummy.set_phenotypes(pheno)
+
         # Preparing the matrices
-        y, X = self.ols_inter.create_matrices(pheno)
+        y, X = self.ols_inter.create_matrices(self.dummy)
         self.assertFalse("geno" in X.columns)
 
         # Merging with genotype
@@ -136,14 +152,17 @@ class TestStatsLinear(unittest.TestCase):
     def test_linear_snp1_inter_categorical_full(self):
         """Tests linear regression for first SNP (inter, full, category)."""
         # Preparing the data
-        pheno = self.data[["pheno1", "age", "var1", "gender"]]
+        pheno = self.data.loc[:, ["pheno1", "age", "var1", "gender"]]
         geno = self.data[["snp1"]].rename(columns={"snp1": "geno"})
 
         # Permuting the genotypes
         geno = geno.iloc[np.random.permutation(geno.shape[0]), :]
 
+        # Adding the data to the object
+        self.dummy.set_phenotypes(pheno)
+
         # Preparing the matrices
-        y, X = self.ols_inter_categorical.create_matrices(pheno)
+        y, X = self.ols_inter_categorical.create_matrices(self.dummy)
         self.assertFalse("geno" in X.columns)
 
         # Merging with genotype
@@ -186,7 +205,7 @@ class TestStatsLinear(unittest.TestCase):
     def test_linear_snp1_inter_too_many_category_full(self):
         """Tests linear regression first SNP (interaction, full, to many)."""
         # Preparing the data
-        pheno = self.data[["pheno1", "age", "var1", "gender"]]
+        pheno = self.data.loc[:, ["pheno1", "age", "var1", "gender"]]
         geno = self.data[["snp1"]].rename(columns={"snp1": "geno"})
 
         # Permuting the genotypes
@@ -195,9 +214,12 @@ class TestStatsLinear(unittest.TestCase):
         # Changing the gender so that there are two clases
         pheno.loc[:, "gender"] = np.random.randint(1, 5, pheno.shape[0])
 
+        # Adding the data to the object
+        self.dummy.set_phenotypes(pheno)
+
         # This should raise an exception
         with self.assertRaises(ValueError):
-            self.ols_inter_categorical.create_matrices(pheno)
+            self.ols_inter_categorical.create_matrices(self.dummy)
 
     def test_linear_snp1(self):
         """Tests linear regression with the first SNP."""
@@ -206,8 +228,11 @@ class TestStatsLinear(unittest.TestCase):
             columns={"snp1": "geno"},
         )
 
+        # Adding the data to the object
+        self.dummy.set_phenotypes(data)
+
         # Preparing the matrices
-        y, X = self.ols.create_matrices(data, create_dummy=False)
+        y, X = self.ols.create_matrices(self.dummy, create_dummy=False)
 
         # Fitting
         self.ols.fit(y, X)
@@ -237,8 +262,11 @@ class TestStatsLinear(unittest.TestCase):
             columns={"snp1": "geno"},
         )
 
+        # Adding the data to the object
+        self.dummy.set_phenotypes(data)
+
         # Preparing the matrices
-        y, X = self.ols_inter.create_matrices(data, create_dummy=False)
+        y, X = self.ols_inter.create_matrices(self.dummy, create_dummy=False)
 
         # Fitting
         self.ols_inter.fit(y, X)
@@ -275,8 +303,11 @@ class TestStatsLinear(unittest.TestCase):
             columns={"snp2": "geno"},
         )
 
+        # Adding the data to the object
+        self.dummy.set_phenotypes(data)
+
         # Preparing the matrices
-        y, X = self.ols.create_matrices(data, create_dummy=False)
+        y, X = self.ols.create_matrices(self.dummy, create_dummy=False)
 
         # Fitting
         self.ols.fit(y, X)
@@ -306,8 +337,11 @@ class TestStatsLinear(unittest.TestCase):
             columns={"snp2": "geno"},
         )
 
+        # Adding the data to the object
+        self.dummy.set_phenotypes(data)
+
         # Preparing the matrices
-        y, X = self.ols_inter.create_matrices(data, create_dummy=False)
+        y, X = self.ols_inter.create_matrices(self.dummy, create_dummy=False)
 
         # Fitting
         self.ols_inter.fit(y, X)
@@ -345,8 +379,11 @@ class TestStatsLinear(unittest.TestCase):
             columns={"snp3": "geno"},
         )
 
+        # Adding the data to the object
+        self.dummy.set_phenotypes(data)
+
         # Preparing the matrices
-        y, X = self.ols.create_matrices(data, create_dummy=False)
+        y, X = self.ols.create_matrices(self.dummy, create_dummy=False)
 
         # Fitting
         self.ols.fit(y, X)
@@ -374,8 +411,11 @@ class TestStatsLinear(unittest.TestCase):
             columns={"snp3": "geno"},
         )
 
+        # Adding the data to the object
+        self.dummy.set_phenotypes(data)
+
         # Preparing the matrices
-        y, X = self.ols_inter.create_matrices(data, create_dummy=False)
+        y, X = self.ols_inter.create_matrices(self.dummy, create_dummy=False)
 
         # Fitting
         self.ols_inter.fit(y, X)
@@ -415,8 +455,11 @@ class TestStatsLinear(unittest.TestCase):
             columns={"snp4": "geno"},
         )
 
+        # Adding the data to the object
+        self.dummy.set_phenotypes(data)
+
         # Preparing the matrices
-        y, X = self.ols.create_matrices(data, create_dummy=False)
+        y, X = self.ols.create_matrices(self.dummy, create_dummy=False)
 
         # Fitting
         self.ols.fit(y, X)
@@ -444,8 +487,11 @@ class TestStatsLinear(unittest.TestCase):
             columns={"snp4": "geno"},
         )
 
+        # Adding the data to the object
+        self.dummy.set_phenotypes(data)
+
         # Preparing the matrices
-        y, X = self.ols_inter.create_matrices(data, create_dummy=False)
+        y, X = self.ols_inter.create_matrices(self.dummy, create_dummy=False)
 
         # Fitting
         self.ols_inter.fit(y, X)
@@ -483,8 +529,11 @@ class TestStatsLinear(unittest.TestCase):
             columns={"snp5": "geno"},
         )
 
+        # Adding the data to the object
+        self.dummy.set_phenotypes(data)
+
         # Preparing the matrices
-        y, X = self.ols.create_matrices(data, create_dummy=False)
+        y, X = self.ols.create_matrices(self.dummy, create_dummy=False)
 
         # Fitting
         with self.assertRaises(StatsError) as cm:
@@ -512,8 +561,11 @@ class TestStatsLinear(unittest.TestCase):
             columns={"snp5": "geno"},
         )
 
+        # Adding the data to the object
+        self.dummy.set_phenotypes(data)
+
         # Preparing the matrices
-        y, X = self.ols_inter.create_matrices(data, create_dummy=False)
+        y, X = self.ols_inter.create_matrices(self.dummy, create_dummy=False)
 
         # Fitting
         with self.assertRaises(StatsError) as cm:
