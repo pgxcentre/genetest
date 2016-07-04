@@ -43,16 +43,26 @@ class TestStatsLogistic(unittest.TestCase):
         )
 
     def setUp(self):
+        # The data
         self.data = pd.read_csv(
             resource_filename(__name__, "data/statistics/logistic.txt.bz2"),
             sep="\t",
             compression="bz2",
         )
 
+        # A dummy class for the 'get_phenotypes' function
+        class DummyContainer(object):
+            def set_phenotypes(self, data):
+                self.data = data
+
+            def get_phenotypes(self):
+                return self.data
+        self.dummy = DummyContainer()
+
     def test_logistic_snp1_full(self):
         """Tests logistic regression with the first SNP (full)."""
         # Preparing the data
-        pheno = self.data[["pheno2", "age", "var1", "gender"]]
+        pheno = self.data.loc[:, ["pheno2", "age", "var1", "gender"]]
         geno = self.data[["snp1"]].rename(
             columns={"snp1": "geno"},
         )
@@ -60,8 +70,11 @@ class TestStatsLogistic(unittest.TestCase):
         # Permuting the genotypes
         geno = geno.iloc[np.random.permutation(geno.shape[0]), :]
 
+        # Adding the data to the object
+        self.dummy.set_phenotypes(pheno)
+
         # Preparing the matrices
-        y, X = self.logistic.create_matrices(pheno)
+        y, X = self.logistic.create_matrices(self.dummy)
         self.assertFalse("geno" in X.columns)
 
         # Merging with genotype
@@ -94,7 +107,7 @@ class TestStatsLogistic(unittest.TestCase):
     def test_logistic_inter_snp1_inter_full(self):
         """Tests logistic regression with the first SNP (interaction, full)."""
         # Preparing the data
-        pheno = self.data[["pheno2", "age", "var1", "gender"]]
+        pheno = self.data.loc[:, ["pheno2", "age", "var1", "gender"]]
         geno = self.data[["snp1"]].rename(
             columns={"snp1": "geno"},
         )
@@ -102,8 +115,11 @@ class TestStatsLogistic(unittest.TestCase):
         # Permuting the genotypes
         geno = geno.iloc[np.random.permutation(geno.shape[0]), :]
 
+        # Adding the data to the object
+        self.dummy.set_phenotypes(pheno)
+
         # Preparing the matrices
-        y, X = self.logistic_inter.create_matrices(pheno)
+        y, X = self.logistic_inter.create_matrices(self.dummy)
         self.assertFalse("geno" in X.columns)
 
         # Merging with genotype
@@ -136,7 +152,7 @@ class TestStatsLogistic(unittest.TestCase):
     def test_logistic_inter_snp1_inter_category_full(self):
         """Tests logistic regression first SNP (inter, full, category)."""
         # Preparing the data
-        pheno = self.data[["pheno2", "age", "var1", "gender"]]
+        pheno = self.data.loc[:, ["pheno2", "age", "var1", "gender"]]
         geno = self.data[["snp1"]].rename(
             columns={"snp1": "geno"},
         )
@@ -144,8 +160,11 @@ class TestStatsLogistic(unittest.TestCase):
         # Permuting the genotypes
         geno = geno.iloc[np.random.permutation(geno.shape[0]), :]
 
+        # Adding the data to the object
+        self.dummy.set_phenotypes(pheno)
+
         # Preparing the matrices
-        y, X = self.logistic_inter_cat.create_matrices(pheno)
+        y, X = self.logistic_inter_cat.create_matrices(self.dummy)
         self.assertFalse("geno" in X.columns)
 
         # Merging with genotype
@@ -187,8 +206,11 @@ class TestStatsLogistic(unittest.TestCase):
             columns={"snp1": "geno"},
         )
 
+        # Adding the data to the object
+        self.dummy.set_phenotypes(data)
+
         # Preparing the matrices
-        y, X = self.logistic.create_matrices(data, create_dummy=False)
+        y, X = self.logistic.create_matrices(self.dummy, create_dummy=False)
 
         # Fitting
         self.logistic.fit(y, X)
@@ -221,8 +243,13 @@ class TestStatsLogistic(unittest.TestCase):
             columns={"snp1": "geno"},
         )
 
+        # Adding the data to the object
+        self.dummy.set_phenotypes(data)
+
         # Preparing the matrices
-        y, X = self.logistic_inter.create_matrices(data, create_dummy=False)
+        y, X = self.logistic_inter.create_matrices(
+            self.dummy, create_dummy=False,
+        )
 
         # Fitting
         self.logistic_inter.fit(y, X)
@@ -255,8 +282,11 @@ class TestStatsLogistic(unittest.TestCase):
             columns={"snp2": "geno"},
         )
 
+        # Adding the data to the object
+        self.dummy.set_phenotypes(data)
+
         # Preparing the matrices
-        y, X = self.logistic.create_matrices(data, create_dummy=False)
+        y, X = self.logistic.create_matrices(self.dummy, create_dummy=False)
 
         # Fitting
         self.logistic.fit(y, X)
@@ -289,8 +319,13 @@ class TestStatsLogistic(unittest.TestCase):
             columns={"snp2": "geno"},
         )
 
+        # Adding the data to the object
+        self.dummy.set_phenotypes(data)
+
         # Preparing the matrices
-        y, X = self.logistic_inter.create_matrices(data, create_dummy=False)
+        y, X = self.logistic_inter.create_matrices(
+            self.dummy, create_dummy=False,
+        )
 
         # Fitting
         self.logistic_inter.fit(y, X)
@@ -323,8 +358,11 @@ class TestStatsLogistic(unittest.TestCase):
             columns={"snp3": "geno"},
         )
 
+        # Adding the data to the object
+        self.dummy.set_phenotypes(data)
+
         # Preparing the matrices
-        y, X = self.logistic.create_matrices(data, create_dummy=False)
+        y, X = self.logistic.create_matrices(self.dummy, create_dummy=False)
 
         # Fitting
         with self.assertRaises(StatsError):
@@ -345,8 +383,13 @@ class TestStatsLogistic(unittest.TestCase):
             columns={"snp3": "geno"},
         )
 
+        # Adding the data to the object
+        self.dummy.set_phenotypes(data)
+
         # Preparing the matrices
-        y, X = self.logistic_inter.create_matrices(data, create_dummy=False)
+        y, X = self.logistic_inter.create_matrices(
+            self.dummy, create_dummy=False,
+        )
 
         # Fitting
         with self.assertRaises(StatsError):
