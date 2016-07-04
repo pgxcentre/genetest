@@ -49,23 +49,36 @@ class TestStatsCoxPH(unittest.TestCase):
         )
 
     def setUp(self):
+        # The data
         self.data = pd.read_csv(
             resource_filename(__name__, "data/statistics/coxph.txt.bz2"),
             sep="\t",
             compression="bz2",
         )
 
+        # A dummy class for the 'get_phenotypes' function
+        class DummyContainer(object):
+            def set_phenotypes(self, data):
+                self.data = data
+
+            def get_phenotypes(self):
+                return self.data
+        self.dummy = DummyContainer()
+
     def test_coxph_snp1_full(self):
         """Tests coxph regression with the first SNP (full)."""
         # Preparing the data
-        pheno = self.data[["tte", "event", "age", "var1", "gender"]]
+        pheno = self.data.loc[:, ["tte", "event", "age", "var1", "gender"]]
         geno = self.data[["snp1"]].rename(columns={"snp1": "geno"})
 
         # Permuting the genotypes
         geno = geno.iloc[np.random.permutation(geno.shape[0]), :]
 
+        # Adding the data to the object
+        self.dummy.set_phenotypes(pheno)
+
         # Preparing the matrices
-        y, X = self.coxph.create_matrices(pheno)
+        y, X = self.coxph.create_matrices(self.dummy)
 
         # Merging with genotype
         y, X = self.coxph.merge_matrices_genotypes(y, X, geno)
@@ -100,14 +113,17 @@ class TestStatsCoxPH(unittest.TestCase):
     def test_coxph_snp1_inter_full(self):
         """Tests coxph regression with the first SNP (full, interaction)."""
         # Preparing the data
-        pheno = self.data[["tte", "event", "age", "var1", "gender"]]
+        pheno = self.data.loc[:, ["tte", "event", "age", "var1", "gender"]]
         geno = self.data[["snp1"]].rename(columns={"snp1": "geno"})
 
         # Permuting the genotypes
         geno = geno.iloc[np.random.permutation(geno.shape[0]), :]
 
+        # Adding the data to the object
+        self.dummy.set_phenotypes(pheno)
+
         # Preparing the matrices
-        y, X = self.coxph_inter.create_matrices(pheno)
+        y, X = self.coxph_inter.create_matrices(self.dummy)
 
         # Merging with genotype
         y, X = self.coxph_inter.merge_matrices_genotypes(y, X, geno)
@@ -137,14 +153,17 @@ class TestStatsCoxPH(unittest.TestCase):
     def test_coxph_snp1_inter_category_full(self):
         """Tests coxph first SNP (full, interaction, category)."""
         # Preparing the data
-        pheno = self.data[["tte", "event", "age", "var1", "gender"]]
+        pheno = self.data.loc[:, ["tte", "event", "age", "var1", "gender"]]
         geno = self.data[["snp1"]].rename(columns={"snp1": "geno"})
 
         # Permuting the genotypes
         geno = geno.iloc[np.random.permutation(geno.shape[0]), :]
 
+        # Adding the data to the object
+        self.dummy.set_phenotypes(pheno)
+
         # Preparing the matrices
-        y, X = self.coxph_inter_cat.create_matrices(pheno)
+        y, X = self.coxph_inter_cat.create_matrices(self.dummy)
 
         # Merging with genotype
         y, X = self.coxph_inter_cat.merge_matrices_genotypes(y, X, geno)
@@ -179,8 +198,11 @@ class TestStatsCoxPH(unittest.TestCase):
         data = self.data[["tte", "event", "age", "var1", "gender", "snp1"]]
         data = data.rename(columns={"snp1": "geno"})
 
+        # Adding the data to the object
+        self.dummy.set_phenotypes(data)
+
         # Preparing the matrices
-        y, X = self.coxph.create_matrices(data, create_dummy=False)
+        y, X = self.coxph.create_matrices(self.dummy, create_dummy=False)
 
         # Fitting
         self.coxph.fit(y, X)
@@ -215,8 +237,11 @@ class TestStatsCoxPH(unittest.TestCase):
         data = self.data[["tte", "event", "age", "var1", "gender", "snp1"]]
         data = data.rename(columns={"snp1": "geno"})
 
+        # Adding the data to the object
+        self.dummy.set_phenotypes(data)
+
         # Preparing the matrices
-        y, X = self.coxph_inter.create_matrices(data, create_dummy=False)
+        y, X = self.coxph_inter.create_matrices(self.dummy, create_dummy=False)
 
         # Fitting
         self.coxph_inter.fit(y, X)
@@ -246,8 +271,11 @@ class TestStatsCoxPH(unittest.TestCase):
         data = self.data[["tte", "event", "age", "var1", "gender", "snp2"]]
         data = data.rename(columns={"snp2": "geno"})
 
+        # Adding the data to the object
+        self.dummy.set_phenotypes(data)
+
         # Preparing the matrices
-        y, X = self.coxph.create_matrices(data, create_dummy=False)
+        y, X = self.coxph.create_matrices(self.dummy, create_dummy=False)
 
         # Fitting
         self.coxph.fit(y, X)
@@ -282,8 +310,11 @@ class TestStatsCoxPH(unittest.TestCase):
         data = self.data[["tte", "event", "age", "var1", "gender", "snp2"]]
         data = data.rename(columns={"snp2": "geno"})
 
+        # Adding the data to the object
+        self.dummy.set_phenotypes(data)
+
         # Preparing the matrices
-        y, X = self.coxph_inter.create_matrices(data, create_dummy=False)
+        y, X = self.coxph_inter.create_matrices(self.dummy, create_dummy=False)
 
         # Fitting
         self.coxph_inter.fit(y, X)
@@ -313,8 +344,11 @@ class TestStatsCoxPH(unittest.TestCase):
         data = self.data[["tte", "event", "age", "var1", "gender", "snp3"]]
         data = data.rename(columns={"snp3": "geno"})
 
+        # Adding the data to the object
+        self.dummy.set_phenotypes(data)
+
         # Preparing the matrices
-        y, X = self.coxph.create_matrices(data, create_dummy=False)
+        y, X = self.coxph.create_matrices(self.dummy, create_dummy=False)
 
         # Fitting
         self.coxph.fit(y, X)
@@ -348,8 +382,11 @@ class TestStatsCoxPH(unittest.TestCase):
         data = self.data[["tte", "event", "age", "var1", "gender", "snp3"]]
         data = data.rename(columns={"snp3": "geno"})
 
+        # Adding the data to the object
+        self.dummy.set_phenotypes(data)
+
         # Preparing the matrices
-        y, X = self.coxph_inter.create_matrices(data, create_dummy=False)
+        y, X = self.coxph_inter.create_matrices(self.dummy, create_dummy=False)
 
         # Fitting
         self.coxph_inter.fit(y, X)
@@ -379,8 +416,11 @@ class TestStatsCoxPH(unittest.TestCase):
         data = self.data[["tte", "event", "age", "var1", "gender", "snp4"]]
         data = data.rename(columns={"snp4": "geno"})
 
+        # Adding the data to the object
+        self.dummy.set_phenotypes(data)
+
         # Preparing the matrices
-        y, X = self.coxph.create_matrices(data, create_dummy=False)
+        y, X = self.coxph.create_matrices(self.dummy, create_dummy=False)
 
         # Fitting
         with self.assertRaises(StatsError):
@@ -401,8 +441,11 @@ class TestStatsCoxPH(unittest.TestCase):
         data = self.data[["tte", "event", "age", "var1", "gender", "snp4"]]
         data = data.rename(columns={"snp4": "geno"})
 
+        # Adding the data to the object
+        self.dummy.set_phenotypes(data)
+
         # Preparing the matrices
-        y, X = self.coxph_inter.create_matrices(data, create_dummy=False)
+        y, X = self.coxph_inter.create_matrices(self.dummy, create_dummy=False)
 
         # Fitting
         with self.assertRaises(StatsError):
