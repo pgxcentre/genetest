@@ -51,7 +51,7 @@ class TestStatsMixedLM(unittest.TestCase):
 
         cls.mixedlm_ml = StatsMixedLM(
             outcome="pheno3",
-            predictors=["age", "var1", "C(gender)", "geno", "C(visit)"],
+            predictors=["age", "var1", "C(gender)", "C(visit)", "geno"],
             interaction=None,
             reml=False,
             p_threshold=1e-4,
