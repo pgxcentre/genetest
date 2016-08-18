@@ -32,18 +32,21 @@ class TestStatsMixedLM(unittest.TestCase):
             predictors=["age", "var1", "C(gender)", "geno", "C(visit)"],
             interaction=None,
             reml=True,
+            p_threshold=1e-4,
         )
         cls.mixedlm_inter = StatsMixedLM(
             outcome="pheno3",
             predictors=["age", "var1", "C(gender)", "geno", "C(visit)"],
             interaction="var1",
             reml=True,
+            p_threshold=1e-4,
         )
         cls.mixedlm_inter_cat = StatsMixedLM(
             outcome="pheno3",
             predictors=["age", "var1", "C(gender)", "geno", "C(visit)"],
             interaction="C(gender)",
             reml=True,
+            p_threshold=1e-4,
         )
 
         cls.mixedlm_ml = StatsMixedLM(
@@ -51,21 +54,25 @@ class TestStatsMixedLM(unittest.TestCase):
             predictors=["age", "var1", "C(gender)", "geno", "C(visit)"],
             interaction=None,
             reml=False,
+            p_threshold=1e-4,
         )
         cls.mixedlm_ml_inter = StatsMixedLM(
             outcome="pheno3",
             predictors=["age", "var1", "C(gender)", "geno", "C(visit)"],
             interaction="var1",
             reml=False,
+            p_threshold=1e-4,
         )
         cls.mixedlm_ml_inter_cat = StatsMixedLM(
             outcome="pheno3",
             predictors=["age", "var1", "C(gender)", "geno", "C(visit)"],
             interaction="C(gender)",
             reml=False,
+            p_threshold=1e-4,
         )
 
     def setUp(self):
+        # The data
         self.data = pd.read_csv(
             resource_filename(__name__, "data/statistics/mixedlm.txt.bz2"),
             sep="\t",
@@ -92,10 +99,26 @@ class TestStatsMixedLM(unittest.TestCase):
         # Setting the index
         self.data = self.data.set_index("sampleid", verify_integrity=True)
 
+        # A dummy class for the 'get_phenotypes' function
+        class DummyContainer(object):
+            def set_phenotypes(self, data):
+                self.data = data
+
+            def get_phenotypes(self):
+                return self.data
+
+            def set_ori(self, ori_samples):
+                self.ori_samples = ori_samples
+
+            def get_original_sample_names(self):
+                return self.ori_samples
+        self.dummy = DummyContainer()
+        self.dummy.set_ori(self.data.loc[:, ["_ori_sample_names_"]])
+
     def test_mixedlm_snp1_reml_full(self):
         """Tests mixedlm regression with the first SNP (using REML, full)."""
         # Preparing the data
-        pheno = self.data[["pheno3", "age", "var1", "gender", "visit"]]
+        pheno = self.data.loc[:, ["pheno3", "age", "var1", "gender", "visit"]]
         geno = self.data[["snp1", "_ori_sample_names_"]]
         geno = geno.rename(columns={"snp1": "geno"})
         geno = geno.drop_duplicates().set_index("_ori_sample_names_")
@@ -103,16 +126,17 @@ class TestStatsMixedLM(unittest.TestCase):
         # Permuting the genotypes
         geno = geno.iloc[np.random.permutation(geno.shape[0]), :]
 
+        # Adding the data to the object
+        self.dummy.set_phenotypes(pheno)
+
         # Preparing the matrices
-        y, X = self.mixedlm.create_matrices(pheno)
+        y, X = self.mixedlm.create_matrices(self.dummy)
 
         # Merging with genotype
-        y, X, groups = self.mixedlm.merge_matrices_genotypes(
-            y, X, geno, ori_samples=self.data[["_ori_sample_names_"]],
-        )
+        y, X = self.mixedlm.merge_matrices_genotypes(y, X, geno)
 
         # Fitting
-        self.mixedlm.fit(y, X, groups=groups)
+        self.mixedlm.fit(y, X)
 
         # Checking the results (according to R lme4)
         self.assertAlmostEqual(
@@ -134,11 +158,15 @@ class TestStatsMixedLM(unittest.TestCase):
             -np.log10(7.112654716978639e-06),
             -np.log10(self.mixedlm.results.p_value), places=4,
         )
+        self.assertAlmostEqual(
+            -np.log10(0.000023996236375808),
+            -np.log10(self.mixedlm.results.ts_p_value),
+        )
 
     def test_mixedlm_snp1_inter_reml_full(self):
         """Tests mixedlm with first SNP (using REML, interaction, full)."""
         # Preparing the data
-        pheno = self.data[["pheno3", "age", "var1", "gender", "visit"]]
+        pheno = self.data.loc[:, ["pheno3", "age", "var1", "gender", "visit"]]
         geno = self.data[["snp1", "_ori_sample_names_"]]
         geno = geno.rename(columns={"snp1": "geno"})
         geno = geno.drop_duplicates().set_index("_ori_sample_names_")
@@ -146,16 +174,17 @@ class TestStatsMixedLM(unittest.TestCase):
         # Permuting the genotypes
         geno = geno.iloc[np.random.permutation(geno.shape[0]), :]
 
+        # Adding the data to the object
+        self.dummy.set_phenotypes(pheno)
+
         # Preparing the matrices
-        y, X = self.mixedlm_inter.create_matrices(pheno)
+        y, X = self.mixedlm_inter.create_matrices(self.dummy)
 
         # Merging with genotype
-        y, X, groups = self.mixedlm_inter.merge_matrices_genotypes(
-            y, X, geno, ori_samples=self.data[["_ori_sample_names_"]],
-        )
+        y, X = self.mixedlm_inter.merge_matrices_genotypes(y, X, geno)
 
         # Fitting
-        self.mixedlm_inter.fit(y, X, groups=groups)
+        self.mixedlm_inter.fit(y, X)
 
         # Checking the results (according to R lme4)
         self.assertAlmostEqual(
@@ -177,11 +206,12 @@ class TestStatsMixedLM(unittest.TestCase):
             -np.log10(4.309198170818540e-02),
             -np.log10(self.mixedlm_inter.results.p_value), places=5,
         )
+        self.assertTrue(np.isnan(self.mixedlm_inter.results.ts_p_value))
 
     def test_mixedlm_snp1_inter_category_reml_full(self):
         """Tests mixedlm with first SNP (REML, interaction, category, full)."""
         # Preparing the data
-        pheno = self.data[["pheno3", "age", "var1", "gender", "visit"]]
+        pheno = self.data.loc[:, ["pheno3", "age", "var1", "gender", "visit"]]
         geno = self.data[["snp1", "_ori_sample_names_"]]
         geno = geno.rename(columns={"snp1": "geno"})
         geno = geno.drop_duplicates().set_index("_ori_sample_names_")
@@ -189,16 +219,17 @@ class TestStatsMixedLM(unittest.TestCase):
         # Permuting the genotypes
         geno = geno.iloc[np.random.permutation(geno.shape[0]), :]
 
+        # Adding the data to the object
+        self.dummy.set_phenotypes(pheno)
+
         # Preparing the matrices
-        y, X = self.mixedlm_inter_cat.create_matrices(pheno)
+        y, X = self.mixedlm_inter_cat.create_matrices(self.dummy)
 
         # Merging with genotype
-        y, X, groups = self.mixedlm_inter_cat.merge_matrices_genotypes(
-            y, X, geno, ori_samples=self.data[["_ori_sample_names_"]],
-        )
+        y, X = self.mixedlm_inter_cat.merge_matrices_genotypes(y, X, geno)
 
         # Fitting
-        self.mixedlm_inter_cat.fit(y, X, groups=groups)
+        self.mixedlm_inter_cat.fit(y, X)
 
         # Checking the results (according to R lme4)
         self.assertAlmostEqual(
@@ -224,11 +255,12 @@ class TestStatsMixedLM(unittest.TestCase):
             6.367892569176092e-01, self.mixedlm_inter_cat.results.p_value,
             places=5,
         )
+        self.assertTrue(np.isnan(self.mixedlm_inter_cat.results.ts_p_value))
 
     def test_mixedlm_snp1_ml_full(self):
         """Tests mixedlm regression with the first SNP (using ML, full)."""
         # Preparing the data
-        pheno = self.data[["pheno3", "age", "var1", "gender", "visit"]]
+        pheno = self.data.loc[:, ["pheno3", "age", "var1", "gender", "visit"]]
         geno = self.data[["snp1", "_ori_sample_names_"]]
         geno = geno.rename(columns={"snp1": "geno"})
         geno = geno.drop_duplicates().set_index("_ori_sample_names_")
@@ -236,16 +268,17 @@ class TestStatsMixedLM(unittest.TestCase):
         # Permuting the genotypes
         geno = geno.iloc[np.random.permutation(geno.shape[0]), :]
 
+        # Adding the data to the object
+        self.dummy.set_phenotypes(pheno)
+
         # Preparing the matrices
-        y, X = self.mixedlm_ml.create_matrices(pheno)
+        y, X = self.mixedlm_ml.create_matrices(self.dummy)
 
         # Merging with genotypes
-        y, X, groups = self.mixedlm_ml.merge_matrices_genotypes(
-            y, X, geno, ori_samples=self.data[["_ori_sample_names_"]],
-        )
+        y, X = self.mixedlm_ml.merge_matrices_genotypes(y, X, geno)
 
         # Fitting
-        self.mixedlm_ml.fit(y, X, groups=self.data._ori_sample_names_)
+        self.mixedlm_ml.fit(y, X)
 
         # Checking the results (according to R lme4)
         self.assertAlmostEqual(
@@ -267,11 +300,15 @@ class TestStatsMixedLM(unittest.TestCase):
             -np.log10(2.732669904137452e-06),
             -np.log10(self.mixedlm_ml.results.p_value), places=5,
         )
+        self.assertAlmostEqual(
+            -np.log10(2.399623637577515e-05),
+            -np.log10(self.mixedlm_ml.results.ts_p_value),
+        )
 
     def test_mixedlm_snp1_inter_ml_full(self):
         """Tests mixedlm with first SNP (using ML, interaction, full)."""
         # Preparing the data
-        pheno = self.data[["pheno3", "age", "var1", "gender", "visit"]]
+        pheno = self.data.loc[:, ["pheno3", "age", "var1", "gender", "visit"]]
         geno = self.data[["snp1", "_ori_sample_names_"]]
         geno = geno.rename(columns={"snp1": "geno"})
         geno = geno.drop_duplicates().set_index("_ori_sample_names_")
@@ -279,16 +316,17 @@ class TestStatsMixedLM(unittest.TestCase):
         # Permuting the genotypes
         geno = geno.iloc[np.random.permutation(geno.shape[0]), :]
 
+        # Adding the data to the object
+        self.dummy.set_phenotypes(pheno)
+
         # Preparing the matrices
-        y, X = self.mixedlm_ml_inter.create_matrices(pheno)
+        y, X = self.mixedlm_ml_inter.create_matrices(self.dummy)
 
         # Merging with genotype
-        y, X, groups = self.mixedlm_ml_inter.merge_matrices_genotypes(
-            y, X, geno, ori_samples=self.data[["_ori_sample_names_"]],
-        )
+        y, X = self.mixedlm_ml_inter.merge_matrices_genotypes(y, X, geno)
 
         # Fitting
-        self.mixedlm_ml_inter.fit(y, X, groups=groups)
+        self.mixedlm_ml_inter.fit(y, X)
 
         # Checking the results (according to R lme4)
         self.assertAlmostEqual(
@@ -314,11 +352,12 @@ class TestStatsMixedLM(unittest.TestCase):
             -np.log10(3.298737010780739e-02),
             -np.log10(self.mixedlm_ml_inter.results.p_value), places=5,
         )
+        self.assertTrue(np.isnan(self.mixedlm_ml_inter.results.ts_p_value))
 
     def test_mixedlm_snp1_inter_category_ml_full(self):
         """Tests mixedlm with first SNP (ML, interaction, category, full)."""
         # Preparing the data
-        pheno = self.data[["pheno3", "age", "var1", "gender", "visit"]]
+        pheno = self.data.loc[:, ["pheno3", "age", "var1", "gender", "visit"]]
         geno = self.data[["snp1", "_ori_sample_names_"]]
         geno = geno.rename(columns={"snp1": "geno"})
         geno = geno.drop_duplicates().set_index("_ori_sample_names_")
@@ -326,16 +365,17 @@ class TestStatsMixedLM(unittest.TestCase):
         # Permuting the genotypes
         geno = geno.iloc[np.random.permutation(geno.shape[0]), :]
 
+        # Adding the data to the object
+        self.dummy.set_phenotypes(pheno)
+
         # Preparing the matrices
-        y, X = self.mixedlm_ml_inter_cat.create_matrices(pheno)
+        y, X = self.mixedlm_ml_inter_cat.create_matrices(self.dummy)
 
         # Merging with genotype
-        y, X, groups = self.mixedlm_ml_inter_cat.merge_matrices_genotypes(
-            y, X, geno, ori_samples=self.data[["_ori_sample_names_"]],
-        )
+        y, X = self.mixedlm_ml_inter_cat.merge_matrices_genotypes(y, X, geno)
 
         # Fitting
-        self.mixedlm_ml_inter_cat.fit(y, X, groups=groups)
+        self.mixedlm_ml_inter_cat.fit(y, X)
 
         # Checking the results (according to R lme4)
         self.assertAlmostEqual(
@@ -361,6 +401,7 @@ class TestStatsMixedLM(unittest.TestCase):
             6.186709566882038e-01, self.mixedlm_ml_inter_cat.results.p_value,
             places=6,
         )
+        self.assertTrue(np.isnan(self.mixedlm_ml_inter_cat.results.ts_p_value))
 
     def test_mixedlm_snp1_reml(self):
         """Tests mixedlm regression with the first SNP (using REML)."""
@@ -368,11 +409,14 @@ class TestStatsMixedLM(unittest.TestCase):
         data = self.data[["pheno3", "age", "var1", "gender", "snp1", "visit"]]
         data = data.rename(columns={"snp1": "geno"})
 
+        # Adding the data to the object
+        self.dummy.set_phenotypes(data)
+
         # Preparing the matrices
-        y, X = self.mixedlm.create_matrices(data, create_dummy=False)
+        y, X = self.mixedlm.create_matrices(self.dummy, create_dummy=False)
 
         # Fitting
-        self.mixedlm.fit(y, X, groups=self.data._ori_sample_names_)
+        self.mixedlm.fit(y, X)
 
         # Checking the results (according to R lme4)
         self.assertAlmostEqual(
@@ -394,6 +438,10 @@ class TestStatsMixedLM(unittest.TestCase):
             -np.log10(7.112654716978639e-06),
             -np.log10(self.mixedlm.results.p_value), places=4,
         )
+        self.assertAlmostEqual(
+            -np.log10(0.000023996236375808),
+            -np.log10(self.mixedlm.results.ts_p_value),
+        )
 
     def test_mixedlm_snp1_ml(self):
         """Tests mixedlm regression with the first SNP (using ML)."""
@@ -401,11 +449,14 @@ class TestStatsMixedLM(unittest.TestCase):
         data = self.data[["pheno3", "age", "var1", "gender", "snp1", "visit"]]
         data = data.rename(columns={"snp1": "geno"})
 
+        # Adding the data to the object
+        self.dummy.set_phenotypes(data)
+
         # Preparing the matrices
-        y, X = self.mixedlm_ml.create_matrices(data, create_dummy=False)
+        y, X = self.mixedlm_ml.create_matrices(self.dummy, create_dummy=False)
 
         # Fitting
-        self.mixedlm_ml.fit(y, X, groups=self.data._ori_sample_names_)
+        self.mixedlm_ml.fit(y, X)
 
         # Checking the results (according to R lme4)
         self.assertAlmostEqual(
@@ -427,6 +478,10 @@ class TestStatsMixedLM(unittest.TestCase):
             -np.log10(2.732669904137452e-06),
             -np.log10(self.mixedlm_ml.results.p_value), places=5,
         )
+        self.assertAlmostEqual(
+            -np.log10(2.399623637577515e-05),
+            -np.log10(self.mixedlm_ml.results.ts_p_value),
+        )
 
     def test_mixedlm_snp1_inter_reml(self):
         """Tests mixedlm regression with the first SNP (using REML, inter)."""
@@ -434,11 +489,16 @@ class TestStatsMixedLM(unittest.TestCase):
         data = self.data[["pheno3", "age", "var1", "gender", "snp1", "visit"]]
         data = data.rename(columns={"snp1": "geno"})
 
+        # Adding the data to the object
+        self.dummy.set_phenotypes(data)
+
         # Preparing the matrices
-        y, X = self.mixedlm_inter.create_matrices(data, create_dummy=False)
+        y, X = self.mixedlm_inter.create_matrices(
+            self.dummy, create_dummy=False,
+        )
 
         # Fitting
-        self.mixedlm_inter.fit(y, X, groups=self.data._ori_sample_names_)
+        self.mixedlm_inter.fit(y, X)
 
         # Checking the results (according to R lme4)
         self.assertAlmostEqual(
@@ -460,6 +520,7 @@ class TestStatsMixedLM(unittest.TestCase):
             -np.log10(4.309198170818540e-02),
             -np.log10(self.mixedlm_inter.results.p_value), places=5,
         )
+        self.assertTrue(np.isnan(self.mixedlm_inter.results.ts_p_value))
 
     def test_mixedlm_snp1_inter_ml(self):
         """Tests mixedlm regression with the first SNP (using ML, inter)."""
@@ -467,11 +528,16 @@ class TestStatsMixedLM(unittest.TestCase):
         data = self.data[["pheno3", "age", "var1", "gender", "snp1", "visit"]]
         data = data.rename(columns={"snp1": "geno"})
 
+        # Adding the data to the object
+        self.dummy.set_phenotypes(data)
+
         # Preparing the matrices
-        y, X = self.mixedlm_ml_inter.create_matrices(data, create_dummy=False)
+        y, X = self.mixedlm_ml_inter.create_matrices(
+            self.dummy, create_dummy=False,
+        )
 
         # Fitting
-        self.mixedlm_ml_inter.fit(y, X, groups=self.data._ori_sample_names_)
+        self.mixedlm_ml_inter.fit(y, X)
 
         # Checking the results (according to R lme4)
         self.assertAlmostEqual(
@@ -497,6 +563,7 @@ class TestStatsMixedLM(unittest.TestCase):
             -np.log10(3.298737010780739e-02),
             -np.log10(self.mixedlm_ml_inter.results.p_value), places=5,
         )
+        self.assertTrue(np.isnan(self.mixedlm_ml_inter.results.ts_p_value))
 
     def test_mixedlm_snp2_reml(self):
         """Tests mixedlm regression with the second SNP (using REML)."""
@@ -504,31 +571,25 @@ class TestStatsMixedLM(unittest.TestCase):
         data = self.data[["pheno3", "age", "var1", "gender", "snp2", "visit"]]
         data = data.rename(columns={"snp2": "geno"})
 
+        # Adding the data to the object
+        self.dummy.set_phenotypes(data)
+
         # Preparing the matrices
-        y, X = self.mixedlm.create_matrices(data, create_dummy=False)
+        y, X = self.mixedlm.create_matrices(self.dummy, create_dummy=False)
 
         # Fitting
-        self.mixedlm.fit(y, X, groups=self.data._ori_sample_names_)
+        self.mixedlm.fit(y, X)
 
         # Checking the results (according to R lme4)
+        self.assertTrue(np.isnan(self.mixedlm.results.coef))
+        self.assertTrue(np.isnan(self.mixedlm.results.std_err))
+        self.assertTrue(np.isnan(self.mixedlm.results.lower_ci))
+        self.assertTrue(np.isnan(self.mixedlm.results.upper_ci))
+        self.assertTrue(np.isnan(self.mixedlm.results.z_value))
+        self.assertTrue(np.isnan(self.mixedlm.results.p_value))
         self.assertAlmostEqual(
-            28.87619649886422479, self.mixedlm.results.coef,
-        )
-        self.assertAlmostEqual(
-            7.616420586507464, self.mixedlm.results.std_err, places=4,
-        )
-        self.assertAlmostEqual(
-            13.9482864582001636, self.mixedlm.results.lower_ci, places=4,
-        )
-        self.assertAlmostEqual(
-            43.8041065395282843, self.mixedlm.results.upper_ci, places=4,
-        )
-        self.assertAlmostEqual(
-            3.7913080259798924, self.mixedlm.results.z_value, places=4,
-        )
-        self.assertAlmostEqual(
-            -np.log10(1.498559584953707e-04),
-            -np.log10(self.mixedlm.results.p_value), places=4,
+            -np.log10(0.0003525413773446878),
+            -np.log10(self.mixedlm.results.ts_p_value),
         )
 
     def test_mixedlm_snp2_ml(self):
@@ -537,31 +598,25 @@ class TestStatsMixedLM(unittest.TestCase):
         data = self.data[["pheno3", "age", "var1", "gender", "snp2", "visit"]]
         data = data.rename(columns={"snp2": "geno"})
 
+        # Adding the data to the object
+        self.dummy.set_phenotypes(data)
+
         # Preparing the matrices
-        y, X = self.mixedlm_ml.create_matrices(data, create_dummy=False)
+        y, X = self.mixedlm_ml.create_matrices(self.dummy, create_dummy=False)
 
         # Fitting
-        self.mixedlm_ml.fit(y, X, groups=self.data._ori_sample_names_)
+        self.mixedlm_ml.fit(y, X)
 
         # Checking the results (according to R lme4)
+        self.assertTrue(np.isnan(self.mixedlm_ml.results.coef))
+        self.assertTrue(np.isnan(self.mixedlm_ml.results.std_err))
+        self.assertTrue(np.isnan(self.mixedlm_ml.results.lower_ci))
+        self.assertTrue(np.isnan(self.mixedlm_ml.results.upper_ci))
+        self.assertTrue(np.isnan(self.mixedlm_ml.results.z_value))
+        self.assertTrue(np.isnan(self.mixedlm_ml.results.p_value))
         self.assertAlmostEqual(
-            28.87619649885465023, self.mixedlm_ml.results.coef,
-        )
-        self.assertAlmostEqual(
-            7.2921675410708389, self.mixedlm_ml.results.std_err, places=4,
-        )
-        self.assertAlmostEqual(
-            14.5838107491238045, self.mixedlm_ml.results.lower_ci, places=4,
-        )
-        self.assertAlmostEqual(
-            43.1685822485854942, self.mixedlm_ml.results.upper_ci, places=4,
-        )
-        self.assertAlmostEqual(
-            3.9598920809510423, self.mixedlm_ml.results.z_value, places=5,
-        )
-        self.assertAlmostEqual(
-            -np.log10(7.498364115088307e-05),
-            -np.log10(self.mixedlm_ml.results.p_value), places=4,
+            -np.log10(0.000352541377346777),
+            -np.log10(self.mixedlm_ml.results.ts_p_value),
         )
 
     def test_mixedlm_snp2_inter_reml(self):
@@ -570,11 +625,16 @@ class TestStatsMixedLM(unittest.TestCase):
         data = self.data[["pheno3", "age", "var1", "gender", "snp2", "visit"]]
         data = data.rename(columns={"snp2": "geno"})
 
+        # Adding the data to the object
+        self.dummy.set_phenotypes(data)
+
         # Preparing the matrices
-        y, X = self.mixedlm_inter.create_matrices(data, create_dummy=False)
+        y, X = self.mixedlm_inter.create_matrices(
+            self.dummy, create_dummy=False,
+        )
 
         # Fitting
-        self.mixedlm_inter.fit(y, X, groups=self.data._ori_sample_names_)
+        self.mixedlm_inter.fit(y, X)
 
         # Checking the results (according to R lme4)
         self.assertAlmostEqual(
@@ -596,6 +656,7 @@ class TestStatsMixedLM(unittest.TestCase):
             1.341594483012889e-01, self.mixedlm_inter.results.p_value,
             places=5,
         )
+        self.assertTrue(np.isnan(self.mixedlm_inter.results.ts_p_value))
 
     def test_mixedlm_snp2_inter_ml(self):
         """Tests mixedlm regression with the second SNP (using ML, inter)."""
@@ -603,11 +664,16 @@ class TestStatsMixedLM(unittest.TestCase):
         data = self.data[["pheno3", "age", "var1", "gender", "snp2", "visit"]]
         data = data.rename(columns={"snp2": "geno"})
 
+        # Adding the data to the object
+        self.dummy.set_phenotypes(data)
+
         # Preparing the matrices
-        y, X = self.mixedlm_ml_inter.create_matrices(data, create_dummy=False)
+        y, X = self.mixedlm_ml_inter.create_matrices(
+            self.dummy, create_dummy=False,
+        )
 
         # Fitting
-        self.mixedlm_ml_inter.fit(y, X, groups=self.data._ori_sample_names_)
+        self.mixedlm_ml_inter.fit(y, X)
 
         # Checking the results (according to R lme4)
         self.assertAlmostEqual(
@@ -633,6 +699,7 @@ class TestStatsMixedLM(unittest.TestCase):
             1.143534452552892e-01, self.mixedlm_ml_inter.results.p_value,
             places=6,
         )
+        self.assertTrue(np.isnan(self.mixedlm_ml_inter.results.ts_p_value))
 
     def test_mixedlm_snp3_reml(self):
         """Tests mixedlm regression with the third SNP (using REML)."""
@@ -640,31 +707,24 @@ class TestStatsMixedLM(unittest.TestCase):
         data = self.data[["pheno3", "age", "var1", "gender", "snp3", "visit"]]
         data = data.rename(columns={"snp3": "geno"})
 
+        # Adding the data to the object
+        self.dummy.set_phenotypes(data)
+
         # Preparing the matrices
-        y, X = self.mixedlm.create_matrices(data, create_dummy=False)
+        y, X = self.mixedlm.create_matrices(self.dummy, create_dummy=False)
 
         # Fitting
-        self.mixedlm.fit(y, X, groups=self.data._ori_sample_names_)
+        self.mixedlm.fit(y, X)
 
         # Checking the results (according to R lme4)
+        self.assertTrue(np.isnan(self.mixedlm.results.coef))
+        self.assertTrue(np.isnan(self.mixedlm.results.std_err))
+        self.assertTrue(np.isnan(self.mixedlm.results.lower_ci))
+        self.assertTrue(np.isnan(self.mixedlm.results.upper_ci))
+        self.assertTrue(np.isnan(self.mixedlm.results.z_value))
         self.assertAlmostEqual(
-            21.61350866000438486, self.mixedlm.results.coef,
-        )
-        self.assertAlmostEqual(
-            6.4018199962254876, self.mixedlm.results.std_err, places=4,
-        )
-        self.assertAlmostEqual(
-            9.0661720318940873, self.mixedlm.results.lower_ci, places=4,
-        )
-        self.assertAlmostEqual(
-            34.160845288114686, self.mixedlm.results.upper_ci, places=4,
-        )
-        self.assertAlmostEqual(
-            3.37615063727935283, self.mixedlm.results.z_value, places=4,
-        )
-        self.assertAlmostEqual(
-            -np.log10(7.350766113720653e-04),
-            -np.log10(self.mixedlm.results.p_value), places=4,
+            -np.log10(0.001256884400795483),
+            -np.log10(self.mixedlm.results.ts_p_value),
         )
 
     def test_mixedlm_snp3_ml(self):
@@ -673,31 +733,25 @@ class TestStatsMixedLM(unittest.TestCase):
         data = self.data[["pheno3", "age", "var1", "gender", "snp3", "visit"]]
         data = data.rename(columns={"snp3": "geno"})
 
+        # Adding the data to the object
+        self.dummy.set_phenotypes(data)
+
         # Preparing the matrices
-        y, X = self.mixedlm_ml.create_matrices(data, create_dummy=False)
+        y, X = self.mixedlm_ml.create_matrices(self.dummy, create_dummy=False)
 
         # Fitting
-        self.mixedlm_ml.fit(y, X, groups=self.data._ori_sample_names_)
+        self.mixedlm_ml.fit(y, X)
 
         # Checking the results (according to R lme4)
+        self.assertTrue(np.isnan(self.mixedlm_ml.results.coef))
+        self.assertTrue(np.isnan(self.mixedlm_ml.results.std_err))
+        self.assertTrue(np.isnan(self.mixedlm_ml.results.lower_ci))
+        self.assertTrue(np.isnan(self.mixedlm_ml.results.upper_ci))
+        self.assertTrue(np.isnan(self.mixedlm_ml.results.z_value))
+        self.assertTrue(np.isnan(self.mixedlm_ml.results.p_value))
         self.assertAlmostEqual(
-            21.61350866001425786, self.mixedlm_ml.results.coef,
-        )
-        self.assertAlmostEqual(
-            6.1292761423280124, self.mixedlm_ml.results.std_err, places=4,
-        )
-        self.assertAlmostEqual(
-            9.6003481697507578, self.mixedlm_ml.results.lower_ci, places=4,
-        )
-        self.assertAlmostEqual(
-            33.6266691502777562, self.mixedlm_ml.results.upper_ci, places=4,
-        )
-        self.assertAlmostEqual(
-            3.52627425459820243, self.mixedlm_ml.results.z_value, places=5,
-        )
-        self.assertAlmostEqual(
-            -np.log10(4.214502895376615e-04),
-            -np.log10(self.mixedlm_ml.results.p_value), places=4,
+            -np.log10(0.001256884400782397),
+            -np.log10(self.mixedlm_ml.results.ts_p_value),
         )
 
     def test_mixedlm_snp3_inter_reml(self):
@@ -706,11 +760,16 @@ class TestStatsMixedLM(unittest.TestCase):
         data = self.data[["pheno3", "age", "var1", "gender", "snp3", "visit"]]
         data = data.rename(columns={"snp3": "geno"})
 
+        # Adding the data to the object
+        self.dummy.set_phenotypes(data)
+
         # Preparing the matrices
-        y, X = self.mixedlm_inter.create_matrices(data, create_dummy=False)
+        y, X = self.mixedlm_inter.create_matrices(
+            self.dummy, create_dummy=False,
+        )
 
         # Fitting
-        self.mixedlm_inter.fit(y, X, groups=self.data._ori_sample_names_)
+        self.mixedlm_inter.fit(y, X)
 
         # Checking the results (according to R lme4)
         self.assertAlmostEqual(
@@ -732,6 +791,7 @@ class TestStatsMixedLM(unittest.TestCase):
             -np.log10(4.085925566922222e-02),
             -np.log10(self.mixedlm_inter.results.p_value), places=4,
         )
+        self.assertTrue(np.isnan(self.mixedlm_inter.results.ts_p_value))
 
     def test_mixedlm_snp3_inter_ml(self):
         """Tests mixedlm regression with the third SNP (using ML, inter)."""
@@ -739,11 +799,16 @@ class TestStatsMixedLM(unittest.TestCase):
         data = self.data[["pheno3", "age", "var1", "gender", "snp3", "visit"]]
         data = data.rename(columns={"snp3": "geno"})
 
+        # Adding the data to the object
+        self.dummy.set_phenotypes(data)
+
         # Preparing the matrices
-        y, X = self.mixedlm_ml_inter.create_matrices(data, create_dummy=False)
+        y, X = self.mixedlm_ml_inter.create_matrices(
+            self.dummy, create_dummy=False,
+        )
 
         # Fitting
-        self.mixedlm_ml_inter.fit(y, X, groups=self.data._ori_sample_names_)
+        self.mixedlm_ml_inter.fit(y, X)
 
         # Checking the results (according to R lme4)
         self.assertAlmostEqual(
@@ -769,6 +834,7 @@ class TestStatsMixedLM(unittest.TestCase):
             -np.log10(3.111707895646454e-02),
             -np.log10(self.mixedlm_ml_inter.results.p_value), places=5,
         )
+        self.assertTrue(np.isnan(self.mixedlm_ml_inter.results.ts_p_value))
 
     def test_mixedlm_snp4_reml(self):
         """Tests mixedlm regression with the fourth SNP (using REML)."""
@@ -776,30 +842,24 @@ class TestStatsMixedLM(unittest.TestCase):
         data = self.data[["pheno3", "age", "var1", "gender", "snp4", "visit"]]
         data = data.rename(columns={"snp4": "geno"})
 
+        # Adding the data to the object
+        self.dummy.set_phenotypes(data)
+
         # Preparing the matrices
-        y, X = self.mixedlm.create_matrices(data, create_dummy=False)
+        y, X = self.mixedlm.create_matrices(self.dummy, create_dummy=False)
 
         # Fitting
-        self.mixedlm.fit(y, X, groups=self.data._ori_sample_names_)
+        self.mixedlm.fit(y, X)
 
         # Checking the results (according to R lme4)
+        self.assertTrue(np.isnan(self.mixedlm.results.coef))
+        self.assertTrue(np.isnan(self.mixedlm.results.std_err))
+        self.assertTrue(np.isnan(self.mixedlm.results.lower_ci))
+        self.assertTrue(np.isnan(self.mixedlm.results.upper_ci))
+        self.assertTrue(np.isnan(self.mixedlm.results.z_value))
+        self.assertTrue(np.isnan(self.mixedlm.results.p_value))
         self.assertAlmostEqual(
-            1.4891822461435404, self.mixedlm.results.coef,
-        )
-        self.assertAlmostEqual(
-            7.9840787818167422, self.mixedlm.results.std_err, places=3,
-        )
-        self.assertAlmostEqual(
-            -14.1593246159476980, self.mixedlm.results.lower_ci, places=3,
-        )
-        self.assertAlmostEqual(
-            17.1376891082347775, self.mixedlm.results.upper_ci, places=3,
-        )
-        self.assertAlmostEqual(
-            0.1865189819437983, self.mixedlm.results.z_value, places=5,
-        )
-        self.assertAlmostEqual(
-            8.520377946017625e-01, self.mixedlm.results.p_value, places=5,
+            0.8488372306662677, self.mixedlm.results.ts_p_value,
         )
 
     def test_mixedlm_snp4_ml(self):
@@ -808,30 +868,24 @@ class TestStatsMixedLM(unittest.TestCase):
         data = self.data[["pheno3", "age", "var1", "gender", "snp4", "visit"]]
         data = data.rename(columns={"snp4": "geno"})
 
+        # Adding the data to the object
+        self.dummy.set_phenotypes(data)
+
         # Preparing the matrices
-        y, X = self.mixedlm_ml.create_matrices(data, create_dummy=False)
+        y, X = self.mixedlm_ml.create_matrices(self.dummy, create_dummy=False)
 
         # Fitting
-        self.mixedlm_ml.fit(y, X, groups=self.data._ori_sample_names_)
+        self.mixedlm_ml.fit(y, X)
 
         # Checking the results (according to R lme4)
+        self.assertTrue(np.isnan(self.mixedlm_ml.results.coef))
+        self.assertTrue(np.isnan(self.mixedlm_ml.results.std_err))
+        self.assertTrue(np.isnan(self.mixedlm_ml.results.lower_ci))
+        self.assertTrue(np.isnan(self.mixedlm_ml.results.upper_ci))
+        self.assertTrue(np.isnan(self.mixedlm_ml.results.z_value))
+        self.assertTrue(np.isnan(self.mixedlm_ml.results.p_value))
         self.assertAlmostEqual(
-            1.489182246136439, self.mixedlm_ml.results.coef,
-        )
-        self.assertAlmostEqual(
-            7.644172965779382, self.mixedlm_ml.results.std_err, places=4,
-        )
-        self.assertAlmostEqual(
-            -13.4931214583858772, self.mixedlm_ml.results.lower_ci, places=3,
-        )
-        self.assertAlmostEqual(
-            16.4714859506587565, self.mixedlm_ml.results.upper_ci, places=3,
-        )
-        self.assertAlmostEqual(
-            0.1948127355049462, self.mixedlm_ml.results.z_value, places=5,
-        )
-        self.assertAlmostEqual(
-            8.455395518199895e-01, self.mixedlm_ml.results.p_value, places=5,
+            0.8488372306664566, self.mixedlm_ml.results.ts_p_value,
         )
 
     def test_mixedlm_snp4_inter_reml(self):
@@ -840,11 +894,16 @@ class TestStatsMixedLM(unittest.TestCase):
         data = self.data[["pheno3", "age", "var1", "gender", "snp4", "visit"]]
         data = data.rename(columns={"snp4": "geno"})
 
+        # Adding the data to the object
+        self.dummy.set_phenotypes(data)
+
         # Preparing the matrices
-        y, X = self.mixedlm_inter.create_matrices(data, create_dummy=False)
+        y, X = self.mixedlm_inter.create_matrices(
+            self.dummy, create_dummy=False,
+        )
 
         # Fitting
-        self.mixedlm_inter.fit(y, X, groups=self.data._ori_sample_names_)
+        self.mixedlm_inter.fit(y, X)
 
         # Checking the results (according to R lme4)
         self.assertAlmostEqual(
@@ -866,6 +925,7 @@ class TestStatsMixedLM(unittest.TestCase):
             9.370134970059800e-01, self.mixedlm_inter.results.p_value,
             places=5,
         )
+        self.assertTrue(np.isnan(self.mixedlm_inter.results.ts_p_value))
 
     def test_mixedlm_snp4_inter_ml(self):
         """Tests mixedlm regression with the fourth SNP (using ML, inter)."""
@@ -873,11 +933,16 @@ class TestStatsMixedLM(unittest.TestCase):
         data = self.data[["pheno3", "age", "var1", "gender", "snp4", "visit"]]
         data = data.rename(columns={"snp4": "geno"})
 
+        # Adding the data to the object
+        self.dummy.set_phenotypes(data)
+
         # Preparing the matrices
-        y, X = self.mixedlm_ml_inter.create_matrices(data, create_dummy=False)
+        y, X = self.mixedlm_ml_inter.create_matrices(
+            self.dummy, create_dummy=False,
+        )
 
         # Fitting
-        self.mixedlm_ml_inter.fit(y, X, groups=self.data._ori_sample_names_)
+        self.mixedlm_ml_inter.fit(y, X)
 
         # Checking the results (according to R lme4)
         self.assertAlmostEqual(
@@ -903,6 +968,7 @@ class TestStatsMixedLM(unittest.TestCase):
             9.336140806606035e-01, self.mixedlm_ml_inter.results.p_value,
             places=6,
         )
+        self.assertTrue(np.isnan(self.mixedlm_ml_inter.results.ts_p_value))
 
     def test_mixedlm_monomorphic(self):
         """Tests mixedlm regression on monomorphic SNP."""
@@ -911,12 +977,15 @@ class TestStatsMixedLM(unittest.TestCase):
         data = data.rename(columns={"snp4": "geno"})
         data.geno = 0
 
+        # Adding the data to the object
+        self.dummy.set_phenotypes(data)
+
         # Preparing the matrices
-        y, X = self.mixedlm.create_matrices(data, create_dummy=False)
+        y, X = self.mixedlm.create_matrices(self.dummy, create_dummy=False)
 
         # Fitting
         with self.assertRaises(StatsError):
-            self.mixedlm.fit(y, X, groups=self.data._ori_sample_names_)
+            self.mixedlm.fit(y, X)
 
         # Checking the results
         self.assertTrue(np.isnan(self.mixedlm.results.coef))
@@ -925,6 +994,7 @@ class TestStatsMixedLM(unittest.TestCase):
         self.assertTrue(np.isnan(self.mixedlm.results.upper_ci))
         self.assertTrue(np.isnan(self.mixedlm.results.z_value))
         self.assertTrue(np.isnan(self.mixedlm.results.p_value))
+        self.assertTrue(np.isnan(self.mixedlm.results.ts_p_value))
 
     def test_merge_matrices_genotypes(self):
         """Tests the 'merge_matrices_genotypes' function for MixedLM."""
@@ -976,12 +1046,14 @@ class TestStatsMixedLM(unittest.TestCase):
             columns=["sample_id", "_ori_sample_names_"],
         ).set_index("sample_id")
 
+        # Setting the original sample names
+        samples = samples.iloc[np.random.permutation(len(samples))]
+        self.mixedlm._ori_samples = samples
+
         # Getting the observed data
-        new_y, new_X, groups = self.mixedlm.merge_matrices_genotypes(
-            y=y,
-            X=X,
+        new_y, new_X = self.mixedlm.merge_matrices_genotypes(
+            y=y, X=X,
             genotypes=genotypes.iloc[np.random.permutation(len(genotypes))],
-            ori_samples=samples.iloc[np.random.permutation(len(samples))],
         )
 
         # The expected data
@@ -1029,5 +1101,5 @@ class TestStatsMixedLM(unittest.TestCase):
         self.assertTrue(expected_X.equals(new_X.sortlevel()))
         self.assertTrue(np.array_equal(
             np.array([s[:2] for s in new_X.index.values]),
-            groups,
+            self.mixedlm._groups,
         ))

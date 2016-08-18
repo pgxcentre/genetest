@@ -55,8 +55,9 @@ class StatsMixedLM(StatsModels):
             upper_ci="Upper 95% confidence interval",
             z_value="z-statistics",
             p_value="p-value",
+            ts_p_value="Two-step p-value",
             print_order=["coef", "std_err", "lower_ci", "upper_ci", "z_value",
-                         "p_value"]
+                         "p_value", "ts_p_value"]
         )
 
         # The original samples and the grouping
@@ -102,10 +103,10 @@ class StatsMixedLM(StatsModels):
             fitted = sm.OLS(t_y, t_X).fit()
 
             # We keep only the p value
-            self.results.p_value = fitted.pvalues["geno"]
+            self.results.ts_p_value = fitted.pvalues["geno"]
 
             # Should we perform the standard LMM?
-            if self.results.p_value >= self._p_threshold:
+            if self.results.ts_p_value >= self._p_threshold:
                 return
 
         # Creating the OLS model from StatsModels and fitting it
@@ -147,6 +148,23 @@ class StatsMixedLM(StatsModels):
         # First, we get the matrix
         y, X = super().create_matrices(data=data, create_dummy=create_dummy)
 
+        # if create_dummy is False, it means the genotypes are in the dataframe
+        if not create_dummy:
+            # Creating the genotypes array
+            self._original_genotypes = pd.merge(
+                X.loc[:, ["geno"]], self._ori_samples, left_index=True,
+                right_index=True,
+            ).drop_duplicates(subset="_ori_sample_names_").set_index(
+                "_ori_sample_names_",
+            )
+
+        # We merge the y and X matrices
+        full_data = pd.merge(data.get_phenotypes().dropna(), self._ori_samples,
+                             left_index=True, right_index=True)
+
+        # We get the original samples
+        self._groups = full_data._ori_sample_names_
+
         # TODO: Check if this is true
         # If we have interaction, the optimization doesn't old
         if self._inter is not None:
@@ -160,13 +178,6 @@ class StatsMixedLM(StatsModels):
         formula = re.sub(r"geno( \+ )?", "", self.get_model_description())
         if formula.endswith(" + "):
             formula = formula[:-3]
-
-        # We merge the y and X matrices
-        full_data = pd.merge(data.get_phenotypes().dropna(), self._ori_samples,
-                             left_index=True, right_index=True)
-
-        # We get the original samples
-        self._groups = full_data._ori_sample_names_
 
         # Fitting the model
         model = sm.MixedLM.from_formula(formula, full_data,
