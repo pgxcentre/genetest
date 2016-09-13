@@ -16,6 +16,8 @@ import pandas as pd
 from types import SimpleNamespace
 from collections import namedtuple
 
+from ..statistics.descriptive import get_freq
+
 
 __copyright__ = "Copyright 2016, Beaulieu-Saucier Pharmacogenomics Centre"
 __license__ = "Attribution-NonCommercial 4.0 International (CC BY-NC 4.0)"
@@ -141,10 +143,9 @@ class GenotypesContainer(object):
             tuple: The genotypes, the minor and major alleles.
 
         """
-        # Checking we have 0 -> homo major and 2 -> homo minor
-        geno_sum = genotypes.geno.sum(skipna=True)
-        nb_geno = genotypes.shape[0] - np.sum(genotypes.geno.isnull())
-        if geno_sum / (nb_geno * 2) > 0.5:
+        # Computing the frequency
+        freq = get_freq(genotypes.geno)
+        if freq > 0.5:
             genotypes.geno = 2 - genotypes.geno
             minor, major = major, minor
 
