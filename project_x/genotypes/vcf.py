@@ -218,7 +218,7 @@ class VCFGenotypes(GenotypesContainer):
             int: The number of samples.
 
         """
-        return self.samples.shape[0] 
+        return self.samples.shape[0]
 
     def get_nb_markers(self):
         """Returns the number of markers.
