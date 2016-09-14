@@ -27,14 +27,14 @@ def get_freq(genotypes):
 
     Note
     ====
-        The frequency is computed using the alternative allele (i.e. the '2'
-        genotype). If there are more '2' genotypes than '0' genotypes, the
+        The frequency is computed using the alternative allele (i.e. the ``2``
+        genotype). If there are more ``2`` genotypes than ``0`` genotypes, the
         alternative allele frequency will be higher than 0.5.
 
     Note
     ====
         When computing the alternative allele frequency, the missing genotypes
-        are excluded. If there are no genotypes, NaN is returned.
+        are excluded. If there are no genotypes, ``NaN`` is returned.
 
     """
     # The sum of all genotypes (excluding missing ones)

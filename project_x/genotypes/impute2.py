@@ -109,9 +109,9 @@ class Impute2Genotypes(GenotypesContainer):
             marker (str): A marker ID (e.g. rs123456).
 
         Returns:
-            Genotypes: A named tuple containing the dataframe with the encoded
-                       genotypes for all samples (the index of the dataframe
-                       will be the sample IDs), the minor and major alleles.
+            MarkerGenotypes: A named tuple containing the dataframe with the
+            encoded genotypes for all samples (the index of the dataframe will
+            be the sample IDs), the minor and major alleles.
 
         """
         if self._impute2_index is None:
@@ -130,9 +130,9 @@ class Impute2Genotypes(GenotypesContainer):
         """Returns a dataframe of genotypes encoded using the provided model.
 
         Returns:
-            Genotypes: A named tuple containing the dataframe with the encoded
-                       genotypes for all samples (the index of the dataframe
-                       will be the sample IDs), the minor and major alleles.
+            MarkerGenotypes: A named tuple containing the dataframe with the
+            encoded genotypes for all samples (the index of the dataframe will
+            be the sample IDs), the minor and major alleles.
 
         """
 
@@ -149,8 +149,8 @@ class Impute2Genotypes(GenotypesContainer):
 
         Returns:
             Genotypes: A named tuple containing the dataframe with the encoded
-                       genotypes for all samples (the index of the dataframe
-                       will be the sample IDs), the minor and major alleles.
+            genotypes for all samples (the index of the dataframe will be the
+            sample IDs), the minor and major alleles.
 
         """
         # Reading the probabilities
@@ -214,7 +214,7 @@ class Impute2Genotypes(GenotypesContainer):
 
         Returns:
             _Impute2Line: A named tuple containing information about the
-                          variation (including the probability matmrix).
+            variation (including the probability matmrix).
         """
         # Splitting
         row = line.rstrip("\r\n").split(" ")
@@ -282,7 +282,7 @@ def _seek_generator(f):
     """Yields seek position for each line.
 
     Args:
-        f (file): the file object
+        f (file): the file object.
 
     """
     yield 0
@@ -294,13 +294,13 @@ def generate_index(fn, cols=None, names=None, sep=" "):
     """Build a index for the given file.
 
     Args:
-        fn (str): the name of the file
-        cols (list): a list containing column to keep (as int)
-        names (list): the name corresponding to the column to keep (as str)
-        sep (str): the field separator
+        fn (str): the name of the file.
+        cols (list): a list containing column to keep (as int).
+        names (list): the name corresponding to the column to keep (as str).
+        sep (str): the field separator.
 
     Returns:
-        pandas.DataFrame: the index
+        pandas.DataFrame: the index.
 
     """
     # Some assertions
@@ -330,12 +330,12 @@ def get_open_func(fn, return_fmt=False):
     """Get the opening function.
 
     Args:
-        fn (str): the name of the file
-        return_fmt (bool): if the file format needs to be returned
+        fn (str): the name of the file.
+        return_fmt (bool): if the file format needs to be returned.
 
     Returns:
         tuple: either a tuple containing two elements: a boolean telling if the
-               format is bgzip, and the opening function.
+        format is bgzip, and the opening function.
 
     """
     # The file might be compressed using bgzip
@@ -371,13 +371,13 @@ def get_index(fn, cols, names, sep):
     """Restores the index for a given file.
 
     Args:
-        fn (str): the name of the file
-        cols (list): a list containing column to keep (as int)
-        names (list): the name corresponding to the column to keep (as str)
-        sep (str): the field separator
+        fn (str): the name of the file.
+        cols (list): a list containing column to keep (as int).
+        names (list): the name corresponding to the column to keep (as str).
+        sep (str): the field separator.
 
     Returns:
-        pandas.DataFrame: the index
+        pandas.DataFrame: the index.
 
     If the index doesn't exist for the file, it is first created.
 
@@ -403,8 +403,8 @@ def write_index(fn, index):
     """Writes the index to file.
 
     Args:
-        fn (str): the name of the file that will contain the index
-        index (pandas.DataFrame): the index
+        fn (str): the name of the file that will contain the index.
+        index (pandas.DataFrame): the index.
 
     """
     with open(fn, "wb") as o_file:
@@ -419,10 +419,10 @@ def read_index(fn):
     """Reads index from file.
 
     Args:
-        fn (str): the name of the file containing the index
+        fn (str): the name of the file containing the index.
 
     Returns:
-        pandas.DataFrame: the index of the file
+        pandas.DataFrame: the index of the file.
 
     Before reading the index, we check the first couple of bytes to see if it
     is a valid index file.
@@ -444,10 +444,10 @@ def get_index_fn(fn):
     """Generates the index filename from the path to the indexed file.
 
     Args:
-        fn (str): the name of the file for which we want an index
+        fn (str): the name of the file for which we want an index.
 
     Returns:
-        str: the name of the file containing the index
+        str: the name of the file containing the index.
 
     """
     return os.path.abspath("{}.idx".format(fn))
@@ -457,10 +457,10 @@ def has_index(fn):
     """Checks if the index exists, if not, create it.
 
     Args:
-        fn (str): the name of the file for which we want the index
+        fn (str): the name of the file for which we want the index.
 
     Returns:
-        bool: ``True`` if the file contains an index, ``False`` otherwise
+        bool: ``True`` if the file contains an index, ``False`` otherwise.
 
     """
     return os.path.isfile(get_index_fn(fn))

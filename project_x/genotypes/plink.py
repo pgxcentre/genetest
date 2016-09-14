@@ -74,9 +74,9 @@ class PlinkGenotypes(GenotypesContainer):
             marker (str): A marker ID (e.g. rs123456).
 
         Returns:
-            Genotypes: A named tuple containing the dataframe with the encoded
-                       genotypes for all samples (the index of the dataframe
-                       will be the sample IDs), the minor and major alleles.
+            MarkerGenotypes: A named tuple containing the dataframe with the
+            encoded genotypes for all samples (the index of the dataframe will
+            be the sample IDs), the minor and major alleles.
 
         Note
         ====
@@ -99,9 +99,9 @@ class PlinkGenotypes(GenotypesContainer):
         """Returns a dataframe of genotypes encoded using the provided model.
 
         Returns:
-            Genotypes: A named tuple containing the dataframe with the encoded
-                       genotypes for all samples (the index of the dataframe
-                       will be the sample IDs), the minor and major alleles.
+            MarkerGenotypes: A named tuple containing the dataframe with the
+            encoded genotypes for all samples (the index of the dataframe will
+            be the sample IDs), the minor and major alleles.
 
         Note
         ====

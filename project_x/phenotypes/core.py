@@ -42,8 +42,8 @@ class PhenotypesContainer(object):
         """Returns the optional arguments.
 
         Returns:
-            dict: The optional arguments (with default values) of the
-                  phenotype container.
+            dict: The optional arguments (with default values) of the phenotype
+            container.
 
         """
         return cls._optional_args
@@ -63,7 +63,7 @@ class PhenotypesContainer(object):
 
         Returns:
             pandas.DataFrame: A dataframe containing the phenotypes (with the
-                              sample IDs as index).
+            sample IDs as index).
 
         """
         raise NotImplementedError()
@@ -90,8 +90,8 @@ class PhenotypesContainer(object):
         """Check if the phenotypes contain repeated measurements.
 
         Returns:
-            bool: True if the data contains repeated measurements, False
-                  otherwise.
+            bool: ``True`` if the data contains repeated measurements,
+            ``False`` otherwise.
 
         """
         raise NotImplementedError()

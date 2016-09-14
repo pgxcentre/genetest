@@ -66,8 +66,8 @@ class StatsModels(object):
         """Returns the optional arguments.
 
         Returns:
-            dict: The optional arguments (with default values) of the
-                  genotype container.
+            dict: The optional arguments (with default values) of the genotype
+            container.
 
         """
         return cls._optional_args

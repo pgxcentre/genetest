@@ -112,7 +112,7 @@ class TextPhenotypes(PhenotypesContainer):
 
         Returns:
             pandas.DataFrame: A dataframe containing the phenotypes (with the
-                              sample IDs as index).
+            sample IDs as index).
 
         """
         return self._phenotypes
@@ -154,8 +154,8 @@ class TextPhenotypes(PhenotypesContainer):
         """Check if the phenotypes contain repeated measurements.
 
         Returns:
-            bool: True if the data contains repeated measurements, False
-                  otherwise.
+            bool: ``True`` if the data contains repeated measurements,
+            ``False`` otherwise.
 
         """
         return self._repeated

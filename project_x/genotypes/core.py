@@ -66,8 +66,8 @@ class GenotypesContainer(object):
         """Returns the optional arguments.
 
         Returns:
-            dict: The optional arguments (with default values) of the
-                  genotype container.
+            dict: The optional arguments (with default values) of the genotype
+            container.
 
         """
         return cls._optional_args
@@ -91,9 +91,9 @@ class GenotypesContainer(object):
                                   genotypes.core.REPRESENTATION.ADDITIVE).
 
         Returns:
-            Genotypes: A named tuple containing the dataframe with the encoded
-                       genotypes for all samples (the index of the dataframe
-                       will be the sample IDs), the minor and major alleles.
+            MarkerGenotypes: A named tuple containing the dataframe with the
+            encoded genotypes for all samples (the index of the dataframe will
+            be the sample IDs), the minor and major alleles.
 
         """
         raise NotImplementedError()
@@ -106,9 +106,9 @@ class GenotypesContainer(object):
                                   genotypes.core.REPRESENTATION.ADDITIVE).
 
         Returns:
-            Genotypes: A named tuple containing the dataframe with the encoded
-                       genotypes for all samples (the index of the dataframe
-                       will be the sample IDs), the minor and major alleles.
+            MarkerGenotypes: A named tuple containing the dataframe with the
+            encoded genotypes for all samples (the index of the dataframe will
+            be the sample IDs), the minor and major alleles.
 
         """
         raise NotImplementedError()
@@ -122,7 +122,7 @@ class GenotypesContainer(object):
             samples (list): The sample (in the required order).
 
         Returns:
-            pandas.DataFrame: The genotypes
+            pandas.DataFrame: The genotypes.
 
         """
         genotypes = pd.DataFrame({"geno": genotypes}, index=samples)
@@ -175,8 +175,7 @@ class GenotypesContainer(object):
 
         Returns:
             pandas.DataFrame: The dataframe containing the genotypic
-                              representation (with 'geno_ab' and 'geno_bb'
-                              column).
+            representation (with 'geno_ab' and 'geno_bb' column).
 
         """
         genotypes["geno_ab"] = [1 if g == 1 else 0 for g in genotypes.geno]
@@ -194,7 +193,7 @@ class GenotypesContainer(object):
 
         Returns:
             pandas.DataFrame: The dataframe containing the additive
-                              representation of the genotypes.
+            representation of the genotypes.
 
         """
         genotypes["geno"] = genotypes.geno.round(0)
