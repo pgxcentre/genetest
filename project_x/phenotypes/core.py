@@ -95,3 +95,12 @@ class PhenotypesContainer(object):
 
         """
         raise NotImplementedError()
+
+    def keep_samples(self, keep):
+        """Keeps only a subset of samples.
+
+        Args:
+            keep (list): The list of samples to keep.
+
+        """
+        raise NotImplementedError()

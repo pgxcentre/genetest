@@ -159,3 +159,12 @@ class TextPhenotypes(PhenotypesContainer):
 
         """
         return self._repeated
+
+    def keep_samples(self, keep):
+        """Keeps only a subset of samples.
+
+        Args:
+            keep (set): The list of samples to keep.
+
+        """
+        self._phenotypes = self._phenotypes[self._phenotypes.index.isin(keep)]
