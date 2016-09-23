@@ -23,7 +23,8 @@ __copyright__ = "Copyright 2016, Beaulieu-Saucier Pharmacogenomics Centre"
 __license__ = "Attribution-NonCommercial 4.0 International (CC BY-NC 4.0)"
 
 
-__all__ = ["GenotypesContainer", "Representation", "MarkerGenotypes"]
+__all__ = ["GenotypesContainer", "Representation", "MarkerGenotypes",
+           "genotype_reader"]
 
 
 # Genotype representation
@@ -39,6 +40,29 @@ MarkerGenotypes = namedtuple(
     "MarkerGenotypes",
     ["marker", "chrom", "pos", "genotypes", "major", "minor"],
 )
+
+
+def genotype_reader(container, arguments, markers, max_size, queue):
+    """A genotype reader that will run in its own process.
+
+    Args:
+        container (GenotypesContainer): The genotype container.
+        arguments (dict): The arguments for the genotype container.
+        markers (list): The list of marker to read.
+        max_size (int): The maximal number of marker to put in the chunk.
+        queue (multiprocessing.Queue): The queue in which the chunk will be
+                                       added.
+
+    The reader will process ``max_size`` marker at a time, add them in a list,
+    and add the list to the waiting queue. When the reader has done processing
+    all the markers, ``None`` is added in the queue, and the reader exits.
+
+    """
+    with container(**arguments) as genotypes:
+        for chunk in np.array_split(markers, max_size):
+            data = [genotypes.get_genotypes(m) for m in chunk]
+            queue.put(data)
+    queue.put(None)
 
 
 class GenotypesContainer(object):
