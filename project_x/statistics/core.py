@@ -10,16 +10,97 @@
 # Commons, PO Box 1866, Mountain View, CA 94042, USA.
 
 
+from collections import namedtuple
+
 import patsy
 import numpy as np
 import pandas as pd
+
+from .descriptive import get_freq
 
 
 __copyright__ = "Copyright 2016, Beaulieu-Saucier Pharmacogenomics Centre"
 __license__ = "Attribution-NonCommercial 4.0 International (CC BY-NC 4.0)"
 
 
-__all__ = ["StatsModels", "StatsResults", "StatsError"]
+__all__ = ["StatsModels", "StatsResults", "StatsError",
+           "statistics_initializer", "statistics_worker"]
+
+
+# The statistical results
+_StatsResults = namedtuple(
+    "_StatsResults",
+    ["chr", "pos", "snp", "major", "minor", "maf", "n", "stats_n", "stats"],
+)
+
+
+def statistics_initializer(model, arguments, phenotypes):
+    """A statistics initializer used by the statistics workers.
+
+    Args:
+        model (StatsModels): The statistical model to perform.
+        arguments (dict): The arguments of the statistical model.
+        phenotypes (PhenotypesContainer): The phenotypes.
+
+    This function initialize the statistics worker.
+
+    """
+    # Initializing the model
+    statistics_worker.stats = model(**arguments)
+
+    # Creating the matrices
+    matrices = statistics_worker.stats.create_matrices(phenotypes)
+    statistics_worker.y, statistics_worker.X = matrices
+
+    # Getting the statistics names
+    names = statistics_worker.stats.results.get_statistic_names()
+    statistics_worker.stats_names = names
+
+
+def statistics_worker(marker):
+    """A statistics worker that will run in its own process.
+
+    Args:
+        genotypes (GenotypesContainer): The genotypes.
+
+    """
+    y, X = statistics_worker.stats.merge_matrices_genotypes(
+        y=statistics_worker.y, X=statistics_worker.X,
+        genotypes=marker.genotypes,
+    )
+
+    # Computing the MAF
+    maf = get_freq(X.geno)
+
+    # Checking it's a MAF
+    minor = marker.minor
+    major = marker.major
+    if (not np.isnan(maf)) and maf > 0.5:
+        maf = 1 - maf
+        X.geno = 2 - X.geno
+        minor, major = major, minor
+
+    if np.isnan(maf) or maf < 0.01:
+        return _StatsResults(
+            marker.chrom, marker.pos, marker.marker, major, minor, maf,
+            X.shape[0], statistics_worker.stats_names,
+            tuple([np.nan] * len(statistics_worker.stats_names)),
+        )
+
+    # Performing the fitting
+    try:
+        statistics_worker.stats.fit(y, X)
+    except StatsError as e:
+        pass
+    except ValueError as e:
+        pass
+
+    # Returning the results
+    return _StatsResults(
+        marker.chrom, marker.pos, marker.marker, major, minor, maf, X.shape[0],
+        statistics_worker.stats_names,
+        tuple(statistics_worker.stats.results.get_statistics()),
+    )
 
 
 class StatsModels(object):
