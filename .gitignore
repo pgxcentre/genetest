@@ -7,6 +7,8 @@ dist
 build
 test
 
+docs/_build
+
 project_x.egg-info/
 project_x/version.py
 
