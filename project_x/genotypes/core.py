@@ -10,6 +10,8 @@
 # Commons, PO Box 1866, Mountain View, CA 94042, USA.
 
 
+import logging
+
 import numpy as np
 import pandas as pd
 
@@ -27,6 +29,10 @@ __all__ = ["GenotypesContainer", "Representation", "MarkerGenotypes",
            "genotype_reader"]
 
 
+# Logging
+logger = logging.getLogger(__name__)
+
+
 # Genotype representation
 Representation = SimpleNamespace(
     ADDITIVE="additive",
@@ -42,7 +48,7 @@ MarkerGenotypes = namedtuple(
 )
 
 
-def genotype_reader(container, arguments, markers, max_size, queue):
+def genotype_reader(container, arguments, markers, max_size, queue, nb):
     """A genotype reader that will run in its own process.
 
     Args:
@@ -59,9 +65,10 @@ def genotype_reader(container, arguments, markers, max_size, queue):
 
     """
     with container(**arguments) as genotypes:
-        for chunk in np.array_split(markers, max_size):
+        for chunk in np.array_split(markers, np.ceil(len(markers) / max_size)):
             data = [genotypes.get_genotypes(m) for m in chunk]
             queue.put(data)
+            logger.info("Reader {} pushed {:,d} markers".format(nb, len(data)))
     queue.put(None)
 
 
