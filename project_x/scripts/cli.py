@@ -72,6 +72,36 @@ def main():
         # Getting the configuration
         conf = AnalysisConfiguration(args.configuration)
 
+        # Some warnings about the readers
+        if args.nb_readers > 5:
+            logger.warning("Using multiple readers (i.e. {:,d}) might "
+                           "decrease performances because of "
+                           "disk IO".format(args.nb_readers))
+        if conf.get_genotypes_format() == "plink" and args.nb_readers > 1:
+            logger.warning("Using plink genotypes with more than one reader "
+                           "will increase memory usage (linear to the number "
+                           "of readers).")
+
+        # Some warnings about the max queue size
+        if args.max_queue_size > 1000:
+            logger.warning("Using a high number of element in the waiting "
+                           "queue (i.e. {:,d}) will use more memory (linear "
+                           "to the number of element waiting in the "
+                           "queue".format(args.max_queue_size))
+
+        # Some warnings about the max marker chunk
+        if args.max_chunk_size > 10000:
+            logger.warning("Using a high number of markers in each chunk "
+                           "(i.e. {:,d}) might freeze the workers if the "
+                           "number of samples is too high (python "
+                           "limitation).".format(args.max_chunk_size))
+
+        # Adding a warning for the OPENBLAS_NUM_THREADS
+        if int(os.environ.get("OPENBLAS_NUM_THREADS", "2")) > 1:
+            logger.warning("If using openblas, be sure to set "
+                           "OPENBLAS_NUM_THREADS environment variable to '1' "
+                           "to make sure each worker uses only one processor.")
+
         # Printing the information about the Genotypes container
         geno_args = conf.get_genotypes_arguments()
         logger.info("Genotypes container: " + conf.get_genotypes_format())
@@ -209,11 +239,6 @@ def perform_analysis(reader_queue, worker_pool, arguments):
     logger.info("Analysis performed")
 
 
-def compute_fitting():
-    """Computes the fitting process."""
-    pass
-
-
 def get_phenotypes(container, arguments):
     """Gets the phenotypes from the phenotype container.
 
@@ -255,12 +280,20 @@ def check_args(args):
         raise CliError("{}: no such file.".format(args.configuration))
 
     # Checking the number of readers
+    if args.nb_readers <= 0:
+        raise CliError("needs at least 1 reader (--nb-reader)")
 
     # Checking the number of workers
+    if args.nb_readers <= 0:
+        raise CliError("needs at least 1 worker (--nb-worker)")
 
     # Checking the maximal size of the waiting queue
+    if args.max_queue_size <= 0:
+        raise CliError("needs at least 1 element in queue (--max-queue-size)")
 
     # Checking the maximal size of the marker chunk
+    if args.max_chunk_size <= 0:
+        raise CliError("needs at least 1 marker per chunk (--max-chunk-size)")
 
 
 def parse_args(parser):     # pragma: no cover
