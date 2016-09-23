@@ -24,7 +24,7 @@ __status__ = "Development"
 
 # The log format
 _LOG_FORMAT = logging.Formatter(
-    fmt="[%(asctime)s %(name)s %(levelname)s] %(message)s",
+    fmt="[%(asctime)s %(levelname)s] %(message)s",
     datefmt="%Y-%m-%d %H:%M:%S",
 )
 
