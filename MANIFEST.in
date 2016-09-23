@@ -1,2 +1,4 @@
 include README.mkd
 include LICENSE.txt
+
+recursive-exclude test *

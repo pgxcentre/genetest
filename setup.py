@@ -24,7 +24,8 @@ def check_python_version():
     python_major, python_minor = sys.version_info[:2]
 
     if python_major != 3 or python_minor < 3:
-        sys.stderr.write("genipe requires python 3 (version 3.3 or higher)\n")
+        sys.stderr.write("project_x requires python 3 "
+                         "(version 3.3 or higher)\n")
         sys.exit(1)
 
 
