@@ -16,12 +16,14 @@ import shlex
 import logging
 import argparse
 import traceback
-from multiprocessing import Pool
+from multiprocessing import Pool, Queue, Process
 
-import pandas as pd
+import numpy as np
 
 from .. import __version__, _LOG_FORMAT
+from ..genotypes.core import genotype_reader
 from ..configuration import AnalysisConfiguration
+from ..statistics.core import statistics_initializer, statistics_worker
 
 
 _TESTING_MODE = False
@@ -40,6 +42,7 @@ def main():
 
     # The logging file handler
     logging_fh = None
+    processes = []
 
     try:
         # Parsing the options
@@ -93,36 +96,46 @@ def main():
             arguments=pheno_args,
         )
 
-        # Getting the genotypes container
-        geno = get_genotypes(
-            container=conf.get_genotypes_container(),
-            arguments=geno_args,
-        )
-
-        # Getting the statistics container
-        stats = get_statistics(
-            container=conf.get_statistics_container(),
-            arguments=stats_args,
-        )
-
         # Getting the list of markers to extract
-        if args.extract is not None:
-            args.extract = get_list_from_file(args.extract)
-            logger.info("{:,d} markers will be extracted prior to "
-                        "analysis".format(len(args.extract)))
+        to_extract = get_list_from_file(args.extract)
+        logger.info("{:,d} markers will be extracted for the "
+                    "analysis".format(len(to_extract)))
 
+        # Creating the waiting queue
+        queue = Queue(args.max_queue_size)
+
+        # Starting the reader processes
+        logger.info("Starting {:,d} reader{}".format(
+            args.nb_readers, "s" if args.nb_readers > 1 else "",
+        ))
+        for chunk in np.array_split(to_extract, args.nb_readers):
+            proc = Process(
+                target=genotype_reader,
+                args=(conf.get_genotypes_container(), geno_args, chunk,
+                      args.max_chunk_size, queue),
+            )
+            proc.start()
+            processes.append(proc)
+
+        # Getting the list of samples to keep
         if args.keep is not None:
-            args.keep = get_list_from_file(args.keep)
-            logger.info("{:,d} samples will be kept prior to "
-                        "analysis".format(len(args.keep)))
+            to_keep = get_list_from_file(args.keep)
+            logger.info("{:,d} samples will be kept for the "
+                        "analysis".format(len(to_keep)))
+            pheno.keep_samples(set(to_keep))
+
+        # Creating the worker pool
+        logger.info("Starting {:,d} worker{}".format(
+            args.nb_workers, "s" if args.nb_workers > 1 else "",
+        ))
+        pool = Pool(
+            processes=args.nb_workers,
+            initializer=statistics_initializer,
+            initargs=[conf.get_statistics_container(), stats_args, pheno],
+        )
 
         # Performing the analysis
-        perform_analysis(
-            phenotypes=pheno,
-            genotypes=geno,
-            statistics=stats,
-            args=args,
-        )
+        perform_analysis(queue, pool, args)
 
     # Catching the Ctrl^C
     except KeyboardInterrupt:
@@ -137,94 +150,63 @@ def main():
     finally:
         if logging_fh:
             logging_fh.close()
+        for proc in processes:
+            if proc.is_alive():
+                logger.info("Terminating the processes")
+                proc.terminate()
 
 
-def perform_analysis(phenotypes, genotypes, statistics, args):
+def perform_analysis(reader_queue, worker_pool, arguments):
     """Performs the analysis.
 
     Args:
-        phenotypes (PhenotypesContainer): The phenotype container.
-        genotypes (GenotypesContainer): The genotype container.
-        statistics (StatsModels): The statistics container.
-        args (argparse.Namespace): The options and arguments.
+        reader_queue (multiprocessing.Queue): The reader's queue.
+        worker_pool (multiprocessing.Pool): The worker pool.
+        arguments (argparse.Namespace): The options and arguments.
 
     """
-    # Creating the matrices for the analysis from the phenotype data
-    pheno = phenotypes.get_phenotypes()
-    repeated_measures = phenotypes.is_repeated()
+    logger.info("Launching analysis")
 
-    # If there are samples to keep, we keep them
-    if args.keep is not None:
-        pheno = pheno.loc[args.keep, :]
-        if repeated_measures:
-            raise NotImplementedError()
-
-        else:
-            pheno = pheno.loc[pheno.index.isin(args.keep), :]
-
-    # Checking there is no 'geno' column in the phenotypes
-    if "geno" in pheno.columns:
-        raise CliError("There should not be a column named 'geno' in the "
-                       "phenotypes.")
-
-    # Creating the y and X matrices for fitting
-    y, X = statistics.create_matrices(pheno)
-
-    # If we need to adjust for a marker, we need to merge the data to the X
-    # statistics
-    if args.marker_adjust:
-        logger.info("Adjusting for marker {}".format(args.marker_adjust))
-        marker_info = genotypes.get_genotypes(args.marker_adjust)
-
-        # Checking the column in the phenotypes
-        if marker_info.marker in X.columns:
-            raise CliError("There is already a '{}' column in the "
-                           "phenotypes.".format(marker_info.marker))
-
-        # Merging the genotypes of the marker to X
-        if repeated_measures:
-            y, X = statistics.merge_matrices_genotypes(
-                y=y, X=X, genotypes=marker_info.genotypes,
-                ori_samples=phenotypes.get_original_sample_names(),
-                compute_interaction=False,
-            )
-        else:
-            y, X = statistics.merge_matrices_genotypes(
-                y=y, X=X, genotypes=marker_info.genotypes,
-                compute_interaction=False,
-            )
-
-        # Renaming the column 'geno' to the name of the marker
-        X = X.rename(columns={"geno": marker_info.marker})
-
-    # Just to be sure, we check there are no null values in the matrices
-    assert not y.isnull().any().any()
-    assert not X.isnull().any().any()
-
-    # The multiprocessing pool, if required
-    pool = None
-    if args.nb_process > 1:
-        pool = Pool(processes=args.nb_process)
-
+    f = open(arguments.output, "w")
     try:
-        # Iterating over markers
-        if args.extract is not None:
-            raise NotImplementedError()
+        nb_finished = 0
+        print_header = True
+        while nb_finished < arguments.nb_readers:
+            # Getting the data
+            chunk = reader_queue.get()
+            if chunk is None:
+                nb_finished += 1
+                continue
 
-        else:
-            raise NotImplementedError()
+            # Analyzing the data
+            results = worker_pool.map(statistics_worker, chunk)
+            for result in results:
+                # Printing the header if required
+                if print_header:
+                    print(*result._fields[:-2], sep="\t", end="\t", file=f)
+                    print(*result.stats_n, sep="\t", file=f)
+                    print_header = False
+
+                # Printing the result
+                print(*result[:-2], sep="\t", end="\t", file=f)
+                print(*result.stats, sep="\t", file=f)
 
     except Exception:
-        if pool is not None:
+        if worker_pool is not None:
             logger.critical("Terminating all processes in the pool")
-            pool.terminate()
+            worker_pool.terminate()
         logger.critical(traceback.format_exc())
         raise CliError("Something went wrong")
 
     finally:
-        if pool is not None:
-            logger.info("Closing the process pool")
-            pool.close()
+        # Closing the output file
+        f.close()
+
+        # Closing the worker pool
+        worker_pool.close()
+        worker_pool.join()
+
+    logger.info("Analysis performed")
 
 
 def compute_fitting():
@@ -251,42 +233,6 @@ def get_phenotypes(container, arguments):
     return pheno
 
 
-def get_genotypes(container, arguments):
-    """Gets the genotypes from the genotype container.
-
-    Args:
-        container (GenotypesContainer): The genotypes container.
-        arguments (dict): The argument to use for the creation of the instance
-                          of the genotype container.
-
-    Returns:
-        GenotypesContainer: The genotypes instance.
-
-    """
-    logger.info("Reading the genotypes")
-    geno = container(**arguments)
-    logger.info("  - {:,d} samples".format(geno.get_nb_samples()))
-    nb_markers = geno.get_nb_markers()
-    if nb_markers is not None:
-        logger.info("  - {:,d} markers".format(nb_markers))
-    return geno
-
-
-def get_statistics(container, arguments):
-    """Gets the statistics container.
-
-    Args:
-        container (StatsModels): The statistics container.
-        arguments (dict): The argument to use for the creation of the instance
-                          of the statistics container.
-
-    Returns:
-        StatsModels: The statistics instance.
-
-    """
-    return container(**arguments)
-
-
 def get_list_from_file(f):
     """Gets a list of elements from a file.
 
@@ -308,6 +254,14 @@ def check_args(args):
     if not os.path.isfile(args.configuration):
         raise CliError("{}: no such file.".format(args.configuration))
 
+    # Checking the number of readers
+
+    # Checking the number of workers
+
+    # Checking the maximal size of the waiting queue
+
+    # Checking the maximal size of the marker chunk
+
 
 def parse_args(parser):     # pragma: no cover
     """Parses the command line options and arguments."""
@@ -315,21 +269,11 @@ def parse_args(parser):     # pragma: no cover
                         version="%(prog)s {}".format(__version__))
     parser.add_argument("--test", action=TestAction, nargs=0,
                         help="Execute the test suite and exit.")
-    parser.add_argument(
-        "--nb-process",
-        type=int,
-        metavar="NB",
-        default=1,
-        help="The number of processes to use for the analysis. [%(default)d]",
-    )
 
     # The input options
     group = parser.add_argument_group("Input Options")
     group.add_argument(
-        "--configuration",
-        type=str,
-        metavar="CONF",
-        required=True,
+        "--configuration", type=str, metavar="CONF", required=True,
         help="The configuration file that describe the phenotypes, genotypes, "
              "and statistical model.",
     )
@@ -337,44 +281,55 @@ def parse_args(parser):     # pragma: no cover
     # The output options
     group = parser.add_argument_group("Output Options")
     group.add_argument(
-        "--output",
-        type=str,
-        metavar="FILE",
-        default="results.txt",
+        "--output", type=str, metavar="FILE", default="results.txt",
         help="The output file that will contain the results from the "
              "statistical analysis. [%(default)s]",
+    )
+
+    # Multiprocessing options
+    group = parser.add_argument_group("Multiprocessing Options")
+    group.add_argument(
+        "--nb-readers", type=int, metavar="NB", default=1,
+        help="The number of reader processes to use. [%(default)d]",
+    )
+    group.add_argument(
+        "--nb-workers", type=int, metavar="NB", default=1,
+        help="The number of worker processes to use. [%(default)d]",
+    )
+    group.add_argument(
+        "--max-queue-size", type=int, metavar="SIZE", default=100,
+        help="The maximal number of marker chunks in the waiting queue. This "
+             "will impact the amount of RAM the analysis will require. "
+             "[%(default)d]",
+    )
+    group.add_argument(
+        "--max-chunk-size", type=int, metavar="SIZE", default=10000,
+        help="The maximal number of marker in a chunk. This will impact the "
+             "amount of RAM in the analysis will require. [%(default)d]",
     )
 
     # Other statistical options
     group = parser.add_argument_group("Other Statistical Options")
     group.add_argument(
-        "--marker-adjust",
-        type=str,
-        metavar="MARKER",
+        "--marker-adjust", type=str, metavar="MARKER",
         help="Add a marker from the genotypes data to the predictors list.",
     )
 
     # Some other options
     group = parser.add_argument_group("Other Options")
     group.add_argument(
-        "--extract",
-        type=argparse.FileType("r"),
-        metavar="FILE",
+        "--extract", type=argparse.FileType("r"), metavar="FILE",
+        required=True,
         help="A file containing a list of marker to extract prior to the "
              "statistical analysis. One marker per line.",
     )
     group.add_argument(
-        "--keep",
-        type=argparse.FileType("r"),
-        metavar="FILE",
+        "--keep", type=argparse.FileType("r"), metavar="FILE",
         help="A file containing a list of samples to keep prior to the "
              "statistical analysis. One sample per line.",
     )
     group.add_argument(
-        "--maf",
-        type=float,
-        default=0.01,
-        metavar="MAF",
+        "--maf", type=float, default=0.01, metavar="MAF",
         help="The MAF threshold to include a marker in the analysis. "
              "[%(default).2f]",
     )
