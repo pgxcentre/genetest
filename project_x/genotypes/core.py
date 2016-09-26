@@ -48,7 +48,7 @@ MarkerGenotypes = namedtuple(
 )
 
 
-def genotype_reader(container, arguments, markers, max_size, queue, nb):
+def genotype_reader(container, arguments, markers, max_size, queue, n):
     """A genotype reader that will run in its own process.
 
     Args:
@@ -58,17 +58,22 @@ def genotype_reader(container, arguments, markers, max_size, queue, nb):
         max_size (int): The maximal number of marker to put in the chunk.
         queue (multiprocessing.Queue): The queue in which the chunk will be
                                        added.
+        n (int): The number of the reader.
 
     The reader will process ``max_size`` marker at a time, add them in a list,
     and add the list to the waiting queue. When the reader has done processing
     all the markers, ``None`` is added in the queue, and the reader exits.
 
     """
+    logger.info("Reader {} will process {:,d} markers".format(n, len(markers)))
     with container(**arguments) as genotypes:
         for chunk in np.array_split(markers, np.ceil(len(markers) / max_size)):
             data = [genotypes.get_genotypes(m) for m in chunk]
             queue.put(data)
-            logger.info("Reader {} pushed {:,d} markers".format(nb, len(data)))
+            logger.info("Reader {} pushed {:,d} markers".format(n, len(data)))
+
+    # Closing the reader
+    logger.info("Closing reader {}".format(n))
     queue.put(None)
 
 
