@@ -114,6 +114,7 @@ class StatsMixedLM(StatsModels):
 
         try:
             fitted = model.fit(reml=self._reml)
+
         except np.linalg.linalg.LinAlgError as e:
             raise StatsError(str(e))
 

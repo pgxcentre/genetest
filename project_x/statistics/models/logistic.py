@@ -68,6 +68,7 @@ class StatsLogistic(StatsModels):
         model = sm.GLM(y, X, family=sm.families.Binomial())
         try:
             fitted = model.fit()
+
         except PerfectSeparationError as e:
             raise StatsError(str(e))
 

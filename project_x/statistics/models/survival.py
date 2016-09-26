@@ -93,6 +93,7 @@ class StatsCoxPH(StatsModels):
         # Fitting the model
         try:
             model.fit(data, self._tte, event_col=self._event)
+
         except np.linalg.linalg.LinAlgError as e:
             raise StatsError(str(e))
 
