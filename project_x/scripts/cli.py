@@ -15,7 +15,6 @@ import sys
 import shlex
 import logging
 import argparse
-import traceback
 from multiprocessing import Pool, Queue, Process
 
 import numpy as np
@@ -43,6 +42,9 @@ def main():
     # The logging file handler
     logging_fh = None
     processes = []
+
+    # The worker pool
+    pool = None
 
     try:
         # Parsing the options
@@ -138,11 +140,12 @@ def main():
         logger.info("Starting {:,d} reader{}".format(
             args.nb_readers, "s" if args.nb_readers > 1 else "",
         ))
-        for chunk in np.array_split(to_extract, args.nb_readers):
+        logger.info("  - chunk size is {:,d}".format(args.max_chunk_size))
+        for i, chunk in enumerate(np.array_split(to_extract, args.nb_readers)):
             proc = Process(
                 target=genotype_reader,
                 args=(conf.get_genotypes_container(), geno_args, chunk,
-                      args.max_chunk_size, queue),
+                      args.max_chunk_size, queue, i+1),
             )
             proc.start()
             processes.append(proc)
@@ -155,17 +158,16 @@ def main():
             pheno.keep_samples(set(to_keep))
 
         # Creating the worker pool
-        logger.info("Starting {:,d} worker{}".format(
+        logger.info("Creating {:,d} worker{}".format(
             args.nb_workers, "s" if args.nb_workers > 1 else "",
         ))
-        pool = Pool(
+        pool_args = dict(
             processes=args.nb_workers,
             initializer=statistics_initializer,
             initargs=[conf.get_statistics_container(), stats_args, pheno],
         )
-
-        # Performing the analysis
-        perform_analysis(queue, pool, args)
+        with Pool(**pool_args) as pool:
+            perform_analysis(queue, pool, args)
 
     # Catching the Ctrl^C
     except KeyboardInterrupt:
@@ -179,10 +181,13 @@ def main():
 
     finally:
         if logging_fh:
+            # Closing the log file
             logging_fh.close()
-        for proc in processes:
+
+        for i, proc in enumerate(processes):
+            # Closing the readers
             if proc.is_alive():
-                logger.info("Terminating the processes")
+                logger.info("Closing reader {}".format(i+1))
                 proc.terminate()
 
 
@@ -195,10 +200,11 @@ def perform_analysis(reader_queue, worker_pool, arguments):
         arguments (argparse.Namespace): The options and arguments.
 
     """
-    logger.info("Launching analysis")
+    # The total number of markers
+    total_markers = 0
 
-    f = open(arguments.output, "w")
-    try:
+    # The actual analysis
+    with open(arguments.output, "w") as f:
         nb_finished = 0
         print_header = True
         while nb_finished < arguments.nb_readers:
@@ -207,6 +213,10 @@ def perform_analysis(reader_queue, worker_pool, arguments):
             if chunk is None:
                 nb_finished += 1
                 continue
+
+            # Logging
+            logger.info("Analysing {:,d} markers".format(len(chunk)))
+            total_markers += len(chunk)
 
             # Analyzing the data
             results = worker_pool.map(statistics_worker, chunk)
@@ -221,22 +231,8 @@ def perform_analysis(reader_queue, worker_pool, arguments):
                 print(*result[:-2], sep="\t", end="\t", file=f)
                 print(*result.stats, sep="\t", file=f)
 
-    except Exception:
-        if worker_pool is not None:
-            logger.critical("Terminating all processes in the pool")
-            worker_pool.terminate()
-        logger.critical(traceback.format_exc())
-        raise CliError("Something went wrong")
-
-    finally:
-        # Closing the output file
-        f.close()
-
-        # Closing the worker pool
-        worker_pool.close()
-        worker_pool.join()
-
-    logger.info("Analysis performed")
+    # Final logging
+    logger.info("Analysis performed on {:,d} markers".format(total_markers))
 
 
 def get_phenotypes(container, arguments):
