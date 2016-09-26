@@ -10,6 +10,7 @@
 # Commons, PO Box 1866, Mountain View, CA 94042, USA.
 
 
+import logging
 from collections import namedtuple
 
 import patsy
@@ -25,6 +26,10 @@ __license__ = "Attribution-NonCommercial 4.0 International (CC BY-NC 4.0)"
 
 __all__ = ["StatsModels", "StatsResults", "StatsError",
            "statistics_initializer", "statistics_worker"]
+
+
+# Logging
+logger = logging.getLogger(__name__)
 
 
 # The statistical results
@@ -90,10 +95,9 @@ def statistics_worker(marker):
     # Performing the fitting
     try:
         statistics_worker.stats.fit(y, X)
+
     except StatsError as e:
-        pass
-    except ValueError as e:
-        pass
+        logger.warning("{}: {}".format(marker.marker, e))
 
     # Returning the results
     return _StatsResults(
