@@ -203,10 +203,6 @@ def main():
         parser.error(e.message)
 
     finally:
-        # Closing the log file
-        if logging_fh:
-            logging_fh.close()
-
         # Terminating the readers
         for i, proc in enumerate(reader_processes):
             if proc.is_alive():
@@ -222,6 +218,10 @@ def main():
         if tmp_dir is not None:
             logger.info("Cleaning up temporary directory")
             tmp_dir.cleanup()
+
+        # Closing the log file
+        if logging_fh:
+            logging_fh.close()
 
 
 def perform_analysis(reader_queue, writer_queue, worker_pool, arguments):
