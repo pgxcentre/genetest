@@ -56,7 +56,7 @@ def main():
             sh = logging.StreamHandler()
             sh.setFormatter(_LOG_FORMAT)
             logger.addHandler(sh)
-            logger.setLevel("INFO")
+            logger.setLevel("INFO" if not args.debug else "DEBUG")
 
             # Adding the file handler to the logger
             logging_fh = logging.FileHandler(args.output + ".log", mode="w")
@@ -334,6 +334,8 @@ def parse_args(parser):     # pragma: no cover
                         version="%(prog)s {}".format(__version__))
     parser.add_argument("--test", action=TestAction, nargs=0,
                         help="Execute the test suite and exit.")
+    parser.add_argument("--debug", default=False, action="store_true",
+                        help="Enters debug mode.")
 
     # The input options
     group = parser.add_argument_group("Input Options")
