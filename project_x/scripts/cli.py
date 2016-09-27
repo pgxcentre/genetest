@@ -41,7 +41,8 @@ def main():
 
     # The logging file handler
     logging_fh = None
-    processes = []
+    reader_processes = []
+    writer_proc = None
 
     # The worker pool
     pool = None
@@ -133,8 +134,9 @@ def main():
         logger.info("{:,d} markers will be extracted for the "
                     "analysis".format(len(to_extract)))
 
-        # Creating the waiting queue
-        queue = Queue(args.max_queue_size)
+        # Creating the reader and writer queue
+        reader_queue = Queue(args.max_queue_size)
+        writer_queue = Queue()
 
         # Starting the reader processes
         logger.info("Starting {:,d} reader{}".format(
@@ -145,10 +147,18 @@ def main():
             proc = Process(
                 target=genotype_reader,
                 args=(conf.get_genotypes_container(), geno_args, chunk,
-                      args.max_chunk_size, queue, i+1),
+                      args.max_chunk_size, reader_queue, i+1),
             )
             proc.start()
-            processes.append(proc)
+            reader_processes.append(proc)
+
+        # Starting the writer process
+        logger.info("Starting a writer")
+        writer_proc = Process(
+            target=writer,
+            args=(args.output, writer_queue),
+        )
+        writer_proc.start()
 
         # Getting the list of samples to keep
         if args.keep is not None:
@@ -167,7 +177,11 @@ def main():
             initargs=[conf.get_statistics_container(), stats_args, pheno],
         )
         with Pool(**pool_args) as pool:
-            perform_analysis(queue, pool, args)
+            perform_analysis(reader_queue, writer_queue, pool, args)
+
+        # Waiting for the end of the writer process
+        writer_queue.put(None)
+        writer_proc.join()
 
     # Catching the Ctrl^C
     except KeyboardInterrupt:
@@ -180,22 +194,28 @@ def main():
         parser.error(e.message)
 
     finally:
+        # Closing the log file
         if logging_fh:
-            # Closing the log file
             logging_fh.close()
 
-        for i, proc in enumerate(processes):
-            # Closing the readers
+        # Terminating the readers
+        for i, proc in enumerate(reader_processes):
             if proc.is_alive():
-                logger.info("Closing reader {}".format(i+1))
+                logger.info("Terminating reader {}".format(i+1))
                 proc.terminate()
 
+        # Terminating the writer
+        if writer_proc is not None and writer_proc.is_alive():
+            logger.info("Terminating the writer")
+            writer_proc.terminate()
 
-def perform_analysis(reader_queue, worker_pool, arguments):
+
+def perform_analysis(reader_queue, writer_queue, worker_pool, arguments):
     """Performs the analysis.
 
     Args:
-        reader_queue (multiprocessing.Queue): The reader's queue.
+        reader_queue (multiprocessing.Queue): The readers' queue.
+        writer_queue (multiprocessing.Queue): The writer's queue.
         worker_pool (multiprocessing.Pool): The worker pool.
         arguments (argparse.Namespace): The options and arguments.
 
@@ -204,24 +224,38 @@ def perform_analysis(reader_queue, worker_pool, arguments):
     total_markers = 0
 
     # The actual analysis
-    with open(arguments.output, "w") as f:
-        nb_finished = 0
+    nb_finished = 0
+    while nb_finished < arguments.nb_readers:
+        # Getting the data
+        chunk = reader_queue.get()
+        if chunk is None:
+            nb_finished += 1
+            continue
+
+        # Logging
+        logger.info("Analysing {:,d} markers".format(len(chunk)))
+        total_markers += len(chunk)
+
+        # Analyzing the data
+        writer_queue.put(worker_pool.map(statistics_worker, chunk))
+
+    # Final logging
+    logger.info("Analysis performed on {:,d} markers".format(total_markers))
+
+
+def writer(filename, queue):
+    """Writes results from a queue to a file.
+
+    Args:
+        filename (str): The name of the file to write.
+        queue (multiprocessing.Queue): The queue containing the results.
+
+    """
+    with open(filename, "w") as f:
         print_header = True
-        while nb_finished < arguments.nb_readers:
-            # Getting the data
-            chunk = reader_queue.get()
-            if chunk is None:
-                nb_finished += 1
-                continue
-
-            # Logging
-            logger.info("Analysing {:,d} markers".format(len(chunk)))
-            total_markers += len(chunk)
-
-            # Analyzing the data
-            results = worker_pool.map(statistics_worker, chunk)
-            for result in results:
-                # Printing the header if required
+        chunk = queue.get()
+        while chunk is not None:
+            for result in chunk:
                 if print_header:
                     print(*result._fields[:-2], sep="\t", end="\t", file=f)
                     print(*result.stats_n, sep="\t", file=f)
@@ -231,8 +265,10 @@ def perform_analysis(reader_queue, worker_pool, arguments):
                 print(*result[:-2], sep="\t", end="\t", file=f)
                 print(*result.stats, sep="\t", file=f)
 
-    # Final logging
-    logger.info("Analysis performed on {:,d} markers".format(total_markers))
+            # Reading the next chunk
+            chunk = queue.get()
+
+    logger.info("Closing the writer")
 
 
 def get_phenotypes(container, arguments):
