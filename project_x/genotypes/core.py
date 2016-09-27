@@ -10,7 +10,9 @@
 # Commons, PO Box 1866, Mountain View, CA 94042, USA.
 
 
+import pickle
 import logging
+from tempfile import NamedTemporaryFile
 
 import numpy as np
 import pandas as pd
@@ -48,7 +50,7 @@ MarkerGenotypes = namedtuple(
 )
 
 
-def genotype_reader(container, arguments, markers, max_size, queue, n):
+def genotype_reader(container, arguments, markers, max_size, queue, tmpdir, n):
     """A genotype reader that will run in its own process.
 
     Args:
@@ -58,6 +60,7 @@ def genotype_reader(container, arguments, markers, max_size, queue, n):
         max_size (int): The maximal number of marker to put in the chunk.
         queue (multiprocessing.Queue): The queue in which the chunk will be
                                        added.
+        tmpdir (str): The name of the temporary directory.
         n (int): The number of the reader.
 
     The reader will process ``max_size`` marker at a time, add them in a list,
@@ -68,8 +71,18 @@ def genotype_reader(container, arguments, markers, max_size, queue, n):
     logger.info("Reader {} will process {:,d} markers".format(n, len(markers)))
     with container(**arguments) as genotypes:
         for chunk in np.array_split(markers, np.ceil(len(markers) / max_size)):
+            # Retrieving the data
             data = [genotypes.get_genotypes(m) for m in chunk]
-            queue.put(data)
+
+            # Pickle the data in a temporary file
+            tmpfile = None
+            with NamedTemporaryFile(dir=tmpdir, delete=False) as f:
+                logger.debug("Reader {} pickle start".format(n))
+                pickle.dump(data, f)
+                logger.debug("Reader {} pickle end".format(n))
+                tmpfile = f.name
+
+            queue.put(tmpfile)
             logger.info("Reader {} pushed {:,d} markers".format(n, len(data)))
 
     # Closing the reader

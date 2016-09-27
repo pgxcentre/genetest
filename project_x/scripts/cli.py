@@ -13,8 +13,10 @@
 import os
 import sys
 import shlex
+import pickle
 import logging
 import argparse
+from tempfile import TemporaryDirectory
 from multiprocessing import Pool, Queue, Process
 
 import numpy as np
@@ -43,6 +45,9 @@ def main():
     logging_fh = None
     reader_processes = []
     writer_proc = None
+
+    # The temporary directory
+    tmp_dir = None
 
     # The worker pool
     pool = None
@@ -138,6 +143,10 @@ def main():
         reader_queue = Queue(args.max_queue_size)
         writer_queue = Queue()
 
+        # Creating the temporary directory
+        tmp_dir = TemporaryDirectory(dir=args.tmp)
+        logger.info("Creating temporary directory: {}".format(tmp_dir.name))
+
         # Starting the reader processes
         logger.info("Starting {:,d} reader{}".format(
             args.nb_readers, "s" if args.nb_readers > 1 else "",
@@ -147,7 +156,7 @@ def main():
             proc = Process(
                 target=genotype_reader,
                 args=(conf.get_genotypes_container(), geno_args, chunk,
-                      args.max_chunk_size, reader_queue, i+1),
+                      args.max_chunk_size, reader_queue, tmp_dir.name, i+1),
             )
             proc.start()
             reader_processes.append(proc)
@@ -209,6 +218,11 @@ def main():
             logger.info("Terminating the writer")
             writer_proc.terminate()
 
+        # Cleaning up the temporary directory
+        if tmp_dir is not None:
+            logger.info("Cleaning up temporary directory")
+            tmp_dir.cleanup()
+
 
 def perform_analysis(reader_queue, writer_queue, worker_pool, arguments):
     """Performs the analysis.
@@ -227,10 +241,16 @@ def perform_analysis(reader_queue, writer_queue, worker_pool, arguments):
     nb_finished = 0
     while nb_finished < arguments.nb_readers:
         # Getting the data
-        chunk = reader_queue.get()
-        if chunk is None:
+        fn = reader_queue.get()
+        if fn is None:
             nb_finished += 1
             continue
+
+        # Getting the data
+        chunk = None
+        with open(fn, "rb") as f:
+            chunk = pickle.load(f)
+        os.unlink(fn)
 
         # Logging
         logger.info("Analysing {:,d} markers".format(len(chunk)))
@@ -336,6 +356,8 @@ def parse_args(parser):     # pragma: no cover
                         help="Execute the test suite and exit.")
     parser.add_argument("--debug", default=False, action="store_true",
                         help="Enters debug mode.")
+    parser.add_argument("--tmp", metavar="DIR", default=".",
+                        help="Path to temporary directory [$PWD].")
 
     # The input options
     group = parser.add_argument_group("Input Options")
