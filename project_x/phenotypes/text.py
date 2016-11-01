@@ -46,6 +46,7 @@ class TextPhenotypes(PhenotypesContainer):
                                           measurements (e.g. for MixedLM).
 
         """
+        # TODO: Check the different column names
         self._phenotypes = pd.read_csv(filename, sep=field_separator,
                                        na_values=missing_values)
 

@@ -83,7 +83,7 @@ class StatsLinear(StatsModels):
             ))
 
         # Checking the smallest eigenvalue (according to StatsModels, values
-        # loser than 1e-10 might indicate that there are strong
+        # lower than 1e-10 might indicate that there are strong
         # multicollinearity problems or that the design matrix is singular)
         if fitted.eigenvals.min() < 1e-10:
             raise StatsError("smallest eigenvalue is small, {}".format(

@@ -109,7 +109,7 @@ def statistics_worker(marker):
 
 class StatsModels(object):
     def __init__(self, outcomes, predictors, interaction, intercept):
-        """Initializes a 'StatsLinear' instance.
+        """Initializes a 'StatsModels' instance.
 
         Args:
             outcome (str): The outcome of the model.
