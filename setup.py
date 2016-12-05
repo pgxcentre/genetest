@@ -24,7 +24,7 @@ def check_python_version():
     python_major, python_minor = sys.version_info[:2]
 
     if python_major != 3 or python_minor < 3:
-        sys.stderr.write("project_x requires python 3 "
+        sys.stderr.write("genetest requires python 3 "
                          "(version 3.3 or higher)\n")
         sys.exit(1)
 
@@ -33,11 +33,11 @@ def write_version_file(fn=None):
     if fn is None:
         fn = os.path.join(
             os.path.dirname(os.path.abspath(__file__)),
-            os.path.join("project_x", "version.py"),
+            os.path.join("genetest", "version.py"),
         )
 
     content = ("\n# THIS FILE WAS GENERATED AUTOMATICALLY\n"
-               'project_x_version = "{version}"\n')
+               'genetest_version = "{version}"\n')
 
     a = open(fn, "w")
     try:
@@ -54,7 +54,7 @@ def setup_package():
     write_version_file()
 
     setup(
-        name="project-x",
+        name="genetest",
         version=VERSION,
         description="A package to process and analyze genotypic and "
                     "phenotypic data.",
@@ -66,22 +66,22 @@ def setup_package():
                          "format. The 'statistics' sub-module will interface "
                          "with them to analyze the data using different "
                          "statistical models.",
-        url="https://github.com/legaultmarc/project_x",
+        url="https://github.com/legaultmarc/genetest",
         license="CC BY-NC 4.0",
         entry_points={
             "console_scripts": [
-                "launch_project_x=project_x.scripts.cli:main",
+                "genetest=genetest.scripts.cli:main",
             ],
         },
-        test_suite="project_x.tests.test_suite",
+        test_suite="genetest.tests.test_suite",
         zip_safe=False,
         install_requires=["numpy >= 1.11.0", "pandas >= 0.18.0",
                           "pyplink >= 1.2.0", "setuptools >= 26.1.0",
                           "statsmodels >= 0.6.1", "pysam >= 0.9.0",
                           "lifelines >= 0.9.2"],
         packages=find_packages(),
-        package_data={"project_x.tests": ["data/genotypes/*",
-                                          "data/statistics/*"]},
+        package_data={"genetest.tests": ["data/genotypes/*",
+                                         "data/statistics/*"]},
         classifiers=["Development Status :: 1 - Planning",
                      "Intended Audience :: Science/Research",
                      "License :: Free for non-commercial use",

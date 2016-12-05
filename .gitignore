@@ -9,8 +9,8 @@ test
 
 docs/_build
 
-project_x.egg-info/
-project_x/version.py
+genetest.egg-info/
+genetest/version.py
 
 .coverage
 htmlcov

@@ -1,0 +1,106 @@
+"""
+"""
+
+
+# This file is part of genetest.
+#
+# This work is licensed under the Creative Commons Attribution-NonCommercial
+# 4.0 International License. To view a copy of this license, visit
+# http://creativecommons.org/licenses/by-nc/4.0/ or send a letter to Creative
+# Commons, PO Box 1866, Mountain View, CA 94042, USA.
+
+
+__copyright__ = "Copyright 2016, Beaulieu-Saucier Pharmacogenomics Centre"
+__license__ = "Attribution-NonCommercial 4.0 International (CC BY-NC 4.0)"
+
+
+__all__ = ["PhenotypesContainer"]
+
+
+class PhenotypesContainer(object):
+    def __enter__(self):
+        return self
+
+    def __exit__(self, exc_type, exc_value, traceback):
+        self.close()
+
+    def close(self):
+        raise NotImplementedError()
+
+    @classmethod
+    def get_required_arguments(cls):
+        """Returns the required arguments.
+
+        Returns:
+            tuple: The required arguments of the phenotype container.
+
+        """
+        return cls._required_args
+
+    @classmethod
+    def get_optional_arguments(cls):
+        """Returns the optional arguments.
+
+        Returns:
+            dict: The optional arguments (with default values) of the phenotype
+            container.
+
+        """
+        return cls._optional_args
+
+    @classmethod
+    def get_arguments_type(cls):
+        """Returns the arguments type.
+
+        Returns:
+            dict: The type of each arguments (both required and optional).
+
+        """
+        return cls._args_type
+
+    def get_phenotypes(self):
+        """Returns a dataframe of phenotypes.
+
+        Returns:
+            pandas.DataFrame: A dataframe containing the phenotypes (with the
+            sample IDs as index).
+
+        """
+        raise NotImplementedError()
+
+    def get_nb_samples(self):
+        """Returns the number of samples.
+
+        Returns:
+            int: The number of samples.
+
+        """
+        raise NotImplementedError()
+
+    def get_nb_variables(self):
+        """Returns the number of variables.
+
+        Returns:
+            int: The number of variables.
+
+        """
+        raise NotImplementedError()
+
+    def is_repeated(self):
+        """Check if the phenotypes contain repeated measurements.
+
+        Returns:
+            bool: ``True`` if the data contains repeated measurements,
+            ``False`` otherwise.
+
+        """
+        raise NotImplementedError()
+
+    def keep_samples(self, keep):
+        """Keeps only a subset of samples.
+
+        Args:
+            keep (list): The list of samples to keep.
+
+        """
+        raise NotImplementedError()
