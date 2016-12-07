@@ -92,6 +92,22 @@ class TestText(unittest.TestCase):
         with self.assertRaises(ValueError):
             observed_pheno.get_original_sample_names()
 
+    def test_subset_phenotypes(self):
+        """Tests asking for a subset of phenotypes."""
+        container = TextPhenotypes(**self.parameters)
+
+        subset = ("V1", "V3")
+        expected = self.expected_pheno.loc[:, ["V1", "V3"]]
+        self.assertTrue(
+            expected.equals(container.get_phenotypes(subset))
+        )
+
+    def test_bad_subset_phenotypes(self):
+        """Tests asking for a subset with unavailable phenotypes."""
+        container = TextPhenotypes(**self.parameters)
+        with self.assertRaises(KeyError):
+            container.get_phenotypes(("V1", "V3", "VX"))
+
     def test_repeated_measurements(self):
         """Tests when there are repeated measurements available."""
         with open(self.parameters["filename"], "w") as f:

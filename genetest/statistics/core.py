@@ -229,11 +229,11 @@ class StatsModels(object):
         """Returns the string representing the model."""
         return self._model.describe()
 
-    def create_matrices(self, data, create_dummy=True):
+    def create_matrices(self, phenotype_container, create_dummy=True):
         """Creates the y and X matrices for a statistical analysis.
 
         Args:
-            data (genetest.phenotypes.core.PhenotypesContainer): The data.
+            phenotype_container (genetest.phenotypes.core.PhenotypesContainer): The data.
             create_dummy (bool): If True, a dummy column will be added for the
                                  genotypes.
 
@@ -242,7 +242,7 @@ class StatsModels(object):
 
         """
         # We get the phenotypes
-        pheno = data.get_phenotypes().dropna()
+        pheno = phenotype_container.get_phenotypes().dropna()
 
         # Creating dummy columns (if required)
         if create_dummy:

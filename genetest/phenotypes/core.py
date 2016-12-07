@@ -58,8 +58,12 @@ class PhenotypesContainer(object):
         """
         return cls._args_type
 
-    def get_phenotypes(self):
+    def get_phenotypes(self, li=None):
         """Returns a dataframe of phenotypes.
+
+        Args:
+            li (list): A list of phenotypes to extract (default: None means
+                       all phenotypes).
 
         Returns:
             pandas.DataFrame: A dataframe containing the phenotypes (with the

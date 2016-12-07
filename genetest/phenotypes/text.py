@@ -108,7 +108,7 @@ class TextPhenotypes(PhenotypesContainer):
             self.get_nb_variables(),
         )
 
-    def get_phenotypes(self):
+    def get_phenotypes(self, li=None):
         """Returns a dataframe of phenotypes.
 
         Returns:
@@ -116,7 +116,18 @@ class TextPhenotypes(PhenotypesContainer):
             sample IDs as index).
 
         """
-        return self._phenotypes
+        if li is None:
+            return self._phenotypes
+
+        # Check that all requested variables are available.
+        missing_variables = set(li) - set(self._phenotypes.columns)
+        if missing_variables:
+            raise KeyError(
+                "Some of the requested phenotypes are unavailable in the "
+                "PhenotypeContainer: {}.".format(missing_variables)
+            )
+
+        return self._phenotypes.loc[:, list(li)]
 
     def get_original_sample_names(self):
         """Returns the original samples (different if repeated measurements).
