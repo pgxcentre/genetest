@@ -9,7 +9,8 @@
 # http://creativecommons.org/licenses/by-nc/4.0/ or send a letter to Creative
 # Commons, PO Box 1866, Mountain View, CA 94042, USA.
 
-
+import importlib.util
+import os
 import logging
 from collections import namedtuple
 
@@ -373,3 +374,16 @@ class StatsError(Exception):
 
     def __str__(self):
         return self.message
+
+
+def parse_modelspec(filename):
+    """Dynamically import a ModelSpec instance from a Python file.
+
+    The file needs to define a model variable corresponding to the ModelSpec
+    instance.
+
+    """
+    spec = importlib.util.spec_from_file_location("model", os.path.abspath(filename))
+    module = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(module)
+    return module.model

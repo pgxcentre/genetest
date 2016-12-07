@@ -23,18 +23,18 @@ __license__ = "CC BY-NC 4.0"
 __all__ = ["available_models"]
 
 
-available_models = dict(
-    linear="Linear regression (ordinary least squares).",
-    logistic="Logistic regression (GLM with binomial distribution).",
-    mixedlm="Linear mixed effect model (random intercept).",
-    coxph="Cox's proportional hazard regression (survival analysis).",
-)
+available_models = {
+    "linear": "Linear regression (ordinary least squares).",
+    "logistic": "Logistic regression (GLM with binomial distribution).",
+    "mixedlm": "Linear mixed effect model (random intercept).",
+    "coxph": "Cox's proportional hazard regression (survival analysis).",
+}
 
 
 # The model map (which maps the name to the class)
-model_map = dict(
-    linear=StatsLinear,
-    logistic=StatsLogistic,
-    mixedlm=StatsMixedLM,
-    coxph=StatsCoxPH,
-)
+model_map = {
+    "linear": StatsLinear,
+    "logistic": StatsLogistic,
+    "mixedlm": StatsMixedLM,
+    "coxph": StatsCoxPH,
+}
