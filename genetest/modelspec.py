@@ -6,7 +6,6 @@ Utilities to build statistical models.
 # use in the ModelSpec creation.
 
 import uuid
-import collections
 import operator
 
 import numpy as np
@@ -123,7 +122,7 @@ class DependencyManager(object):
         if (self.source, key) in deps:
             return deps[(self.source, key)]
 
-        id = str(uuid.uuid4())
+        id = EntityIdentifier()
         deps[(self.source, key)] = id
         return id
 
@@ -138,8 +137,10 @@ class TransformationManager(object):
         self.action = action
 
     def __call__(self, source, *params):
+        # source is either an EntityIdentifier or an Expression
         # Generate an identifier for the result of the transformation.
-        target = str(uuid.uuid4())
+        # NOTE: Not sure if this should be an EntityIdentifier.
+        target = EntityIdentifier()
         TransformationManager.transformations.append(
             (self.action, source, target, params)
         )
@@ -204,11 +205,26 @@ class ModelSpec(object):
         ]
 
         df = phenotypes.get_phenotypes(phen_keys)
-        df.columns = [self.dependencies[(PHENOTYPES, k)] for k in phen_keys]
+        df.columns = [
+            self.dependencies[(PHENOTYPES, k)].id for k in phen_keys
+        ]
 
         # Extract the genotype dependencies.
-        # TODO
-        # Also handle SNPs.
+        # TODO handle SNPs.
+        GENOTYPES = "GENOTYPES"
+
+        geno_keys = [
+            k[1] for k, v in self.dependencies.items() if k[0] == GENOTYPES
+        ]
+
+        for marker in geno_keys:
+            entity_id = self.dependencies[(GENOTYPES, marker)]
+
+            g = genotypes.get_genotypes(marker).genotypes
+            df[entity_id.id] = g
+
+            # Also bind the EntityIdentifier.
+            entity_id.bind(g)
 
         # Apply transformations.
         for action, source, target, params in self.transformations:
@@ -217,44 +233,46 @@ class ModelSpec(object):
 
             # Some tranformations return multiple columns. We create all the
             # relevant columns in the dataframe.
-            if isinstance(res, collections.Iterable):
+            if isinstance(res, tuple):
                 for i, col in enumerate(res):
-                    df["{}-{}".format(target, i + 1)] = col
+                    df["{}-{}".format(target.id, i + 1)] = col
 
             # In most cases, transformations return a single array. We set it
             # under the target ID.
             else:
-                df[target] = res
+                df[target.id] = res
 
         print(df)
         return df
 
 
 @transformation_handler("LOG10")
-def _log10(data, column):
-    return np.log10(data[column])
+def _log10(data, entity):
+    return np.log10(data[entity.id])
 
 
 @transformation_handler("ENCODE_FACTOR")
-def _encode_factor(data, column):
+def _encode_factor(data, entity):
     # TODO
-    return data[column]
+    return (data[entity.id], data[entity.id])
 
 
 @transformation_handler("POW")
-def _pow(data, column, power):
-    return np.pow(data[column], power)
+def _pow(data, entity, power):
+    return np.pow(data[entity.id], power)
 
 
 @transformation_handler("INTERACTION")
-def _interaction(data, column, interaction_target):
-    return data[column] * data[interaction_target]
+def _interaction(data, entity, interaction_target):
+    print("INTERACTION -> ", interaction_target)
+    return data[entity.id] * data[interaction_target]
 
 
 @transformation_handler("GENETIC_RISK_SCORE")
-def _grs(data, column):
-    # TODO
-    return data[column]
+def _grs(data, entity):
+    if not isinstance(entity, Expression):
+        raise ValueError("grs function requires an expression.")
+    return entity.eval()
 
 phenotypes = DependencyManager("PHENOTYPES")
 genotypes = DependencyManager("GENOTYPES")
