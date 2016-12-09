@@ -136,11 +136,20 @@ class TransformationManager(object):
     def __init__(self, action):
         self.action = action
 
-    def __call__(self, source, *params):
+    def __call__(self, source, *params, name=None):
         # source is either an EntityIdentifier or an Expression
         # Generate an identifier for the result of the transformation.
-        # NOTE: Not sure if this should be an EntityIdentifier.
-        target = EntityIdentifier()
+        if name is None:
+            # Generate an interpretable name.
+            if isinstance(source, Expression):
+                raise ValueError(
+                    "The name parameter is mandatory for expression-based "
+                    "transformations."
+                )
+            else:
+                name = "TRANSFORM:{}:{}".format(self.action, source.id)
+
+        target = EntityIdentifier(name)
         TransformationManager.transformations.append(
             (self.action, source, target, params)
         )
@@ -189,6 +198,10 @@ class ModelSpec(object):
     def transformations(self):
         return TransformationManager.transformations
 
+    def get_translations(self):
+        """Returns a dict mapping IDs to regular variable names."""
+        return {id.id: tu[1] for tu, id in self.dependencies.items()}
+
     def create_data_matrix(self, phenotypes, genotypes):
         """Create the data matrix given data containers.
 
@@ -210,7 +223,6 @@ class ModelSpec(object):
         ]
 
         # Extract the genotype dependencies.
-        # TODO handle SNPs.
         GENOTYPES = "GENOTYPES"
 
         geno_keys = [
@@ -235,14 +247,19 @@ class ModelSpec(object):
             # relevant columns in the dataframe.
             if isinstance(res, tuple):
                 for i, col in enumerate(res):
-                    df["{}-{}".format(target.id, i + 1)] = col
+                    df["{}:{}".format(target.id, i + 1)] = col
+
+            elif isinstance(res, dict):
+                for key, col in res.items():
+                    df["{}:{}".format(target.id, key)] = col
 
             # In most cases, transformations return a single array. We set it
             # under the target ID.
             else:
                 df[target.id] = res
 
-        print(df)
+        # Only keep predictors and outcomes.
+
         return df
 
 
@@ -253,8 +270,11 @@ def _log10(data, entity):
 
 @transformation_handler("ENCODE_FACTOR")
 def _encode_factor(data, entity):
-    # TODO
-    return (data[entity.id], data[entity.id])
+    raise NotImplementedError()
+    return {
+        "level1": data[entity.id],
+        "level2": data[entity.id]
+    }
 
 
 @transformation_handler("POW")
@@ -264,8 +284,11 @@ def _pow(data, entity, power):
 
 @transformation_handler("INTERACTION")
 def _interaction(data, entity, interaction_target):
-    print("INTERACTION -> ", interaction_target)
-    return data[entity.id] * data[interaction_target]
+    # It is possible that there are multiple levels in the interaction_target.
+    # This is TODO
+    return {
+        interaction_target.id: data[entity.id] * data[interaction_target.id]
+    }
 
 
 @transformation_handler("GENETIC_RISK_SCORE")
