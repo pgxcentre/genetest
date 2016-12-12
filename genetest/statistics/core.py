@@ -50,6 +50,10 @@ def statistics_initializer(model, arguments, phenotypes):
 
     This function initialize the statistics worker.
 
+    Note
+    ====
+        This function gets called by all the subprocesses.
+
     """
     # Initializing the model
     statistics_worker.stats = model(**arguments)

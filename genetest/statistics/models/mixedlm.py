@@ -127,11 +127,11 @@ class StatsMixedLM(StatsModels):
         self.results.z_value = fitted.tvalues[self._result_col]
         self.results.p_value = fitted.pvalues[self._result_col]
 
-    def create_matrices(self, data, create_dummy=True):
+    def create_matrices(self, phenotype_container, create_dummy=True):
         """Creates the y and X matrices for a mixedlm analysis.
 
         Args:
-            data (genetest.phenotypes.core.PhenotypesContainer): The data.
+            phenotype_container (genetest.phenotypes.core.PhenotypesContainer): The data.
             create_dummy (bool): If True, a dummy column will be added for the
                                  genotypes.
 
@@ -144,10 +144,11 @@ class StatsMixedLM(StatsModels):
 
         """
         # Saving the original samples
-        self._ori_samples = data.get_original_sample_names()
+        self._ori_samples = phenotype_container.get_original_sample_names()
 
         # First, we get the matrix
-        y, X = super().create_matrices(data=data, create_dummy=create_dummy)
+        y, X = super().create_matrices(phenotype_container=phenotype_container,
+                                       create_dummy=create_dummy)
 
         # if create_dummy is False, it means the genotypes are in the dataframe
         if not create_dummy:
@@ -160,7 +161,8 @@ class StatsMixedLM(StatsModels):
             )
 
         # We merge the y and X matrices
-        full_data = pd.merge(data.get_phenotypes().dropna(), self._ori_samples,
+        full_data = pd.merge(phenotype_container.get_phenotypes().dropna(),
+                             self._ori_samples,
                              left_index=True, right_index=True)
 
         # We get the original samples
