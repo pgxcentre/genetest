@@ -12,8 +12,7 @@
 
 import statsmodels.api as sm
 
-from ...decorators import arguments
-from ..core import StatsModels, StatsResults, StatsError
+from ..core import StatsModels, StatsError, Schema
 
 
 __copyright__ = "Copyright 2016, Beaulieu-Saucier Pharmacogenomics Centre"
@@ -23,57 +22,35 @@ __license__ = "Attribution-NonCommercial 4.0 International (CC BY-NC 4.0)"
 __all__ = ["StatsLinear"]
 
 
-@arguments(required=(("outcome", str), ("predictors", [str])),
-           optional={"interaction": (str, None),
-                     "condition_value_t": (int, 1000)})
 class StatsLinear(StatsModels):
-    def __init__(self, outcome, predictors, interaction, condition_value_t):
+    def __init__(self, condition_value_t=1000):
         """Initializes a 'StatsLinear' instance.
 
         Args:
-            outcome (str): The outcome of the model.
-            predictors (list): The list of predictor variables in the model.
-            interaction (str): The interaction variable to add to the model
-                               with the genotype.
             condition_value_t (int): The condition value threshold (for
                                      multicollinearity).
 
         """
-        # Creating the result object
-        self.results = StatsResults(
-            coef="Linear regression coefficient",
-            std_err="Standard error of the regression coefficient",
-            lower_ci="Lower 95% confidence interval",
-            upper_ci="Upper 95% confidence interval",
-            t_value="t-statistics",
-            p_value="p-value",
-            rsquared_adj="adjusted r-squared",
-            print_order=["coef", "std_err", "lower_ci", "upper_ci", "t_value",
-                         "p_value", "rsquared_adj"]
-        )
-
         # Saving the condition value threshold
         self._condition_value_t = condition_value_t
 
-        # Executing the super init class
-        super().__init__(outcomes=[outcome], predictors=predictors,
-                         interaction=interaction, intercept=True)
+    @property
+    def schema(self):
+        return {
+            Schema.Parameter: {
+                "coef": float,
+                "std_err": float,
+                "lower_ci": float,
+                "upper_ci": float,
+                "t_value": float,
+                "p_value": float,
+            },
+            "model": {
+                "r_squared_adj": float
+            }
+        }
 
-    def fit(self, y, X):
-        """Fit the model.
-
-        Args:
-            y (pandas.DataFrame): The vector of endogenous variable.
-            X (pandas.DataFrame): The matrix of exogenous variables.
-
-        """
-        # Resetting the statistics
-        self.results.reset()
-
-        # Creating the OLS model from StatsModels and fitting it
-        model = sm.OLS(y, X)
-        fitted = model.fit()
-
+    def results_handler(self, fitted):
         # Checking the condition number (according to StatsModels, condition
         # number higher than 1000 indicate that there are strong
         # multicollinearity or other numerical problems)
@@ -90,12 +67,34 @@ class StatsLinear(StatsModels):
                 fitted.eigenvals.min(),
             ))
 
-        # Saving the statistics
-        self.results.coef = fitted.params[self._result_col]
-        self.results.std_err = fitted.bse[self._result_col]
-        self.results.lower_ci, self.results.upper_ci = tuple(
-            fitted.conf_int().loc[self._result_col, :].values
-        )
-        self.results.t_value = fitted.tvalues[self._result_col]
-        self.results.p_value = fitted.pvalues[self._result_col]
-        self.results.rsquared_adj = fitted.rsquared_adj
+        # Results about the model fit.
+        out = {
+            "model": {"r_squared_adj": fitted.rsquared_adj}
+        }
+
+        # Results about individual model parameters.
+        parameters = fitted.params.index
+        for param in parameters:
+            out[param] = {
+                "coef": fitted.params[param],
+                "std_err": fitted.bse[param],
+                "lower_ci": fitted.conf_int().loc[param, 0],
+                "upper_ci": fitted.conf_int().loc[param, 1],
+                "t_values": fitted.tvalues[param],
+                "p_values": fitted.pvalues[param],
+            }
+
+        return out
+
+    def fit(self, y, X, handler=None):
+        """Fit the model.
+
+        Args:
+            y (pandas.DataFrame): The vector of endogenous variable.
+            X (pandas.DataFrame): The matrix of exogenous variables.
+
+        """
+        # Creating the OLS model from StatsModels and fitting it
+        model = sm.OLS(y, X)
+        handler = self.results_handler if handler is None else handler
+        return handler(model.fit())

@@ -68,11 +68,6 @@ def setup_package():
                          "statistical models.",
         url="https://github.com/legaultmarc/genetest",
         license="CC BY-NC 4.0",
-        entry_points={
-            "console_scripts": [
-                "genetest=genetest.scripts.cli:main",
-            ],
-        },
         test_suite="genetest.tests.test_suite",
         zip_safe=False,
         install_requires=["numpy >= 1.11.0", "pandas >= 0.18.0",

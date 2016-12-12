@@ -13,7 +13,6 @@ from collections import defaultdict
 
 import pandas as pd
 
-from ..decorators import arguments
 from .core import PhenotypesContainer
 
 
@@ -24,11 +23,6 @@ __license__ = "Attribution-NonCommercial 4.0 International (CC BY-NC 4.0)"
 __all__ = ["TextPhenotypes"]
 
 
-@arguments(required=(("filename", str), ),
-           optional={"sample_column": (str, "sample"),
-                     "field_separator": (str, "\t"),
-                     "missing_values": ([str], None),
-                     "repeated_measurements": (bool, False)})
 class TextPhenotypes(PhenotypesContainer):
     def __init__(self, filename, sample_column, field_separator,
                  missing_values, repeated_measurements):

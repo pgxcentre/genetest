@@ -17,8 +17,7 @@ import numpy as np
 import pandas as pd
 import statsmodels.api as sm
 
-from ...decorators import arguments
-from ..core import StatsModels, StatsResults, StatsError
+from ..core import StatsModels, StatsError
 
 
 __copyright__ = "Copyright 2016, Beaulieu-Saucier Pharmacogenomics Centre"
@@ -28,10 +27,6 @@ __license__ = "Attribution-NonCommercial 4.0 International (CC BY-NC 4.0)"
 __all__ = ["StatsMixedLM"]
 
 
-@arguments(required=(("outcome", str), ("predictors", [str])),
-           optional={"interaction": (str, None),
-                     "reml": (bool, True),
-                     "p_threshold": (float, 1e-4)})
 class StatsMixedLM(StatsModels):
     def __init__(self, outcome, predictors, interaction, reml, p_threshold):
         """Initializes a 'StatsMixedLM' instance.
@@ -48,17 +43,17 @@ class StatsMixedLM(StatsModels):
 
         """
         # Creating the result object
-        self.results = StatsResults(
-            coef="MixedLM regression coefficient",
-            std_err="Standard error of the regression coefficient",
-            lower_ci="Lower 95% confidence interval",
-            upper_ci="Upper 95% confidence interval",
-            z_value="z-statistics",
-            p_value="p-value",
-            ts_p_value="Two-step p-value",
-            print_order=["coef", "std_err", "lower_ci", "upper_ci", "z_value",
-                         "p_value", "ts_p_value"]
-        )
+        # self.results = StatsResults(
+        #     coef="MixedLM regression coefficient",
+        #     std_err="Standard error of the regression coefficient",
+        #     lower_ci="Lower 95% confidence interval",
+        #     upper_ci="Upper 95% confidence interval",
+        #     z_value="z-statistics",
+        #     p_value="p-value",
+        #     ts_p_value="Two-step p-value",
+        #     print_order=["coef", "std_err", "lower_ci", "upper_ci", "z_value",
+        #                  "p_value", "ts_p_value"]
+        # )
 
         # The original samples and the grouping
         self._ori_samples = None
@@ -87,7 +82,7 @@ class StatsMixedLM(StatsModels):
 
         """
         # Resetting the statistics
-        self.results.reset()
+        # self.results.reset()
 
         # We perform the optimization if there is no interaction
         if not self._inter:
@@ -103,7 +98,7 @@ class StatsMixedLM(StatsModels):
             fitted = sm.OLS(t_y, t_X).fit()
 
             # We keep only the p value
-            self.results.ts_p_value = fitted.pvalues["geno"]
+            # self.results.ts_p_value = fitted.pvalues["geno"]
 
             # Should we perform the standard LMM?
             if self.results.ts_p_value >= self._p_threshold:
@@ -113,19 +108,20 @@ class StatsMixedLM(StatsModels):
         model = sm.MixedLM(y, X, self._groups)
 
         try:
-            fitted = model.fit(reml=self._reml)
+            # fitted = model.fit(reml=self._reml)
+            model.fit(reml=self._reml)
 
         except np.linalg.linalg.LinAlgError as e:
             raise StatsError(str(e))
 
         # Saving the statistics
-        self.results.coef = fitted.params[self._result_col]
-        self.results.std_err = fitted.bse[self._result_col]
-        self.results.lower_ci, self.results.upper_ci = tuple(
-            fitted.conf_int().loc[self._result_col, :].values
-        )
-        self.results.z_value = fitted.tvalues[self._result_col]
-        self.results.p_value = fitted.pvalues[self._result_col]
+        # self.results.coef = fitted.params[self._result_col]
+        # self.results.std_err = fitted.bse[self._result_col]
+        # self.results.lower_ci, self.results.upper_ci = tuple(
+        #     fitted.conf_int().loc[self._result_col, :].values
+        # )
+        # self.results.z_value = fitted.tvalues[self._result_col]
+        # self.results.p_value = fitted.pvalues[self._result_col]
 
     def create_matrices(self, phenotype_container, create_dummy=True):
         """Creates the y and X matrices for a mixedlm analysis.

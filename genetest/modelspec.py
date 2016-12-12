@@ -259,6 +259,7 @@ class ModelSpec(object):
                 df[target.id] = res
 
         # Only keep predictors and outcomes.
+        # TODO
 
         return df
 

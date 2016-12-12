@@ -13,8 +13,7 @@
 import statsmodels.api as sm
 from statsmodels.tools.sm_exceptions import PerfectSeparationError
 
-from ...decorators import arguments
-from ..core import StatsModels, StatsResults, StatsError
+from ..core import StatsModels, StatsError
 
 
 __copyright__ = "Copyright 2016, Beaulieu-Saucier Pharmacogenomics Centre"
@@ -24,8 +23,6 @@ __license__ = "Attribution-NonCommercial 4.0 International (CC BY-NC 4.0)"
 __all__ = ["StatsLogistic"]
 
 
-@arguments(required=(("outcome", str), ("predictors", [str])),
-           optional={"interaction": (str, None)})
 class StatsLogistic(StatsModels):
     def __init__(self, outcome, predictors, interaction):
         """Initializes a 'StatsLogistic' instance.
@@ -38,16 +35,16 @@ class StatsLogistic(StatsModels):
 
         """
         # Creating the result object
-        self.results = StatsResults(
-            coef="Logistic regression coefficient",
-            std_err="Standard error of the regression coefficient",
-            lower_ci="Lower 95% confidence interval",
-            upper_ci="Upper 95% confidence interval",
-            z_value="z-statistics",
-            p_value="p-value",
-            print_order=["coef", "std_err", "lower_ci", "upper_ci", "z_value",
-                         "p_value"]
-        )
+        # self.results = StatsResults(
+        #     coef="Logistic regression coefficient",
+        #     std_err="Standard error of the regression coefficient",
+        #     lower_ci="Lower 95% confidence interval",
+        #     upper_ci="Upper 95% confidence interval",
+        #     z_value="z-statistics",
+        #     p_value="p-value",
+        #     print_order=["coef", "std_err", "lower_ci", "upper_ci", "z_value",
+        #                  "p_value"]
+        # )
 
         # Executing the super init class
         super().__init__(outcomes=[outcome], predictors=predictors,

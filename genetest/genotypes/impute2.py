@@ -17,7 +17,6 @@ from collections import namedtuple
 import numpy as np
 import pandas as pd
 
-from ..decorators import arguments
 from .core import GenotypesContainer, Representation, MarkerGenotypes
 
 
@@ -32,9 +31,6 @@ _Impute2Line = namedtuple("_Impute2Line",
                           ["marker", "chrom", "pos", "a1", "a2", "prob"])
 
 
-@arguments(required=(("filename", str), ("sample_filename", str)),
-           optional={"representation": (str, Representation.DOSAGE),
-                     "probability_threshold": (float, 0.9)})
 class Impute2Genotypes(GenotypesContainer):
     def __init__(self, filename, sample_filename, representation,
                  probability_threshold):

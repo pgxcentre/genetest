@@ -14,8 +14,7 @@ import numpy as np
 import pandas as pd
 from lifelines import CoxPHFitter
 
-from ...decorators import arguments
-from ..core import StatsModels, StatsResults, StatsError
+from ..core import StatsModels, StatsError
 
 
 __copyright__ = "Copyright 2016, Beaulieu-Saucier Pharmacogenomics Centre"
@@ -25,10 +24,6 @@ __license__ = "Attribution-NonCommercial 4.0 International (CC BY-NC 4.0)"
 __all__ = ["StatsCoxPH"]
 
 
-@arguments(required=(("time_to_event", str), ("event", str),
-                     ("predictors", [str])),
-           optional={"interaction": (str, None),
-                     "normalize": (bool, False)})
 class StatsCoxPH(StatsModels):
     def __init__(self, time_to_event, event, predictors, interaction,
                  normalize):
@@ -49,17 +44,17 @@ class StatsCoxPH(StatsModels):
                            predictors=predictors, interaction=interaction,
                            intercept=True)
 
-        self.results = StatsResults(
-            coef="Cox proportional hazard regression coefficient",
-            std_err="Standard error of the regression coefficient",
-            hr="Hazard ratio",
-            hr_lower_ci="Lower 95% confidence interval of the hazard ratio",
-            hr_upper_ci="Upper 95% confidence interval of the hazard ratio",
-            z_value="z-statistics",
-            p_value="p-value",
-            print_order=["coef", "std_err", "hr", "hr_lower_ci", "hr_upper_ci",
-                         "z_value", "p_value"]
-        )
+        # self.results = StatsResults(
+        #     coef="Cox proportional hazard regression coefficient",
+        #     std_err="Standard error of the regression coefficient",
+        #     hr="Hazard ratio",
+        #     hr_lower_ci="Lower 95% confidence interval of the hazard ratio",
+        #     hr_upper_ci="Upper 95% confidence interval of the hazard ratio",
+        #     z_value="z-statistics",
+        #     p_value="p-value",
+        #     print_order=["coef", "std_err", "hr", "hr_lower_ci", "hr_upper_ci",
+        #                  "z_value", "p_value"]
+        # )
 
         # Saving the two variables for time to event and event
         self._tte = time_to_event
@@ -82,7 +77,7 @@ class StatsCoxPH(StatsModels):
 
         """
         # Resetting the statistics
-        self.results.reset()
+        # self.results.reset()
 
         # Creating one data frame
         data = pd.merge(y, X, left_index=True, right_index=True)
@@ -98,16 +93,16 @@ class StatsCoxPH(StatsModels):
             raise StatsError(str(e))
 
         # Gathering the results for the required column
-        results = model.summary.loc[self._result_col, :]
+        # results = model.summary.loc[self._result_col, :]
 
         # Saving the statistics
-        self.results.coef = results.coef
-        self.results.std_err = results["se(coef)"]
-        self.results.hr = np.exp(results.coef)
-        self.results.hr_lower_ci = np.exp(results["lower 0.95"])
-        self.results.hr_upper_ci = np.exp(results["upper 0.95"])
-        self.results.z_value = results.z
-        self.results.p_value = results.p
+        # self.results.coef = results.coef
+        # self.results.std_err = results["se(coef)"]
+        # self.results.hr = np.exp(results.coef)
+        # self.results.hr_lower_ci = np.exp(results["lower 0.95"])
+        # self.results.hr_upper_ci = np.exp(results["upper 0.95"])
+        # self.results.z_value = results.z
+        # self.results.p_value = results.p
 
     def create_matrices(self, data, create_dummy=True):
         """Creates the y and X matrices for a linear regression.
