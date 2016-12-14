@@ -11,15 +11,16 @@ Run a full statistical analysis.
 # Commons, PO Box 1866, Mountain View, CA 94042, USA.
 
 
-from .modelspec import SNPs 
+import pprint
+
+from .modelspec import SNPs
 from .statistics import model_map
 
 
 class Subscriber(object):
     """Abstract class for subscribers."""
-    def init(self, schema, translations):
-        self.schema = schema
-        self.translations = translations
+    def init(self, modelspec):
+        self.modelspec = modelspec
 
     def handle(self, results):
         """Handle results from a statistical test."""
@@ -28,7 +29,26 @@ class Subscriber(object):
 
 class Print(Subscriber):
     def handle(self, results):
-        print(results)
+        pprint.pprint(results)
+
+
+class RowWriter(Subscriber):
+    def __init__(self, filename=None, columns=None, header=False, sep="\t"):
+        self.header = header
+        self.columns = columns
+        self.sep = sep
+        self.filename = filename
+
+    def handle(self, results):
+        if self.header:
+            print(self.sep.join([i[0] for i in self.columns]))
+
+        row = []
+        for name, result in self.columns:
+            row.append(str(result.get(results)))
+
+        if self.filename is None:
+            print(self.sep.join(row))
 
 
 def execute(phenotypes, genotypes, modelspec, subscribers=None):
@@ -38,19 +58,32 @@ def execute(phenotypes, genotypes, modelspec, subscribers=None):
     #          for snp in genotypes.iter_marker_genotypes():
     #              # snp has marker, chrom, pos, genotypes, major, minor.
     if subscribers is None:
-        subscribers = []
+        subscribers = [Print()]
 
-    translations = modelspec.get_translations()
     data = modelspec.create_data_matrix(phenotypes, genotypes)
+    data = data.dropna()  # CHECK THIS TODO
 
     # Get the statistical test.
     test = model_map[modelspec.test]()
 
     # Assemble the data matrices.
     y = data[modelspec.outcome.id]
-    X = data[[i.id for i in modelspec.predictors]]
+
+    print(modelspec.predictors)
+
+    predictor_ids = set([i.id for i in modelspec.predictors])
+    columns = [i for i in data.columns
+               if i in predictor_ids or i.startswith("TRANSFORM:")]
+    X = data[columns]
 
     results = test.fit(y, X)
+
+    # Update the results with the variant metadata.
+    for entity in results:
+        if entity in modelspec.variant_metadata:
+            results[entity].update(modelspec.variant_metadata[entity])
+
+    # Dispatch the results to the subscribers.
     for subscriber in subscribers:
-        subscriber.init(test.schema, translations)
+        subscriber.init(modelspec)
         subscriber.handle(results)

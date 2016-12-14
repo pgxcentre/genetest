@@ -33,10 +33,6 @@ _StatsResults = namedtuple(
 )
 
 
-class Schema(object):
-    Parameter = "PARAMETER"
-
-
 class StatsModels(object):
     def fit(self, y, X):
         """Fit the model.

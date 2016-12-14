@@ -12,7 +12,7 @@
 
 import statsmodels.api as sm
 
-from ..core import StatsModels, StatsError, Schema
+from ..core import StatsModels, StatsError
 
 
 __copyright__ = "Copyright 2016, Beaulieu-Saucier Pharmacogenomics Centre"
@@ -34,22 +34,6 @@ class StatsLinear(StatsModels):
         # Saving the condition value threshold
         self._condition_value_t = condition_value_t
 
-    @property
-    def schema(self):
-        return {
-            Schema.Parameter: {
-                "coef": float,
-                "std_err": float,
-                "lower_ci": float,
-                "upper_ci": float,
-                "t_value": float,
-                "p_value": float,
-            },
-            "model": {
-                "r_squared_adj": float
-            }
-        }
-
     def results_handler(self, fitted):
         # Checking the condition number (according to StatsModels, condition
         # number higher than 1000 indicate that there are strong
@@ -69,7 +53,7 @@ class StatsLinear(StatsModels):
 
         # Results about the model fit.
         out = {
-            "model": {"r_squared_adj": fitted.rsquared_adj}
+            "MODEL": {"r_squared_adj": fitted.rsquared_adj}
         }
 
         # Results about individual model parameters.
@@ -80,8 +64,8 @@ class StatsLinear(StatsModels):
                 "std_err": fitted.bse[param],
                 "lower_ci": fitted.conf_int().loc[param, 0],
                 "upper_ci": fitted.conf_int().loc[param, 1],
-                "t_values": fitted.tvalues[param],
-                "p_values": fitted.pvalues[param],
+                "t_value": fitted.tvalues[param],
+                "p_value": fitted.pvalues[param],
             }
 
         return out

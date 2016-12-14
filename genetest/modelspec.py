@@ -13,6 +13,9 @@ import numpy as np
 from .statistics import available_models
 
 
+SNPs = "SNPs"
+
+
 class transformation_handler(object):
     handlers = {}
 
@@ -24,8 +27,47 @@ class transformation_handler(object):
         return f
 
 
-class SNPs(object):
-    pass
+class Result(object):
+    def __init__(self, entity):
+        self.entity = entity
+        self.key = None
+
+    def __getitem__(self, key):
+        self.key = key
+        return self
+
+    def get(self, results):
+        if self.entity is SNPs:
+            return results["the_snp"][self.key]
+        elif isinstance(self.entity, EntityIdentifier):
+            # Access for transformations and entities.
+            if self.entity.id in results.keys():
+                return results[self.entity.id][self.key]
+            else:
+                # Check for many levels.
+                results_per_level = {}
+
+                for key in results:
+                    split_key = key.split(":")
+                    id, level = (":".join(split_key[:-1]), split_key[-1])
+                    if id == self.entity.id:
+                        print("--")
+                        print(level)
+                        print(key)
+                        print(self.key)
+                        print("--")
+                        results_per_level[level] = results[key][self.key]
+
+                return results_per_level
+
+        else:
+            # Access for special fields like "MODEL"
+            return results[self.entity][self.key]
+
+
+class ResultMetaclass(object):
+    def __getitem__(self, entity):
+        return Result(entity)
 
 
 class Expression(object):
@@ -78,11 +120,22 @@ class Expression(object):
 
 
 class EntityIdentifier(object):
+    """Placeholder for variables in the modelspec.
+
+    Instances get assigned an ID (a UUID4 if nothing is specified), the
+    chosen identifier otherwise.
+
+    It is possible to do basic arithmetic on instances. This will return an
+    Expression object that can be evaluated. Before evaluation, data needs
+    to be bound to the EntityIdentifier using the bind method.
+
+    """
     def __init__(self, id=None):
         if id:
             self.id = id
         else:
             self.id = str(uuid.uuid4())
+
         self.values = None
 
     def __mul__(self, other):
@@ -110,7 +163,11 @@ class EntityIdentifier(object):
 
 
 class DependencyManager(object):
-    """Class that remembers which items are accessed in an internal set."""
+    """Class that remembers which items are accessed in an internal set.
+
+    For example, "genotypes" and "phenotypes" are dependency managers.
+
+    """
     dependencies = {}
 
     def __init__(self, source):
@@ -149,8 +206,19 @@ class TransformationManager(object):
             else:
                 name = "TRANSFORM:{}:{}".format(self.action, source.id)
 
+        else:
+            name = "TRANSFORM:{}".format(name)
+
         target = EntityIdentifier(name)
-        TransformationManager.transformations.append(
+
+        # Make sure there are no entities with the same name.
+        transformations = TransformationManager.transformations
+        if target.id in {i[2].id for i in transformations}:
+            raise ValueError(
+                "Transformation named '{}' already exists. You can provide a "
+                "unique name using the 'name=' parameter.".format(target.id))
+
+        transformations.append(
             (self.action, source, target, params)
         )
         return target
@@ -167,6 +235,11 @@ class ModelSpec(object):
         self.outcome = self._clean_outcome(outcome)
         self.predictors = self._clean_predictors(predictors)
         self.test = self._clean_test(test)
+
+        # SNP metadata is stored in the modelspec because it is obtained as a
+        # consequence of building the data matrix.
+        # Hence, it is more efficient to cache it than to request it.
+        self.variant_metadata = {}
 
     def _clean_test(self, test):
         if test not in available_models:
@@ -185,6 +258,7 @@ class ModelSpec(object):
             iter_failed = False
         except TypeError:
             pass
+
         if iter_failed:
             raise TypeError("'predictors' argument needs to be an iterable.")
 
@@ -197,6 +271,15 @@ class ModelSpec(object):
     @property
     def transformations(self):
         return TransformationManager.transformations
+
+    def get_tested_variants(self):
+        if SNPs in self.predictors:
+            return SNPs
+        else:
+            return [
+                (v, k[1]) for k, v in self.dependencies.items()
+                if k[0] == "GENOTYPES"
+            ]
 
     def get_translations(self):
         """Returns a dict mapping IDs to regular variable names."""
@@ -223,20 +306,27 @@ class ModelSpec(object):
         ]
 
         # Extract the genotype dependencies.
-        GENOTYPES = "GENOTYPES"
+        markers = self.get_tested_variants()
 
-        geno_keys = [
-            k[1] for k, v in self.dependencies.items() if k[0] == GENOTYPES
-        ]
+        # In GWAS we handle the SNPs differently, but the modelspec adds
+        # variants that are specified explicitly directly to the phenotypes
+        # dataframe.
+        if markers is not SNPs:
+            for entity, marker in markers:
+                entity_id = self.dependencies[("GENOTYPES", marker)]
 
-        for marker in geno_keys:
-            entity_id = self.dependencies[(GENOTYPES, marker)]
+                g = genotypes.get_genotypes(marker)
+                df[entity_id.id] = g.genotypes
 
-            g = genotypes.get_genotypes(marker).genotypes
-            df[entity_id.id] = g
+                # Also bind the EntityIdentifier in case we need to compute
+                # a GRS.
+                entity_id.bind(g.genotypes)
 
-            # Also bind the EntityIdentifier.
-            entity_id.bind(g)
+                # And save the variant metadata.
+                self.variant_metadata[entity.id] = {
+                    "name": marker, "chrom": g.chrom, "pos": g.pos,
+                    "minor": g.minor, "major": g.major
+                }
 
         # Apply transformations.
         for action, source, target, params in self.transformations:
@@ -245,11 +335,7 @@ class ModelSpec(object):
 
             # Some tranformations return multiple columns. We create all the
             # relevant columns in the dataframe.
-            if isinstance(res, tuple):
-                for i, col in enumerate(res):
-                    df["{}:{}".format(target.id, i + 1)] = col
-
-            elif isinstance(res, dict):
+            if isinstance(res, dict):
                 for key, col in res.items():
                     df["{}:{}".format(target.id, key)] = col
 
@@ -271,10 +357,10 @@ def _log10(data, entity):
 
 @transformation_handler("ENCODE_FACTOR")
 def _encode_factor(data, entity):
-    raise NotImplementedError()
+    # raise NotImplementedError()
     return {
         "level1": data[entity.id],
-        "level2": data[entity.id]
+        "level2": np.random.random(len(data[entity.id]))
     }
 
 
@@ -287,9 +373,7 @@ def _pow(data, entity, power):
 def _interaction(data, entity, interaction_target):
     # It is possible that there are multiple levels in the interaction_target.
     # This is TODO
-    return {
-        interaction_target.id: data[entity.id] * data[interaction_target.id]
-    }
+    return data[entity.id] * data[interaction_target.id]
 
 
 @transformation_handler("GENETIC_RISK_SCORE")
@@ -297,6 +381,9 @@ def _grs(data, entity):
     if not isinstance(entity, Expression):
         raise ValueError("grs function requires an expression.")
     return entity.eval()
+
+result = ResultMetaclass()
+model = "MODEL"
 
 phenotypes = DependencyManager("PHENOTYPES")
 genotypes = DependencyManager("GENOTYPES")
