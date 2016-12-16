@@ -11,6 +11,7 @@ Run a full statistical analysis.
 # Commons, PO Box 1866, Mountain View, CA 94042, USA.
 
 
+import sys
 import queue
 import pprint
 import multiprocessing
@@ -83,13 +84,7 @@ class RowWriter(Subscriber):
     def handle(self, results):
         row = []
         for name, result in self.columns:
-            try:
-                row.append(str(result.get(results)))
-            except Exception as e:
-                logger.warning(
-                    "Error in RowWriter: Results key not found: {}"
-                    "".format(e)
-                )
+            row.append(str(result.get(results)))
 
         row = self.sep.join(row)
         if self.filename is not None:
@@ -99,9 +94,28 @@ class RowWriter(Subscriber):
             print(row)
 
 
-def _gwas_worker(q, results_q, failed, fit, y, X):
+def sync(phenotypes, genotypes):
+    """Make the sample order for phenotypes and genotypes identical."""
+    # TODO
+    pass
+
+
+def _invalid_subscriber(message, abort=None):
+    """Logs the error from the subscriber."""
+    logger.critical(
+        "A subscriber for this analysis raised an exception. "
+        "This is be because an invalid key was accessed from the results of "
+        "the statistical test.\n"
+        "Unknown field: '{}'".format(message)
+    )
+    if abort:
+        abort.set()
+    sys.exit(1)
+
+
+def _gwas_worker(q, results_q, failed, abort, fit, y, X):
     # Get a SNP.
-    while True:
+    while not abort.is_set():
         # Get a SNP from the Queue.
         snp = q.get()
 
@@ -112,7 +126,6 @@ def _gwas_worker(q, results_q, failed, fit, y, X):
             return
 
         # Set the genotypes.
-        # TODO this assumes that the containers are synced.
         X["SNPs"] = snp.genotypes
 
         # Compute.
@@ -132,6 +145,8 @@ def _gwas_worker(q, results_q, failed, fit, y, X):
 
 
 def execute(phenotypes, genotypes, modelspec, subscribers=None):
+    sync(phenotypes, genotypes)
+
     if subscribers is None:
         subscribers = [Print()]
 
@@ -160,7 +175,10 @@ def execute(phenotypes, genotypes, modelspec, subscribers=None):
         # Dispatch the results to the subscribers.
         for subscriber in subscribers:
             subscriber.init(modelspec)
-            subscriber.handle(results)
+            try:
+                subscriber.handle(results)
+            except KeyError as e:
+                return _invalid_subscriber(e.args[0])
 
 
 def _execute_gwas(genotypes, modelspec, subscribers, y, X):
@@ -178,6 +196,7 @@ def _execute_gwas(genotypes, modelspec, subscribers, y, X):
         failed = multiprocessing.Queue()
         q = multiprocessing.Queue(500)
         results = multiprocessing.Queue()
+        abort = multiprocessing.Event()
 
         # Spawn the worker processes.
         workers = []
@@ -188,7 +207,7 @@ def _execute_gwas(genotypes, modelspec, subscribers, y, X):
 
             worker = multiprocessing.Process(
                 target=_gwas_worker,
-                args=(q, results, failed, fit, this_y, this_X)
+                args=(q, results, failed, abort, fit, this_y, this_X)
             )
 
             workers.append(worker)
@@ -218,7 +237,10 @@ def _execute_gwas(genotypes, modelspec, subscribers, y, X):
                 return 1
 
             for subscriber in subscribers:
-                subscriber.handle(res)
+                try:
+                    subscriber.handle(res)
+                except KeyError as e:
+                    _invalid_subscriber(e.args[0], abort)
 
             return 0
 
