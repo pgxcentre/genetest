@@ -14,6 +14,7 @@ from .statistics import available_models
 
 
 SNPs = "SNPs"
+model = "MODEL"
 
 
 class transformation_handler(object):
@@ -408,7 +409,6 @@ def _grs(data, entity):
     return entity.eval()
 
 result = ResultMetaclass()
-model = "MODEL"
 
 phenotypes = DependencyManager("PHENOTYPES")
 genotypes = DependencyManager("GENOTYPES")

@@ -15,6 +15,8 @@ from statsmodels.tools.sm_exceptions import PerfectSeparationError
 
 from ..core import StatsModels, StatsError
 
+import numpy as np
+
 
 __copyright__ = "Copyright 2016, Beaulieu-Saucier Pharmacogenomics Centre"
 __license__ = "Attribution-NonCommercial 4.0 International (CC BY-NC 4.0)"
@@ -24,32 +26,6 @@ __all__ = ["StatsLogistic"]
 
 
 class StatsLogistic(StatsModels):
-    def __init__(self, outcome, predictors, interaction):
-        """Initializes a 'StatsLogistic' instance.
-
-        Args:
-            outcome (str): The outcome of the model.
-            predictors (list): The list of predictor variables in the model.
-            interaction (str): The interaction variable to add to the model
-                               with the genotype.
-
-        """
-        # Creating the result object
-        # self.results = StatsResults(
-        #     coef="Logistic regression coefficient",
-        #     std_err="Standard error of the regression coefficient",
-        #     lower_ci="Lower 95% confidence interval",
-        #     upper_ci="Upper 95% confidence interval",
-        #     z_value="z-statistics",
-        #     p_value="p-value",
-        #     print_order=["coef", "std_err", "lower_ci", "upper_ci", "z_value",
-        #                  "p_value"]
-        # )
-
-        # Executing the super init class
-        super().__init__(outcomes=[outcome], predictors=predictors,
-                         interaction=interaction, intercept=True)
-
     def fit(self, y, X):
         """Fit the model.
 
@@ -58,9 +34,6 @@ class StatsLogistic(StatsModels):
             X (pandas.DataFrame): The matrix of exogenous variables.
 
         """
-        # Resetting the statistics
-        self.results.reset()
-
         # Creating the OLS model from StatsModels and fitting it
         model = sm.GLM(y, X, family=sm.families.Binomial())
         try:
@@ -69,11 +42,21 @@ class StatsLogistic(StatsModels):
         except PerfectSeparationError as e:
             raise StatsError(str(e))
 
-        # Saving the statistics
-        self.results.coef = fitted.params[self._result_col]
-        self.results.std_err = fitted.bse[self._result_col]
-        self.results.lower_ci, self.results.upper_ci = tuple(
-            fitted.conf_int().loc[self._result_col, :].values
-        )
-        self.results.z_value = fitted.tvalues[self._result_col]
-        self.results.p_value = fitted.pvalues[self._result_col]
+        out = {}
+        parameters = fitted.params.index
+
+        for param in parameters:
+            # If GWAS, check that inference could be done on the SNP.
+            if param == "SNPs" and np.isnan(fitted.pvalues[param]):
+                raise StatsError("Inference did not converge.")
+
+            out[param] = {
+                "coef": fitted.params[param],
+                "std_err": fitted.bse[param],
+                "lower_ci": fitted.conf_int().loc[param, 0],
+                "upper_ci": fitted.conf_int().loc[param, 1],
+                "t_value": fitted.tvalues[param],
+                "p_value": fitted.pvalues[param],
+            }
+
+        return out

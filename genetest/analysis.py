@@ -20,8 +20,16 @@ import logging
 from .modelspec import SNPs
 from .statistics import model_map
 
+import numpy as np
 
+
+logging.basicConfig()
 logger = logging.getLogger(__name__)
+
+
+DEBUG = True
+if DEBUG:
+    logger.setLevel(logging.DEBUG)
 
 
 class Subscriber(object):
@@ -94,12 +102,6 @@ class RowWriter(Subscriber):
             print(row)
 
 
-def sync(phenotypes, genotypes):
-    """Make the sample order for phenotypes and genotypes identical."""
-    # TODO
-    pass
-
-
 def _invalid_subscriber(message, abort=None):
     """Logs the error from the subscriber."""
     logger.critical(
@@ -113,6 +115,13 @@ def _invalid_subscriber(message, abort=None):
     sys.exit(1)
 
 
+def _missing(y, X):
+    """Return a boolean vector indexing non-missing values."""
+    y_missing = y.isnull()
+    X_missing = X.isnull().any(axis=1)
+    return ~(y_missing | X_missing)
+
+
 def _gwas_worker(q, results_q, failed, abort, fit, y, X):
     # Get a SNP.
     while not abort.is_set():
@@ -123,15 +132,25 @@ def _gwas_worker(q, results_q, failed, abort, fit, y, X):
         if snp is None:
             q.put(None)
             results_q.put(None)
+            logger.debug("Worker Done")
             return
 
+        # Compute union between indices.
+        union = snp.genotypes.index & X.index
+        no_geno = X.index.difference(snp.genotypes.index)
+
         # Set the genotypes.
-        X["SNPs"] = snp.genotypes
+        if no_geno.shape[0] > 0:
+            X.loc[no_geno, "SNPs"] = np.nan
+        X.loc[union, "SNPs"] = snp.genotypes.loc[union, "geno"]
+
+        missing = _missing(y, X)
 
         # Compute.
         try:
-            results = fit(y, X)
-        except Exception:
+            results = fit(y[missing], X[missing])
+        except Exception as e:
+            logger.debug(e)
             if snp.marker:
                 failed.put(snp.marker)
             continue
@@ -145,12 +164,12 @@ def _gwas_worker(q, results_q, failed, abort, fit, y, X):
 
 
 def execute(phenotypes, genotypes, modelspec, subscribers=None):
-    sync(phenotypes, genotypes)
-
     if subscribers is None:
         subscribers = [Print()]
 
     data = modelspec.create_data_matrix(phenotypes, genotypes)
+
+    # Exclude samples with missing outcome or covariable.
     data = data.dropna()
 
     y = data[modelspec.outcome.id]
@@ -165,6 +184,8 @@ def execute(phenotypes, genotypes, modelspec, subscribers=None):
         # Get the statistical test.
         test = model_map[modelspec.test]()
 
+        # We don't need to worry about indexing or the sample order because
+        # both parameters are from the same df.
         results = test.fit(y, X)
 
         # Update the results with the variant metadata.
@@ -183,14 +204,11 @@ def execute(phenotypes, genotypes, modelspec, subscribers=None):
 
 def _execute_gwas(genotypes, modelspec, subscribers, y, X):
         test_class = model_map[modelspec.test]
-        cpus = multiprocessing.cpu_count()
+        cpus = multiprocessing.cpu_count() - 1
 
         # Pre-initialize the subscribers.
         for subscriber in subscribers:
             subscriber.init(modelspec)
-
-        # Spawn the manager process.
-        cpus -= 1
 
         # Create queues for failing SNPs and the consumer queue.
         failed = multiprocessing.Queue()
@@ -245,14 +263,21 @@ def _execute_gwas(genotypes, modelspec, subscribers, y, X):
             return 0
 
         # Start filling the consumer queue and listening for results.
+        limit = 1000
         for snp in genotypes.iter_marker_genotypes():
             q.put(snp)
 
             # Handle results at the same time to avoid occupying too much
             # memory as the results queue gets filled.
-            _handle_result()
+            val = _handle_result()
+            assert val == 0
+
+            limit -= 1
+            if limit == 0:
+                break
 
         # Signal that there are no more SNPs to add.
+        logger.debug("Done pushing SNPs")
         q.put(None)
 
         # Handle the remaining results.
