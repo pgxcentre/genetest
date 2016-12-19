@@ -13,7 +13,6 @@ Dummy implementation of the phenotype container with test data.
 import pandas as pd
 import numpy as np
 
-from ..decorators import arguments
 from .core import PhenotypesContainer
 
 
@@ -24,7 +23,6 @@ __license__ = "Attribution-NonCommercial 4.0 International (CC BY-NC 4.0)"
 __all__ = ["_DummyPhenotypes"]
 
 
-@arguments(required=(), optional={})
 class _DummyPhenotypes(PhenotypesContainer):
     def __init__(self):
         self.data = pd.DataFrame({
