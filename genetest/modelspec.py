@@ -360,6 +360,34 @@ class ModelSpec(object):
         return df[keep_cols]
 
 
+class VariantPredicate(object):
+    def __init__(self):
+        """Initialize a callable that will serve as a variant filtering
+        function.
+
+        The predicate should return True if the variant is to be analyzed and
+        False otherwise.
+
+        Variant predicates can also raise StopIteration to stop pushing SNPs.
+
+        """
+        pass
+
+
+class MAFFilter(VariantPredicate):
+    def __init__(self, maf):
+        """Filters variants with a MAF under the specified threshold."""
+        self.maf = maf
+
+    def __call__(self, snp):
+        # Compute the MAF.
+        g = snp.genotypes.values
+        f = np.sum(g) / (2 * g.shape[0])
+        maf = min(f, 1 - f)
+
+        return maf >= self.maf
+
+
 @transformation_handler("LOG10")
 def _log10(data, entity):
     return np.log10(data[entity.id])

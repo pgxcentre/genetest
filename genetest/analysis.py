@@ -158,14 +158,22 @@ def _gwas_worker(q, results_q, failed, abort, fit, y, X):
         # Update the results for the SNP with metadata.
         results["SNPs"].update({
             "chr": snp.chrom, "pos": snp.pos, "major": snp.major,
-            "minor": snp.minor, "name": snp.marker
+            "minor": snp.minor, "name": snp.marker,
         })
+        maf = np.sum(X["SNPs"]) / (2 * X.shape[0])
+        maf = min(maf, 1 - maf)
+        results["SNPs"]["maf"] = maf
+
         results_q.put(results)
 
 
-def execute(phenotypes, genotypes, modelspec, subscribers=None):
+def execute(phenotypes, genotypes, modelspec, subscribers=None,
+            variant_predicates=None):
     if subscribers is None:
         subscribers = [Print()]
+
+    if variant_predicates is None:
+        variant_predicates = []
 
     data = modelspec.create_data_matrix(phenotypes, genotypes)
 
@@ -177,10 +185,16 @@ def execute(phenotypes, genotypes, modelspec, subscribers=None):
 
     # GWAS context.
     if SNPs in modelspec.predictors:
-        _execute_gwas(genotypes, modelspec, subscribers, y, X)
+        _execute_gwas(genotypes, modelspec, subscribers, y, X,
+                      variant_predicates=variant_predicates)
 
     # Simple statistical test.
     else:
+        # There shouldn't be variant_predicates.
+        if len(variant_predicates) != 0:
+            logger.warning("Variant predicates are only used for GWAS "
+                           "analyses.")
+
         # Get the statistical test.
         test = model_map[modelspec.test]()
 
@@ -202,7 +216,7 @@ def execute(phenotypes, genotypes, modelspec, subscribers=None):
                 return _invalid_subscriber(e.args[0])
 
 
-def _execute_gwas(genotypes, modelspec, subscribers, y, X):
+def _execute_gwas(genotypes, modelspec, subscribers, y, X, variant_predicates):
         test_class = model_map[modelspec.test]
         cpus = multiprocessing.cpu_count() - 1
 
@@ -263,18 +277,23 @@ def _execute_gwas(genotypes, modelspec, subscribers, y, X):
             return 0
 
         # Start filling the consumer queue and listening for results.
-        limit = 1000
+        not_analyzed = []
         for snp in genotypes.iter_marker_genotypes():
+            # Pass through the list of variant filtering predicates.
+            try:
+                if not all([f(snp) for f in variant_predicates]):
+                    not_analyzed.append(snp.marker)
+                    continue
+
+            except StopIteration:
+                break
+
             q.put(snp)
 
             # Handle results at the same time to avoid occupying too much
             # memory as the results queue gets filled.
             val = _handle_result()
             assert val == 0
-
-            limit -= 1
-            if limit == 0:
-                break
 
         # Signal that there are no more SNPs to add.
         logger.debug("Done pushing SNPs")
@@ -296,6 +315,11 @@ def _execute_gwas(genotypes, modelspec, subscribers, y, X):
 
                 if snp:
                     f.write(snp + '\n')
+
+        # Dump the not analyzed SNPs to disk.
+        with open("not_analyzed_snps.txt", "w") as f:
+            for snp in not_analyzed:
+                f.write(snp + '\n')
 
         # Sanity check that there is nothing important left in the queues.
         queues_iter = zip(
