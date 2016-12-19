@@ -13,7 +13,6 @@ Dummy implementation of the phenotype container with test data.
 import pandas as pd
 import numpy as np
 
-from ..decorators import arguments
 from .core import PhenotypesContainer
 
 
@@ -24,7 +23,6 @@ __license__ = "Attribution-NonCommercial 4.0 International (CC BY-NC 4.0)"
 __all__ = ["_DummyPhenotypes"]
 
 
-@arguments(required=(), optional={})
 class _DummyPhenotypes(PhenotypesContainer):
     def __init__(self):
         self.data = pd.DataFrame({
@@ -33,6 +31,7 @@ class _DummyPhenotypes(PhenotypesContainer):
             "V2": [0, np.nan, 1, 0, 1],
             "V3": [-2, 1, np.nan, 0, -1],
             "V4": [0.1, 0.2, 0.3, 0.4, 0.5],
+            "V5": [0, 0, 0, 1, 1],
         }, index=["s{}".format(i) for i in range(1, 6)])
 
     def close(self):

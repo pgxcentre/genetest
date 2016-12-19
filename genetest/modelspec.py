@@ -405,7 +405,8 @@ def _encode_factor(data, entity):
             # Set the first level as the reference.
             if i == 0:
                 continue
-            out[cat] = v[v == cat]
+            out[cat] = (v == cat).astype(int)
+
         return out
 
     # Any other data type.
@@ -413,7 +414,7 @@ def _encode_factor(data, entity):
     for i, level in enumerate(levels):
         if i == 0:
             continue
-        out["level{}".format(level)] = v[v == level]
+        out["level{}".format(level)] = (v == level).astype(int)
 
     return out
 
