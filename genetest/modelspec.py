@@ -437,6 +437,12 @@ def _grs(data, entity):
         raise ValueError("grs function requires an expression.")
     return entity.eval()
 
+
+def _reset():
+    TransformationManager.transformations = []
+    DependencyManager.dependencies = {}
+
+
 result = ResultMetaclass()
 
 phenotypes = DependencyManager("PHENOTYPES")
