@@ -23,6 +23,7 @@ __copyright__ = "Copyright 2016, Beaulieu-Saucier Pharmacogenomics Centre"
 __license__ = "Attribution-NonCommercial 4.0 International (CC BY-NC 4.0)"
 
 
+@unittest.skip("Not implemented")
 class TestAnalysisConfiguration(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
