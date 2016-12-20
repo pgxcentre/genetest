@@ -1,10 +1,10 @@
 [run]
 branch = True
-source = project_x
+source = genetest
 
 [report]
 exclude_lines = 
     pragma: no cover
 
 [html]
-title = Coverage report - project_x
+title = Coverage report - genetest
