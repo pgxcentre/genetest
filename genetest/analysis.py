@@ -66,6 +66,13 @@ class ResultsMemory(Subscriber):
             results
         ))
 
+    def _get_gwas_results(self):
+        out = {}
+        for result in self.results:
+            name = result["SNPs"]["name"]
+            out[name] = result
+        return out
+
 
 class Print(Subscriber):
     def __init__(self, raw=False):
