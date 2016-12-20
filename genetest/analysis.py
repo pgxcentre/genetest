@@ -44,6 +44,27 @@ class Subscriber(object):
         """Handle results from a statistical test."""
         raise NotImplementedError()
 
+    @staticmethod
+    def _apply_translation(translation, results):
+        out = {}
+        for k in results:
+            if k in translation:
+                out[translation[k]] = results[k]
+            else:
+                out[k] = results[k]
+        return out
+
+
+class ResultsMemory(Subscriber):
+    def __init__(self):
+        self.results = []
+
+    def handle(self, results):
+        self.results.append(Subscriber._apply_translation(
+            self.modelspec.get_translations(),
+            results
+        ))
+
 
 class Print(Subscriber):
     def __init__(self, raw=False):
@@ -54,16 +75,10 @@ class Print(Subscriber):
             pprint.pprint(results)
             return
 
-        out = {}
-        translations = self.modelspec.get_translations()
-
-        for k in results:
-            if k in translations:
-                out[translations[k]] = results[k]
-            else:
-                out[k] = results[k]
-
-        pprint.pprint(out)
+        pprint.pprint(Subscriber._apply_translation(
+            self.modelspec.get_translations(),
+            results
+        ))
 
 
 class RowWriter(Subscriber):
@@ -182,6 +197,9 @@ def execute(phenotypes, genotypes, modelspec, subscribers=None,
 
     y = data[modelspec.outcome.id]
     X = data[[c for c in data.columns if c != modelspec.outcome.id]]
+
+    # Add an intercept.
+    X["intercept"] = 1
 
     # GWAS context.
     if SNPs in modelspec.predictors:

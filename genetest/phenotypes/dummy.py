@@ -31,6 +31,7 @@ class _DummyPhenotypes(PhenotypesContainer):
             "V2": [0, np.nan, 1, 0, 1],
             "V3": [-2, 1, np.nan, 0, -1],
             "V4": [0.1, 0.2, 0.3, 0.4, 0.5],
+            "V5": [0, 0, 0, 1, 1],
         }, index=["s{}".format(i) for i in range(1, 6)])
 
     def close(self):
