@@ -19,6 +19,7 @@ import logging
 
 from .modelspec import SNPs
 from .statistics import model_map
+from .statistics.descriptive import get_maf
 
 import numpy as np
 
@@ -161,6 +162,15 @@ def _gwas_worker(q, results_q, failed, abort, fit, y, X):
 
         missing = _missing(y, X)
 
+        # Computing MAF
+        maf, minor, major, flip = get_maf(
+            genotypes=X.loc[missing, "SNPs"],
+            minor=snp.minor,
+            major=snp.major,
+        )
+        if flip:
+            X.loc[:, "SNPs"] = 2 - X.loc[:, "SNPs"]
+
         # Compute.
         try:
             results = fit(y[missing], X[missing])
@@ -172,11 +182,9 @@ def _gwas_worker(q, results_q, failed, abort, fit, y, X):
 
         # Update the results for the SNP with metadata.
         results["SNPs"].update({
-            "chr": snp.chrom, "pos": snp.pos, "major": snp.major,
-            "minor": snp.minor, "name": snp.marker,
+            "chr": snp.chrom, "pos": snp.pos, "major": major,
+            "minor": minor, "name": snp.marker,
         })
-        maf = np.sum(X["SNPs"]) / (2 * X.shape[0])
-        maf = min(maf, 1 - maf)
         results["SNPs"]["maf"] = maf
 
         results_q.put(results)

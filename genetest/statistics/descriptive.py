@@ -10,20 +10,20 @@
 # Commons, PO Box 1866, Mountain View, CA 94042, USA.
 
 
-import numpy as np
+__all__ = ["get_maf"]
 
 
-__all__ = ["get_freq"]
-
-
-def get_freq(genotypes):
+def get_maf(genotypes, minor, major):
     """Computes the alternative allele frequency using genotypes.
 
     Args:
         genotypes (pandas.Series): The genotypes.
+        minor (str): The minor allele.
+        major (str): The major allele.
 
     Returns:
-        float: the alternative allele frequency.
+        tuple: Returns the MAF, the minor allele, the major allele and a
+               boolean telling if the markers were flip or not.
 
     Note
     ====
@@ -37,14 +37,10 @@ def get_freq(genotypes):
         are excluded. If there are no genotypes, ``NaN`` is returned.
 
     """
-    # The sum of all genotypes (excluding missing ones)
-    geno_sum = genotypes.sum(skipna=True)
+    nb_geno = genotypes.shape[0] - genotypes.isnull().sum()
+    maf = genotypes.sum(skipna=True) / (2 * nb_geno)
 
-    # Computing the number of genotypes (excluding the missing ones)
-    nb_geno = genotypes.shape[0] - np.sum(genotypes.isnull())
+    if maf > 0.5:
+        return 1 - maf, major, minor, True
 
-    if nb_geno == 0:
-        return np.nan
-
-    # Returning the alternative allele frequency
-    return geno_sum / (nb_geno * 2)
+    return maf, minor, major, False

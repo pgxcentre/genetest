@@ -20,7 +20,7 @@ import pandas as pd
 from types import SimpleNamespace
 from collections import namedtuple
 
-from ..statistics.descriptive import get_freq
+from ..statistics.descriptive import get_maf
 
 
 __copyright__ = "Copyright 2016, Beaulieu-Saucier Pharmacogenomics Centre"
@@ -193,10 +193,13 @@ class GenotypesContainer(object):
 
         """
         # Computing the frequency
-        freq = get_freq(genotypes.geno)
-        if freq > 0.5:
+        freq, minor, major, flip = get_maf(
+            genotypes=genotypes.geno,
+            minor=minor,
+            major=major,
+        )
+        if flip > 0.5:
             genotypes.geno = 2 - genotypes.geno
-            minor, major = major, minor
 
         return genotypes, minor, major
 
