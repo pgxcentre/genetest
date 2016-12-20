@@ -28,11 +28,6 @@ logging.basicConfig()
 logger = logging.getLogger(__name__)
 
 
-DEBUG = True
-if DEBUG:
-    logger.setLevel(logging.DEBUG)
-
-
 class Subscriber(object):
     """Abstract class for subscribers."""
     def init(self, modelspec):
