@@ -15,7 +15,11 @@ import pandas as pd
 from pkg_resources import resource_filename
 
 from ..statistics.core import StatsError
-from ..statistics.models.linear import StatsLinear
+
+from .. import analysis
+from .. import modelspec as spec
+from ..phenotypes.dummy import _DummyPhenotypes
+from ..genotypes.dummy import _DummyGenotypes
 
 
 __copyright__ = "Copyright 2016, Beaulieu-Saucier Pharmacogenomics Centre"
@@ -26,82 +30,142 @@ class TestStatsLinear(unittest.TestCase):
     """Tests the 'StatsLinear' class."""
     @classmethod
     def setUpClass(cls):
-        cls.ols = StatsLinear(
-            outcome="pheno1",
-            predictors=["age", "var1", "C(gender)", "geno"],
-            interaction=None,
-            condition_value_t=1000,
-        )
-        cls.ols_inter = StatsLinear(
-            outcome="pheno1",
-            predictors=["age", "var1", "C(gender)", "geno"],
-            interaction="var1",
-            condition_value_t=15000,
-        )
-        cls.ols_inter_categorical = StatsLinear(
-            outcome="pheno1",
-            predictors=["age", "var1", "C(gender)", "geno"],
-            interaction="C(gender)",
-            condition_value_t=15000,
-        )
-
-    def setUp(self):
-        # The data
-        self.data = pd.read_csv(
+        # Loading the data
+        cls.data = pd.read_csv(
             resource_filename(__name__, "data/statistics/linear.txt.bz2"),
             sep="\t",
             compression="bz2",
         )
 
-        # A dummy class for the 'get_phenotypes' function
-        class DummyContainer(object):
-            def set_phenotypes(self, data):
-                self.data = data
+        # Creating the index
+        cls.data["sample"] = [
+            "s{}".format(i+1) for i in range(cls.data.shape[0])
+        ]
+        cls.data = cls.data.set_index("sample")
 
-            def get_phenotypes(self):
-                return self.data
-        self.dummy = DummyContainer()
-
-    def test_linear_snp1_full(self):
-        """Tests linear regression with the first SNP (full)."""
-        # Preparing the data
-        pheno = self.data.loc[:, ["pheno1", "age", "var1", "gender"]]
-        geno = self.data[["snp1"]].rename(columns={"snp1": "geno"})
-
-        # Permuting the genotypes
-        geno = geno.iloc[np.random.permutation(geno.shape[0]), :]
-
-        # Adding the data to the object
-        self.dummy.set_phenotypes(pheno)
-
-        # Preparing the matrices
-        y, X = self.ols.create_matrices(self.dummy)
-        self.assertFalse("geno" in X.columns)
-
-        # Merging with genotype
-        y, X = self.ols.merge_matrices_genotypes(y, X, geno)
-
-        # Fitting
-        self.ols.fit(y, X)
-
-        # The number of observation and parameters that were fitted
-        n = X.shape[0]
-        p = X.shape[1] - 1
-
-        # Checking the results (according to SAS)
-        self.assertAlmostEqual(113.19892138658, self.ols.results.coef)
-        self.assertAlmostEqual(20.8583649966504, self.ols.results.std_err)
-        self.assertAlmostEqual(71.397823827102, self.ols.results.lower_ci)
-        self.assertAlmostEqual(155.000018946058, self.ols.results.upper_ci)
-        self.assertAlmostEqual(5.42702754529217, self.ols.results.t_value)
-        self.assertAlmostEqual(
-            -np.log10(0.0000013285915771), -np.log10(self.ols.results.p_value),
+        # Creating the dummy phenotype container
+        cls.phenotypes = _DummyPhenotypes()
+        cls.phenotypes.data = cls.data.drop(
+            ["snp{}".format(i+1) for i in range(5)],
+            axis=1,
         )
+
+        # Creating the dummy genotype container
+        cls.genotypes = _DummyGenotypes()
+        cls.genotypes.data = cls.data.drop(
+            ["pheno1", "age", "var1", "gender"],
+            axis=1,
+        )
+        cls.genotypes.snp_info = {
+            "snp1": {"chrom": "3", "pos": 1234, "major": "C", "minor": "T"},
+            "snp2": {"chrom": "3", "pos": 9618, "major": "A", "minor": "C"},
+            "snp3": {"chrom": "2", "pos": 1519, "major": "T", "minor": "G"},
+            "snp4": {"chrom": "1", "pos": 5871, "major": "A", "minor": "G"},
+            "snp5": {"chrom": "X", "pos": 2938, "major": "C", "minor": "T"},
+        }
+
+    def setUp(self):
+        """Resetting the ModelSpec."""
+        spec._reset()
+
+    def test_linear_gwas(self):
+        """Tests linear regression for GWAS."""
+        # The variables which are factors
+        gender = spec.factor(spec.phenotypes.gender)
+
+        # Creating the model specification
+        modelspec = spec.ModelSpec(
+            outcome=spec.phenotypes.pheno1,
+            predictors=[spec.SNPs, spec.phenotypes.age,
+                        spec.phenotypes.var1, gender],
+            test="linear",
+        )
+
+        # Performing the analysis and retrieving the results
+        subscriber = analysis.ResultsMemory()
+        analysis.execute(
+            self.phenotypes, self.genotypes, modelspec,
+            subscribers=[subscriber],
+        )
+        gwas_results = subscriber._get_gwas_results()
+
+        # Checking the number of results (should be 4)
+        self.assertEqual(4, len(gwas_results.keys()))
+
+        # The number of observations and parameters
+        n = self.phenotypes.data.shape[0]
+        p = 4
+
+        # Checking the first marker (snp1)
+        results = gwas_results["snp1"]
+        self.assertEqual("snp1", results["SNPs"]["name"])
+        self.assertEqual("3", results["SNPs"]["chrom"])
+        self.assertEqual(1234, results["SNPs"]["pos"])
+        self.assertEqual("T", results["SNPs"]["minor"])
+        self.assertEqual("C", results["SNPs"]["major"])
+
+        # Checking the marker statistics (according to SAS)
+        self.assertAlmostEqual(113.19892138658, results["SNPs"]["coef"])
+        self.assertAlmostEqual(20.8583649966504, results["SNPs"]["std_err"])
+        self.assertAlmostEqual(71.397823827102, results["SNPs"]["lower_ci"])
+        self.assertAlmostEqual(155.000018946058, results["SNPs"]["upper_ci"])
+        self.assertAlmostEqual(5.42702754529217, results["SNPs"]["t_value"])
+        self.assertAlmostEqual(-np.log10(0.0000013285915771),
+                               -np.log10(results["SNPs"]["p_value"]))
+
+        # Checking the model r squared (adjusted) (according to SAS)
         self.assertAlmostEqual(
             1 - (n - 1) * (1 - 0.35513322438349)/((n - 1) - p),
-            self.ols.results.rsquared_adj,
+            results["MODEL"]["r_squared_adj"],
         )
 
+        # Checking the second marker (snp2)
+        results = gwas_results["snp2"]
+        self.assertAlmostEqual(25.6638410624231, results["SNPs"]["coef"])
+        self.assertAlmostEqual(7.02442421875627, results["SNPs"]["std_err"])
+        self.assertAlmostEqual(11.5865803512147, results["SNPs"]["lower_ci"])
+        self.assertAlmostEqual(39.7411017736316, results["SNPs"]["upper_ci"])
+        self.assertAlmostEqual(3.65351525807579, results["SNPs"]["t_value"])
+        self.assertAlmostEqual(-np.log10(0.0005783767026428),
+                               -np.log10(results["SNPs"]["p_value"]))
+
+        # Checking the model r squared (adjusted) (according to SAS)
+        self.assertAlmostEqual(
+            1 - (n - 1) * (1 - 0.20318728482079)/((n - 1) - p),
+            results["MODEL"]["r_squared_adj"],
+        )
+
+        # Checking the third marker (snp3)
+        results = gwas_results["snp3"]
+        self.assertAlmostEqual(0.08097682855889, results["SNPs"]["coef"])
+        self.assertAlmostEqual(6.6803747245602, results["SNPs"]["std_err"])
+        self.assertAlmostEqual(-13.3067932886126, results["SNPs"]["lower_ci"])
+        self.assertAlmostEqual(13.4687469457304, results["SNPs"]["upper_ci"])
+        self.assertAlmostEqual(0.0121215997451737, results["SNPs"]["t_value"])
+        self.assertAlmostEqual(0.99037246258077, results["SNPs"]["p_value"])
+
+        # Checking the model r squared (adjusted) (according to SAS)
+        self.assertAlmostEqual(
+            1 - (n - 1) * (1 - 0.0098082108350667)/((n - 1) - p),
+            results["MODEL"]["r_squared_adj"],
+        )
+
+        # Checking the fourth marker (snp4)
+        results = gwas_results["snp4"]
+        self.assertAlmostEqual(-17.0933815760203, results["SNPs"]["coef"])
+        self.assertAlmostEqual(6.49570434323821, results["SNPs"]["std_err"])
+        self.assertAlmostEqual(-30.1110639788755, results["SNPs"]["lower_ci"])
+        self.assertAlmostEqual(-4.07569917316514, results["SNPs"]["upper_ci"])
+        self.assertAlmostEqual(-2.63149008526133, results["SNPs"]["t_value"])
+        self.assertAlmostEqual(0.0110092290989312, results["SNPs"]["p_value"])
+
+        # Checking the model r squared (adjusted) (according to SAS)
+        self.assertAlmostEqual(
+            1 - (n - 1) * (1 - 0.1205341542723)/((n - 1) - p),
+            results["MODEL"]["r_squared_adj"],
+        )
+
+    @unittest.skip("Not implemented")
     def test_linear_snp1_inter_full(self):
         """Tests linear regression for first SNP (interaction, full)."""
         # Preparing the data
@@ -149,6 +213,7 @@ class TestStatsLinear(unittest.TestCase):
             self.ols_inter.results.rsquared_adj,
         )
 
+    @unittest.skip("Not implemented")
     def test_linear_snp1_inter_categorical_full(self):
         """Tests linear regression for first SNP (inter, full, category)."""
         # Preparing the data
@@ -202,6 +267,7 @@ class TestStatsLinear(unittest.TestCase):
             self.ols_inter_categorical.results.rsquared_adj,
         )
 
+    @unittest.skip("Not implemented")
     def test_linear_snp1_inter_too_many_category_full(self):
         """Tests linear regression first SNP (interaction, full, to many)."""
         # Preparing the data
@@ -223,38 +289,54 @@ class TestStatsLinear(unittest.TestCase):
 
     def test_linear_snp1(self):
         """Tests linear regression with the first SNP."""
-        # Preparing the data
-        data = self.data[["pheno1", "age", "var1", "gender", "snp1"]].rename(
-            columns={"snp1": "geno"},
+        # The variables which are factors
+        gender = spec.factor(spec.phenotypes.gender)
+
+        # Creating the model specification
+        modelspec = spec.ModelSpec(
+            outcome=spec.phenotypes.pheno1,
+            predictors=[spec.genotypes.snp1, spec.phenotypes.age,
+                        spec.phenotypes.var1, gender],
+            test="linear",
         )
 
-        # Adding the data to the object
-        self.dummy.set_phenotypes(data)
-
-        # Preparing the matrices
-        y, X = self.ols.create_matrices(self.dummy, create_dummy=False)
-
-        # Fitting
-        self.ols.fit(y, X)
-
-        # The number of observation and parameters that were fitted
-        n = X.shape[0]
-        p = X.shape[1] - 1
-
-        # Checking the results (according to SAS)
-        self.assertAlmostEqual(113.19892138658, self.ols.results.coef)
-        self.assertAlmostEqual(20.8583649966504, self.ols.results.std_err)
-        self.assertAlmostEqual(71.397823827102, self.ols.results.lower_ci)
-        self.assertAlmostEqual(155.000018946058, self.ols.results.upper_ci)
-        self.assertAlmostEqual(5.42702754529217, self.ols.results.t_value)
-        self.assertAlmostEqual(
-            -np.log10(0.0000013285915771), -np.log10(self.ols.results.p_value),
+        # Performing the analysis and retrieving the results
+        subscriber = analysis.ResultsMemory()
+        analysis.execute(
+            self.phenotypes, self.genotypes, modelspec,
+            subscribers=[subscriber],
         )
+        results = subscriber.results[0]
+
+        # Checking the marker information
+        self.assertEqual("snp1", results["snp1"]["name"])
+        self.assertEqual("3", results["snp1"]["chrom"])
+        self.assertEqual(1234, results["snp1"]["pos"])
+        self.assertEqual("T", results["snp1"]["minor"])
+        self.assertEqual("C", results["snp1"]["major"])
+
+        # The number of observations and parameters
+        n = self.phenotypes.data.shape[0]
+        p = 4
+
+        # Checking the marker statistics (according to SAS)
+        self.assertAlmostEqual(113.19892138658, results["snp1"]["coef"])
+        self.assertAlmostEqual(20.8583649966504, results["snp1"]["std_err"])
+        self.assertAlmostEqual(71.397823827102, results["snp1"]["lower_ci"])
+        self.assertAlmostEqual(155.000018946058, results["snp1"]["upper_ci"])
+        self.assertAlmostEqual(5.42702754529217, results["snp1"]["t_value"])
+        self.assertAlmostEqual(-np.log10(0.0000013285915771),
+                               -np.log10(results["snp1"]["p_value"]))
+
+        # Checking the model r squared (adjusted) (according to SAS)
         self.assertAlmostEqual(
             1 - (n - 1) * (1 - 0.35513322438349)/((n - 1) - p),
-            self.ols.results.rsquared_adj,
+            results["MODEL"]["r_squared_adj"],
         )
 
+        # TODO: Check the other predictors
+
+    @unittest.skip("Not implemented")
     def test_linear_snp1_inter(self):
         """Tests linear regression with the first SNP (interaction)."""
         # Preparing the data
@@ -298,38 +380,54 @@ class TestStatsLinear(unittest.TestCase):
 
     def test_linear_snp2(self):
         """Tests linear regression with the second SNP."""
-        # Preparing the data
-        data = self.data[["pheno1", "age", "var1", "gender", "snp2"]].rename(
-            columns={"snp2": "geno"},
+        # The variables which are factors
+        gender = spec.factor(spec.phenotypes.gender)
+
+        # Creating the model specification
+        modelspec = spec.ModelSpec(
+            outcome=spec.phenotypes.pheno1,
+            predictors=[spec.genotypes.snp2, spec.phenotypes.age,
+                        spec.phenotypes.var1, gender],
+            test="linear",
         )
 
-        # Adding the data to the object
-        self.dummy.set_phenotypes(data)
-
-        # Preparing the matrices
-        y, X = self.ols.create_matrices(self.dummy, create_dummy=False)
-
-        # Fitting
-        self.ols.fit(y, X)
-
-        # The number of observation and parameters that were fitted
-        n = X.shape[0]
-        p = X.shape[1] - 1
-
-        # Checking the results (according to SAS)
-        self.assertAlmostEqual(25.6638410624231, self.ols.results.coef)
-        self.assertAlmostEqual(7.02442421875627, self.ols.results.std_err)
-        self.assertAlmostEqual(11.5865803512147, self.ols.results.lower_ci)
-        self.assertAlmostEqual(39.7411017736316, self.ols.results.upper_ci)
-        self.assertAlmostEqual(3.65351525807579, self.ols.results.t_value)
-        self.assertAlmostEqual(
-            -np.log10(0.0005783767026428), -np.log10(self.ols.results.p_value),
+        # Performing the analysis and retrieving the results
+        subscriber = analysis.ResultsMemory()
+        analysis.execute(
+            self.phenotypes, self.genotypes, modelspec,
+            subscribers=[subscriber],
         )
+        results = subscriber.results[0]
+
+        # Checking the marker information
+        self.assertEqual("snp2", results["snp2"]["name"])
+        self.assertEqual("3", results["snp2"]["chrom"])
+        self.assertEqual(9618, results["snp2"]["pos"])
+        self.assertEqual("C", results["snp2"]["minor"])
+        self.assertEqual("A", results["snp2"]["major"])
+
+        # The number of observations and parameters
+        n = self.phenotypes.data.shape[0]
+        p = 4
+
+        # Checking the marker statistics (according to SAS)
+        self.assertAlmostEqual(25.6638410624231, results["snp2"]["coef"])
+        self.assertAlmostEqual(7.02442421875627, results["snp2"]["std_err"])
+        self.assertAlmostEqual(11.5865803512147, results["snp2"]["lower_ci"])
+        self.assertAlmostEqual(39.7411017736316, results["snp2"]["upper_ci"])
+        self.assertAlmostEqual(3.65351525807579, results["snp2"]["t_value"])
+        self.assertAlmostEqual(-np.log10(0.0005783767026428),
+                               -np.log10(results["snp2"]["p_value"]))
+
+        # Checking the model r squared (adjusted) (according to SAS)
         self.assertAlmostEqual(
             1 - (n - 1) * (1 - 0.20318728482079)/((n - 1) - p),
-            self.ols.results.rsquared_adj,
+            results["MODEL"]["r_squared_adj"],
         )
 
+        # TODO: Check the other predictors
+
+    @unittest.skip("Not implemented")
     def test_linear_snp2_inter(self):
         """Tests linear regression with the second SNP (interaction)."""
         # Preparing the data
@@ -374,36 +472,53 @@ class TestStatsLinear(unittest.TestCase):
 
     def test_linear_snp3(self):
         """Tests linear regression with the third SNP."""
-        # Preparing the data
-        data = self.data[["pheno1", "age", "var1", "gender", "snp3"]].rename(
-            columns={"snp3": "geno"},
+        # The variables which are factors
+        gender = spec.factor(spec.phenotypes.gender)
+
+        # Creating the model specification
+        modelspec = spec.ModelSpec(
+            outcome=spec.phenotypes.pheno1,
+            predictors=[spec.genotypes.snp3, spec.phenotypes.age,
+                        spec.phenotypes.var1, gender],
+            test="linear",
         )
 
-        # Adding the data to the object
-        self.dummy.set_phenotypes(data)
+        # Performing the analysis and retrieving the results
+        subscriber = analysis.ResultsMemory()
+        analysis.execute(
+            self.phenotypes, self.genotypes, modelspec,
+            subscribers=[subscriber],
+        )
+        results = subscriber.results[0]
 
-        # Preparing the matrices
-        y, X = self.ols.create_matrices(self.dummy, create_dummy=False)
+        # Checking the marker information
+        self.assertEqual("snp3", results["snp3"]["name"])
+        self.assertEqual("2", results["snp3"]["chrom"])
+        self.assertEqual(1519, results["snp3"]["pos"])
+        self.assertEqual("G", results["snp3"]["minor"])
+        self.assertEqual("T", results["snp3"]["major"])
 
-        # Fitting
-        self.ols.fit(y, X)
+        # The number of observations and parameters
+        n = self.phenotypes.data.shape[0]
+        p = 4
 
-        # The number of observation and parameters that were fitted
-        n = X.shape[0]
-        p = X.shape[1] - 1
+        # Checking the marker statistics (according to SAS)
+        self.assertAlmostEqual(0.08097682855889, results["snp3"]["coef"])
+        self.assertAlmostEqual(6.6803747245602, results["snp3"]["std_err"])
+        self.assertAlmostEqual(-13.3067932886126, results["snp3"]["lower_ci"])
+        self.assertAlmostEqual(13.4687469457304, results["snp3"]["upper_ci"])
+        self.assertAlmostEqual(0.0121215997451737, results["snp3"]["t_value"])
+        self.assertAlmostEqual(0.99037246258077, results["snp3"]["p_value"])
 
-        # Checking the results (according to SAS)
-        self.assertAlmostEqual(0.08097682855889, self.ols.results.coef)
-        self.assertAlmostEqual(6.6803747245602, self.ols.results.std_err)
-        self.assertAlmostEqual(-13.3067932886126, self.ols.results.lower_ci)
-        self.assertAlmostEqual(13.4687469457304, self.ols.results.upper_ci)
-        self.assertAlmostEqual(0.0121215997451737, self.ols.results.t_value)
-        self.assertAlmostEqual(0.99037246258077, self.ols.results.p_value)
+        # Checking the model r squared (adjusted) (according to SAS)
         self.assertAlmostEqual(
             1 - (n - 1) * (1 - 0.0098082108350667)/((n - 1) - p),
-            self.ols.results.rsquared_adj,
+            results["MODEL"]["r_squared_adj"],
         )
 
+        # TODO: Check the other predictors
+
+    @unittest.skip("Not implemented")
     def test_linear_snp3_inter(self):
         """Tests linear regression with the third SNP."""
         # Preparing the data
@@ -450,36 +565,51 @@ class TestStatsLinear(unittest.TestCase):
 
     def test_linear_snp4(self):
         """Tests linear regression with the fourth SNP."""
-        # Preparing the data
-        data = self.data[["pheno1", "age", "var1", "gender", "snp4"]].rename(
-            columns={"snp4": "geno"},
+        # The variables which are factors
+        gender = spec.factor(spec.phenotypes.gender)
+
+        # Creating the model specification
+        modelspec = spec.ModelSpec(
+            outcome=spec.phenotypes.pheno1,
+            predictors=[spec.genotypes.snp4, spec.phenotypes.age,
+                        spec.phenotypes.var1, gender],
+            test="linear",
         )
 
-        # Adding the data to the object
-        self.dummy.set_phenotypes(data)
+        # Performing the analysis and retrieving the results
+        subscriber = analysis.ResultsMemory()
+        analysis.execute(
+            self.phenotypes, self.genotypes, modelspec,
+            subscribers=[subscriber],
+        )
+        results = subscriber.results[0]
 
-        # Preparing the matrices
-        y, X = self.ols.create_matrices(self.dummy, create_dummy=False)
+        # Checking the marker information
+        self.assertEqual("snp4", results["snp4"]["name"])
+        self.assertEqual("1", results["snp4"]["chrom"])
+        self.assertEqual(5871, results["snp4"]["pos"])
+        self.assertEqual("G", results["snp4"]["minor"])
+        self.assertEqual("A", results["snp4"]["major"])
 
-        # Fitting
-        self.ols.fit(y, X)
+        # The number of observations and parameters
+        n = self.phenotypes.data.shape[0]
+        p = 4
 
-        # The number of observation and parameters that were fitted
-        n = X.shape[0]
-        p = X.shape[1] - 1
+        # Checking the marker statistics (according to SAS)
+        self.assertAlmostEqual(-17.0933815760203, results["snp4"]["coef"])
+        self.assertAlmostEqual(6.49570434323821, results["snp4"]["std_err"])
+        self.assertAlmostEqual(-30.1110639788755, results["snp4"]["lower_ci"])
+        self.assertAlmostEqual(-4.07569917316514, results["snp4"]["upper_ci"])
+        self.assertAlmostEqual(-2.63149008526133, results["snp4"]["t_value"])
+        self.assertAlmostEqual(0.0110092290989312, results["snp4"]["p_value"])
 
-        # Checking the results (according to SAS)
-        self.assertAlmostEqual(-17.0933815760203, self.ols.results.coef)
-        self.assertAlmostEqual(6.49570434323821, self.ols.results.std_err)
-        self.assertAlmostEqual(-30.1110639788755, self.ols.results.lower_ci)
-        self.assertAlmostEqual(-4.07569917316514, self.ols.results.upper_ci)
-        self.assertAlmostEqual(-2.63149008526133, self.ols.results.t_value)
-        self.assertAlmostEqual(0.0110092290989312, self.ols.results.p_value)
+        # Checking the model r squared (adjusted) (according to SAS)
         self.assertAlmostEqual(
             1 - (n - 1) * (1 - 0.1205341542723)/((n - 1) - p),
-            self.ols.results.rsquared_adj,
+            results["MODEL"]["r_squared_adj"],
         )
 
+    @unittest.skip("Not implemented")
     def test_linear_snp4_inter(self):
         """Tests linear regression with the fourth SNP (interaction)."""
         # Preparing the data
@@ -524,36 +654,26 @@ class TestStatsLinear(unittest.TestCase):
 
     def test_linear_snp5(self):
         """Tests linear regression with the fifth SNP (raises StatsError)."""
-        # Preparing the data
-        data = self.data[["pheno1", "age", "var1", "gender", "snp5"]].rename(
-            columns={"snp5": "geno"},
+        # The variables which are factors
+        gender = spec.factor(spec.phenotypes.gender)
+
+        # Creating the model specification
+        modelspec = spec.ModelSpec(
+            outcome=spec.phenotypes.pheno1,
+            predictors=[spec.genotypes.snp5, spec.phenotypes.age,
+                        spec.phenotypes.var1, gender],
+            test="linear",
         )
 
-        # Adding the data to the object
-        self.dummy.set_phenotypes(data)
-
-        # Preparing the matrices
-        y, X = self.ols.create_matrices(self.dummy, create_dummy=False)
-
-        # Fitting
+        # Performing the analysis and retrieving the results
         with self.assertRaises(StatsError) as cm:
-            self.ols.fit(y, X)
+            analysis.execute(
+                self.phenotypes, self.genotypes, modelspec,
+                subscribers=[analysis.ResultsMemory()],
+            )
+        self.assertEqual("condition number is large, inf", str(cm.exception))
 
-        # Checking the error message
-        self.assertEqual(
-            "condition number is large, inf",
-            str(cm.exception),
-        )
-
-        # All the value should be NaN
-        self.assertTrue(np.isnan(self.ols.results.coef))
-        self.assertTrue(np.isnan(self.ols.results.std_err))
-        self.assertTrue(np.isnan(self.ols.results.lower_ci))
-        self.assertTrue(np.isnan(self.ols.results.upper_ci))
-        self.assertTrue(np.isnan(self.ols.results.t_value))
-        self.assertTrue(np.isnan(self.ols.results.p_value))
-        self.assertTrue(np.isnan(self.ols.results.rsquared_adj))
-
+    @unittest.skip("Not implemented")
     def test_linear_snp5_inter(self):
         """Tests linear regression fifth SNP (inter) (raises StatsError)."""
         # Preparing the data
