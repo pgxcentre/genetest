@@ -65,8 +65,20 @@ class TestStatsLinear(unittest.TestCase):
         }
 
     def setUp(self):
-        """Resetting the ModelSpec."""
+        # Resetting the model specification
         spec._reset()
+
+        # Reordering the columns and the rows of the genotype data frame
+        self.genotypes.data = self.genotypes.data.iloc[
+            np.random.permutation(self.genotypes.data.shape[0]),
+            np.random.permutation(self.genotypes.data.shape[1])
+        ]
+
+        # Reordering the columns and the rows of the phenotype data frame
+        self.phenotypes.data = self.phenotypes.data.iloc[
+            np.random.permutation(self.phenotypes.data.shape[0]),
+            np.random.permutation(self.phenotypes.data.shape[1])
+        ]
 
     def test_linear_gwas(self):
         """Tests linear regression for GWAS."""
