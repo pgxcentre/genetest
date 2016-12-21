@@ -268,6 +268,9 @@ class ModelSpec(object):
         )
 
     def _clean_outcome(self, outcome):
+        if isinstance(outcome, EntityIdentifier):
+            return {"y": outcome}
+
         return outcome
 
     def _clean_predictors(self, predictors):
@@ -345,7 +348,7 @@ class ModelSpec(object):
                 )
 
                 if flip:
-                    df.loc[:, entity_id.id] = 2 - df[entity_id.id]
+                    df.loc[:, entity_id.id] = 2 - df.loc[:, entity_id.id]
 
                 # Also bind the EntityIdentifier in case we need to compute
                 # a GRS.
@@ -374,7 +377,7 @@ class ModelSpec(object):
                 df[target.id] = res
 
         # Only keep predictors and outcomes.
-        keep_cols = [self.outcome.id]
+        keep_cols = [v.id for v in self.outcome.values()]
         for pred in self.predictors:
             if pred is SNPs:
                 continue

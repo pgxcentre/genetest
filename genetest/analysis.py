@@ -137,7 +137,7 @@ def _invalid_subscriber(message, abort=None):
 
 def _missing(y, X):
     """Return a boolean vector indexing non-missing values."""
-    y_missing = y.isnull()
+    y_missing = y.isnull().any(axis=1)
     X_missing = X.isnull().any(axis=1)
     return ~(y_missing | X_missing)
 
@@ -184,7 +184,7 @@ def _gwas_worker(q, results_q, failed, abort, fit, y, X):
         try:
             results = fit(y[missing], X[missing])
         except Exception as e:
-            logger.debug(e)
+            logger.debug("Exception raised during fitting:", e)
             if snp.marker:
                 failed.put(snp.marker)
             continue
@@ -212,8 +212,13 @@ def execute(phenotypes, genotypes, modelspec, subscribers=None,
     # Exclude samples with missing outcome or covariable.
     data = data.dropna()
 
-    y = data[modelspec.outcome.id]
-    X = data[[c for c in data.columns if c != modelspec.outcome.id]]
+    # Extract y and X matrices
+    y_cols = tuple(modelspec.outcome.keys())
+    y = data[[modelspec.outcome[col].id for col in y_cols]]
+    X = data.drop(y.columns, axis=1)
+
+    # Rename y columns
+    y.columns = y_cols
 
     # GWAS context.
     if SNPs in modelspec.predictors:
