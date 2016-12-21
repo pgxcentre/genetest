@@ -215,9 +215,6 @@ def execute(phenotypes, genotypes, modelspec, subscribers=None,
     y = data[modelspec.outcome.id]
     X = data[[c for c in data.columns if c != modelspec.outcome.id]]
 
-    # Add an intercept.
-    X["intercept"] = 1
-
     # GWAS context.
     if SNPs in modelspec.predictors:
         _execute_gwas(genotypes, modelspec, subscribers, y, X,

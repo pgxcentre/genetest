@@ -228,7 +228,7 @@ class TransformationManager(object):
 
 
 class ModelSpec(object):
-    def __init__(self, outcome, predictors, test):
+    def __init__(self, outcome, predictors, test, no_intercept=False):
         """Statistical model specification.
 
         Args:
@@ -238,6 +238,7 @@ class ModelSpec(object):
         self.outcome = self._clean_outcome(outcome)
         self.predictors = self._clean_predictors(predictors)
         self.test = self._clean_test(test)
+        self.no_intercept = no_intercept
 
         # SNP metadata is stored in the modelspec because it is obtained as a
         # consequence of building the data matrix.
@@ -381,6 +382,11 @@ class ModelSpec(object):
             for col in df.columns:
                 if col.startswith(pred.id):
                     keep_cols.append(col)
+
+        # Adding the intercept
+        if not self.no_intercept:
+            keep_cols.append("intercept")
+            df["intercept"] = 1
 
         return df[keep_cols]
 
