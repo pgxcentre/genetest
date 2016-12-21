@@ -34,7 +34,7 @@ class StatsLinear(StatsModels):
         # Saving the condition value threshold
         self._condition_value_t = condition_value_t
 
-    def results_handler(self, fitted):
+    def _results_handler(self, fitted):
         # Checking the condition number (according to StatsModels, condition
         # number higher than 1000 indicate that there are strong
         # multicollinearity or other numerical problems)
@@ -53,7 +53,10 @@ class StatsLinear(StatsModels):
 
         # Results about the model fit.
         out = {
-            "MODEL": {"r_squared_adj": fitted.rsquared_adj}
+            "MODEL": {
+                "r_squared_adj": fitted.rsquared_adj,
+                "log_likelihood": fitted.llf,
+            }
         }
 
         # Results about individual model parameters.
@@ -80,5 +83,5 @@ class StatsLinear(StatsModels):
         """
         # Creating the OLS model from StatsModels and fitting it
         model = sm.OLS(y, X)
-        handler = self.results_handler if handler is None else handler
+        handler = self._results_handler if handler is None else handler
         return handler(model.fit())

@@ -45,6 +45,11 @@ class StatsLogistic(StatsModels):
         out = {}
         parameters = fitted.params.index
 
+        # Results about the model fit.
+        out = {
+            "MODEL": {"log_likelihood": fitted.llf}
+        }
+
         for param in parameters:
             # If GWAS, check that inference could be done on the SNP.
             if param == "SNPs" and np.isnan(fitted.pvalues[param]):
