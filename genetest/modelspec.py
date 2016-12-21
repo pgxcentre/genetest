@@ -10,7 +10,8 @@ import operator
 
 import numpy as np
 
-from .statistics import available_models
+from .statistics import model_map
+from .statistics.descriptive import get_maf
 
 
 SNPs = "SNPs"
@@ -244,11 +245,26 @@ class ModelSpec(object):
         self.variant_metadata = {}
 
     def _clean_test(self, test):
-        if test not in available_models:
-            raise ValueError(
-                "{} is not a valid statistical model.".format(test)
-            )
-        return test
+        """Returns a factory function to create instances of a statistical
+        model.
+
+        Args:
+            test (str, class or callable): This can be either the name of the
+                                           test or a class or callable that
+                                           returns a valid instance.
+
+        """
+        try:
+            return model_map[test]
+        except KeyError:
+            pass
+
+        if hasattr(test, "__call__"):
+            return test
+
+        raise ValueError(
+            "{} is not a valid statistical model.".format(test)
+        )
 
     def _clean_outcome(self, outcome):
         return outcome
@@ -318,17 +334,26 @@ class ModelSpec(object):
                 entity_id = self.dependencies[("GENOTYPES", marker)]
 
                 g = genotypes.get_genotypes(marker)
+                # Rename the genotypes column before joining.
                 g.genotypes.columns = [entity_id.id]
                 df = df.join(g.genotypes, how="inner")
 
+                # Compute the maf.
+                maf, minor, major, flip = get_maf(
+                    df[entity_id.id], g.minor, g.major
+                )
+
+                if flip:
+                    df.loc[:, entity_id.id] = 2 - df[entity_id.id]
+
                 # Also bind the EntityIdentifier in case we need to compute
                 # a GRS.
-                entity_id.bind(g.genotypes)
+                entity_id.bind(df[entity_id.id])
 
                 # And save the variant metadata.
                 self.variant_metadata[entity.id] = {
                     "name": marker, "chrom": g.chrom, "pos": g.pos,
-                    "minor": g.minor, "major": g.major
+                    "minor": minor, "major": major, "maf": maf
                 }
 
         # Apply transformations.
@@ -421,7 +446,7 @@ def _encode_factor(data, entity):
 
 @transformation_handler("POW")
 def _pow(data, entity, power):
-    return np.pow(data[entity.id], power)
+    return np.power(data[entity.id], power)
 
 
 @transformation_handler("INTERACTION")

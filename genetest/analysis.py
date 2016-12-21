@@ -18,13 +18,11 @@ import multiprocessing
 import logging
 
 from .modelspec import SNPs
-from .statistics import model_map
 from .statistics.descriptive import get_maf
 
 import numpy as np
 
 
-logging.basicConfig()
 logger = logging.getLogger(__name__)
 
 
@@ -85,14 +83,15 @@ class Print(Subscriber):
 
 
 class RowWriter(Subscriber):
-    def __init__(self, filename=None, columns=None, header=False, sep="\t"):
+    def __init__(self, filename=None, columns=None, header=False, sep="\t",
+                 append=False):
         self.header = header
         self.columns = columns
         self.sep = sep
         self.filename = filename
 
         if filename:
-            self._f = open(filename, "w")
+            self._f = open(filename, "a" if append else "w")
         else:
             self._f = None
 
@@ -110,7 +109,10 @@ class RowWriter(Subscriber):
     def handle(self, results):
         row = []
         for name, result in self.columns:
-            row.append(str(result.get(results)))
+            if isinstance(result, str):
+                row.append(result)
+            else:
+                row.append(str(result.get(results)))
 
         row = self.sep.join(row)
         if self.filename is not None:
@@ -155,6 +157,11 @@ def _gwas_worker(q, results_q, failed, abort, fit, y, X):
 
         # Compute union between indices.
         union = snp.genotypes.index & X.index
+        if len(union) == 0:
+            raise ValueError(
+                "Genotype and phenotype data have non-overlapping indices."
+            )
+            abort.set()
         no_geno = X.index.difference(snp.genotypes.index)
 
         # Set the genotypes.
@@ -193,7 +200,7 @@ def _gwas_worker(q, results_q, failed, abort, fit, y, X):
 
 
 def execute(phenotypes, genotypes, modelspec, subscribers=None,
-            variant_predicates=None):
+            variant_predicates=None, output_prefix=None):
     if subscribers is None:
         subscribers = [Print()]
 
@@ -214,7 +221,7 @@ def execute(phenotypes, genotypes, modelspec, subscribers=None,
     # GWAS context.
     if SNPs in modelspec.predictors:
         _execute_gwas(genotypes, modelspec, subscribers, y, X,
-                      variant_predicates=variant_predicates)
+                      variant_predicates, output_prefix)
 
     # Simple statistical test.
     else:
@@ -224,7 +231,7 @@ def execute(phenotypes, genotypes, modelspec, subscribers=None,
                            "analyses.")
 
         # Get the statistical test.
-        test = model_map[modelspec.test]()
+        test = modelspec.test()
 
         # We don't need to worry about indexing or the sample order because
         # both parameters are from the same df.
@@ -244,8 +251,8 @@ def execute(phenotypes, genotypes, modelspec, subscribers=None,
                 return _invalid_subscriber(e.args[0])
 
 
-def _execute_gwas(genotypes, modelspec, subscribers, y, X, variant_predicates):
-        test_class = model_map[modelspec.test]
+def _execute_gwas(genotypes, modelspec, subscribers, y, X, variant_predicates,
+                  output_prefix):
         cpus = multiprocessing.cpu_count() - 1
 
         # Pre-initialize the subscribers.
@@ -263,7 +270,7 @@ def _execute_gwas(genotypes, modelspec, subscribers, y, X, variant_predicates):
         for worker in range(cpus):
             this_y = y.copy()
             this_X = X.copy()
-            fit = test_class().fit
+            fit = modelspec.test().fit
 
             worker = multiprocessing.Process(
                 target=_gwas_worker,
@@ -337,7 +344,9 @@ def _execute_gwas(genotypes, modelspec, subscribers, y, X, variant_predicates):
 
         # Dump the failed SNPs to disk.
         failed.put(None)
-        with open("failed_snps.txt", "w") as f:
+        prefix = (output_prefix + "_") if output_prefix is not None else ""
+
+        with open(prefix + "failed_snps.txt", "w") as f:
             while not failed.empty():
                 snp = failed.get()
 
@@ -345,7 +354,7 @@ def _execute_gwas(genotypes, modelspec, subscribers, y, X, variant_predicates):
                     f.write(snp + '\n')
 
         # Dump the not analyzed SNPs to disk.
-        with open("not_analyzed_snps.txt", "w") as f:
+        with open(prefix + "not_analyzed_snps.txt", "w") as f:
             for snp in not_analyzed:
                 f.write(snp + '\n')
 

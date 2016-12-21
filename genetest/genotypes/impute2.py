@@ -53,6 +53,9 @@ class Impute2Genotypes(GenotypesContainer):
                                    names=["fid", "iid", "missing", "father",
                                           "mother", "sex", "plink_geno"])
 
+        self.samples["fid"] = self.samples["fid"].astype(str)
+        self.samples["iid"] = self.samples["iid"].astype(str)
+
         # We want to set the index for the samples
         try:
             self.samples = self.samples.set_index("iid", verify_integrity=True)
