@@ -1,37 +1,37 @@
-project_x.statistics.models package
+genetest.statistics.models package
 ===================================
 
 Submodules
 ----------
 
-project_x.statistics.models.linear module
+genetest.statistics.models.linear module
 -----------------------------------------
 
-.. automodule:: project_x.statistics.models.linear
+.. automodule:: genetest.statistics.models.linear
     :members:
     :undoc-members:
     :show-inheritance:
 
-project_x.statistics.models.logistic module
+genetest.statistics.models.logistic module
 -------------------------------------------
 
-.. automodule:: project_x.statistics.models.logistic
+.. automodule:: genetest.statistics.models.logistic
     :members:
     :undoc-members:
     :show-inheritance:
 
-project_x.statistics.models.mixedlm module
+genetest.statistics.models.mixedlm module
 ------------------------------------------
 
-.. automodule:: project_x.statistics.models.mixedlm
+.. automodule:: genetest.statistics.models.mixedlm
     :members:
     :undoc-members:
     :show-inheritance:
 
-project_x.statistics.models.survival module
+genetest.statistics.models.survival module
 -------------------------------------------
 
-.. automodule:: project_x.statistics.models.survival
+.. automodule:: genetest.statistics.models.survival
     :members:
     :undoc-members:
     :show-inheritance:
@@ -40,7 +40,7 @@ project_x.statistics.models.survival module
 Module contents
 ---------------
 
-.. automodule:: project_x.statistics.models
+.. automodule:: genetest.statistics.models
     :members:
     :undoc-members:
     :show-inheritance:

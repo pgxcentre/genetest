@@ -1,77 +1,77 @@
-project_x.tests package
+genetest.tests package
 =======================
 
 Submodules
 ----------
 
-project_x.tests.test_configuration module
+genetest.tests.test_configuration module
 -----------------------------------------
 
-.. automodule:: project_x.tests.test_configuration
+.. automodule:: genetest.tests.test_configuration
     :members:
     :undoc-members:
     :show-inheritance:
 
-project_x.tests.test_coxph module
+genetest.tests.test_coxph module
 ---------------------------------
 
-.. automodule:: project_x.tests.test_coxph
+.. automodule:: genetest.tests.test_coxph
     :members:
     :undoc-members:
     :show-inheritance:
 
-project_x.tests.test_descriptive_stats module
+genetest.tests.test_descriptive_stats module
 ---------------------------------------------
 
-.. automodule:: project_x.tests.test_descriptive_stats
+.. automodule:: genetest.tests.test_descriptive_stats
     :members:
     :undoc-members:
     :show-inheritance:
 
-project_x.tests.test_genotypes module
+genetest.tests.test_genotypes module
 -------------------------------------
 
-.. automodule:: project_x.tests.test_genotypes
+.. automodule:: genetest.tests.test_genotypes
     :members:
     :undoc-members:
     :show-inheritance:
 
-project_x.tests.test_linear module
+genetest.tests.test_linear module
 ----------------------------------
 
-.. automodule:: project_x.tests.test_linear
+.. automodule:: genetest.tests.test_linear
     :members:
     :undoc-members:
     :show-inheritance:
 
-project_x.tests.test_logistic module
+genetest.tests.test_logistic module
 ------------------------------------
 
-.. automodule:: project_x.tests.test_logistic
+.. automodule:: genetest.tests.test_logistic
     :members:
     :undoc-members:
     :show-inheritance:
 
-project_x.tests.test_mixedlm module
+genetest.tests.test_mixedlm module
 -----------------------------------
 
-.. automodule:: project_x.tests.test_mixedlm
+.. automodule:: genetest.tests.test_mixedlm
     :members:
     :undoc-members:
     :show-inheritance:
 
-project_x.tests.test_phenotypes module
+genetest.tests.test_phenotypes module
 --------------------------------------
 
-.. automodule:: project_x.tests.test_phenotypes
+.. automodule:: genetest.tests.test_phenotypes
     :members:
     :undoc-members:
     :show-inheritance:
 
-project_x.tests.test_stats_core module
+genetest.tests.test_stats_core module
 --------------------------------------
 
-.. automodule:: project_x.tests.test_stats_core
+.. automodule:: genetest.tests.test_stats_core
     :members:
     :undoc-members:
     :show-inheritance:
@@ -80,7 +80,7 @@ project_x.tests.test_stats_core module
 Module contents
 ---------------
 
-.. automodule:: project_x.tests
+.. automodule:: genetest.tests
     :members:
     :undoc-members:
     :show-inheritance:
