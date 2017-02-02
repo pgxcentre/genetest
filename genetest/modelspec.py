@@ -2,8 +2,6 @@
 Utilities to build statistical models.
 """
 
-# Dynamically import all the statistical tests so that they are available for
-# use in the ModelSpec creation.
 
 import uuid
 import operator
@@ -337,7 +335,14 @@ class ModelSpec(object):
             for entity, marker in markers:
                 entity_id = self.dependencies[("GENOTYPES", marker)]
 
-                g = genotypes.get_genotypes(marker)
+                try:
+                    g = genotypes.get_genotypes(marker)
+                except:
+                    raise ValueError(
+                        "Could not find '{}' in genotypes container."
+                        "".format(marker)
+                    )
+
                 # Rename the genotypes column before joining.
                 g.genotypes.columns = [entity_id.id]
                 df = df.join(g.genotypes, how="inner")
@@ -381,6 +386,12 @@ class ModelSpec(object):
         for pred in self.predictors:
             if pred is SNPs:
                 continue
+
+            if not isinstance(pred, EntityIdentifier):
+                raise ValueError(
+                    "Predictors are expected to be entity identifiers (and "
+                    "'{}' is of type {}).".format(pred, type(pred))
+                )
 
             for col in df.columns:
                 if col.startswith(pred.id):

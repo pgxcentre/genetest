@@ -17,6 +17,7 @@ from pkg_resources import resource_filename
 from ..statistics.core import StatsError
 
 from .. import analysis
+from .. import subscribers
 from .. import modelspec as spec
 from ..phenotypes.dummy import _DummyPhenotypes
 from ..genotypes.dummy import _DummyGenotypes
@@ -94,7 +95,7 @@ class TestStatsLinear(unittest.TestCase):
         )
 
         # Performing the analysis and retrieving the results
-        subscriber = analysis.ResultsMemory()
+        subscriber = subscribers.ResultsMemory()
         analysis.execute(
             self.phenotypes, self.genotypes, modelspec,
             subscribers=[subscriber],
@@ -313,7 +314,7 @@ class TestStatsLinear(unittest.TestCase):
         )
 
         # Performing the analysis and retrieving the results
-        subscriber = analysis.ResultsMemory()
+        subscriber = subscribers.ResultsMemory()
         analysis.execute(
             self.phenotypes, self.genotypes, modelspec,
             subscribers=[subscriber],
@@ -404,7 +405,7 @@ class TestStatsLinear(unittest.TestCase):
         )
 
         # Performing the analysis and retrieving the results
-        subscriber = analysis.ResultsMemory()
+        subscriber = subscribers.ResultsMemory()
         analysis.execute(
             self.phenotypes, self.genotypes, modelspec,
             subscribers=[subscriber],
@@ -496,7 +497,7 @@ class TestStatsLinear(unittest.TestCase):
         )
 
         # Performing the analysis and retrieving the results
-        subscriber = analysis.ResultsMemory()
+        subscriber = subscribers.ResultsMemory()
         analysis.execute(
             self.phenotypes, self.genotypes, modelspec,
             subscribers=[subscriber],
@@ -589,7 +590,7 @@ class TestStatsLinear(unittest.TestCase):
         )
 
         # Performing the analysis and retrieving the results
-        subscriber = analysis.ResultsMemory()
+        subscriber = subscribers.ResultsMemory()
         analysis.execute(
             self.phenotypes, self.genotypes, modelspec,
             subscribers=[subscriber],
@@ -681,7 +682,7 @@ class TestStatsLinear(unittest.TestCase):
         with self.assertRaises(StatsError) as cm:
             analysis.execute(
                 self.phenotypes, self.genotypes, modelspec,
-                subscribers=[analysis.ResultsMemory()],
+                subscribers=[subscribers.ResultsMemory()],
             )
         self.assertEqual("condition number is large, inf", str(cm.exception))
 

@@ -17,6 +17,7 @@ from pkg_resources import resource_filename
 from ..statistics.core import StatsError
 
 from .. import analysis
+from .. import subscribers
 from .. import modelspec as spec
 from ..phenotypes.dummy import _DummyPhenotypes
 from ..genotypes.dummy import _DummyGenotypes
@@ -93,7 +94,7 @@ class TestStatsCoxPH(unittest.TestCase):
         )
 
         # Performing the analysis and retrieving the results
-        subscriber = analysis.ResultsMemory()
+        subscriber = subscribers.ResultsMemory()
         analysis.execute(
             self.phenotypes, self.genotypes, modelspec,
             subscribers=[subscriber],
@@ -268,7 +269,7 @@ class TestStatsCoxPH(unittest.TestCase):
         )
 
         # Performing the analysis and retrieving the results
-        subscriber = analysis.ResultsMemory()
+        subscriber = subscribers.ResultsMemory()
         analysis.execute(
             self.phenotypes, self.genotypes, modelspec,
             subscribers=[subscriber],
@@ -344,7 +345,7 @@ class TestStatsCoxPH(unittest.TestCase):
         )
 
         # Performing the analysis and retrieving the results
-        subscriber = analysis.ResultsMemory()
+        subscriber = subscribers.ResultsMemory()
         analysis.execute(
             self.phenotypes, self.genotypes, modelspec,
             subscribers=[subscriber],
@@ -422,7 +423,7 @@ class TestStatsCoxPH(unittest.TestCase):
         )
 
         # Performing the analysis and retrieving the results
-        subscriber = analysis.ResultsMemory()
+        subscriber = subscribers.ResultsMemory()
         analysis.execute(
             self.phenotypes, self.genotypes, modelspec,
             subscribers=[subscriber],
@@ -503,7 +504,7 @@ class TestStatsCoxPH(unittest.TestCase):
         with self.assertRaises(StatsError):
             analysis.execute(
                 self.phenotypes, self.genotypes, modelspec,
-                subscribers=[analysis.ResultsMemory()],
+                subscribers=[subscribers.ResultsMemory()],
             )
 
     @unittest.skip("Not implemented")
