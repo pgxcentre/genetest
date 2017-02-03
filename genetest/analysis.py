@@ -27,6 +27,12 @@ _SUBSCRIBER_DEPRECATED = ("DeprecationWarning: Subscribers are now in the "
                           "'genetest.subscribers' module.")
 
 
+class Subscriber(subscribers_module.Subscriber):
+    def __init__(self, *args, **kwargs):
+        logger.warning(_SUBSCRIBER_DEPRECATED)
+        super().__init__(*args, **kwargs)
+
+
 class ResultsMemory(subscribers_module.ResultsMemory):
     def __init__(self, *args, **kwargs):
         logger.warning(_SUBSCRIBER_DEPRECATED)
