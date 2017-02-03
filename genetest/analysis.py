@@ -33,7 +33,6 @@ class ResultsMemory(subscribers_module.ResultsMemory):
         super().__init__(*args, **kwargs)
 
 
-
 class Print(subscribers_module.Print):
     def __init__(self, *args, **kwargs):
         logger.warning(_SUBSCRIBER_DEPRECATED)
@@ -69,10 +68,10 @@ def _gwas_worker(q, results_q, failed, abort, fit, y, X):
         # Compute union between indices.
         union = snp.genotypes.index & X.index
         if len(union) == 0:
+            abort.set()
             raise ValueError(
                 "Genotype and phenotype data have non-overlapping indices."
             )
-            abort.set()
         no_geno = X.index.difference(snp.genotypes.index)
 
         # Set the genotypes.
@@ -123,6 +122,17 @@ def execute(phenotypes, genotypes, modelspec, subscribers=None,
     # Exclude samples with missing outcome or covariable.
     data = data.dropna()
 
+    # Check if some factor levels are now noninformative.
+    bad_cols = data.columns[(
+        data.columns.str.startswith("TRANSFORM:ENCODE_FACTOR") &
+        (data.sum() == 0)
+    )]
+    logger.info(
+        "Dropping factor levels ({}) that had no variation after removing "
+        "missing values.".format(len(bad_cols))
+    )
+    data = data.drop(bad_cols, axis=1)
+
     # Extract y and X matrices
     y_cols = tuple(modelspec.outcome.keys())
     y = data[[modelspec.outcome[col].id for col in y_cols]]
@@ -145,6 +155,10 @@ def execute(phenotypes, genotypes, modelspec, subscribers=None,
 
         # Get the statistical test.
         test = modelspec.test()
+
+        logger.info(
+            "Executing {} - Design matrix has shape: {}".format(test, X.shape)
+        )
 
         # We don't need to worry about indexing or the sample order because
         # both parameters are from the same df.

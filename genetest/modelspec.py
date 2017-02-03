@@ -457,6 +457,7 @@ def _encode_factor(data, entity):
     # Any other data type.
     levels = sorted(np.unique(v))
     for i, level in enumerate(levels):
+        # First level is the reference.
         if i == 0:
             continue
         out["level{}".format(level)] = (v == level).astype(int)
