@@ -226,17 +226,27 @@ class TransformationManager(object):
 
 
 class ModelSpec(object):
-    def __init__(self, outcome, predictors, test, no_intercept=False):
+    def __init__(self, outcome, predictors, test, no_intercept=False,
+                 stratify_by=None):
         """Statistical model specification.
 
         Args:
-            outcome (str): The outcome variable of the model.
+            outcome (EntityIdentifier): The outcome variable of the model.
+            predictors (list): A list of EntityIdentifier that represent
+                               covariates.
+            test (callable or str): Either the name of a statistical test or
+                                    a callable that returns an instance of a
+                                    statistical test.
+            no_intercept (bool): Controls if a column of ones is to be added.
+            stratify_by (EntityIdentifier): An EntityIdentifier to stratify
+                                            the analysis.
 
         """
         self.outcome = self._clean_outcome(outcome)
         self.predictors = self._clean_predictors(predictors)
         self.test = self._clean_test(test)
         self.no_intercept = no_intercept
+        self.stratify_by = stratify_by
 
         # SNP metadata is stored in the modelspec because it is obtained as a
         # consequence of building the data matrix.
@@ -366,6 +376,19 @@ class ModelSpec(object):
                 }
 
         # Apply transformations.
+        df = self._apply_transformations(df)
+
+        # Only keep predictors and outcomes.
+        keep_cols = self._filter_columns(df)
+
+        # Adding the intercept
+        if not self.no_intercept:
+            keep_cols.append("intercept")
+            df["intercept"] = 1
+
+        return df[keep_cols]
+
+    def _apply_transformations(self, df):
         for action, source, target, params in self.transformations:
             f = transformation_handler.handlers[action]
             res = f(df, source, *params)
@@ -381,7 +404,9 @@ class ModelSpec(object):
             else:
                 df[target.id] = res
 
-        # Only keep predictors and outcomes.
+        return df
+
+    def _filter_columns(self, df):
         keep_cols = [v.id for v in self.outcome.values()]
         for pred in self.predictors:
             if pred is SNPs:
@@ -397,12 +422,7 @@ class ModelSpec(object):
                 if col.startswith(pred.id):
                     keep_cols.append(col)
 
-        # Adding the intercept
-        if not self.no_intercept:
-            keep_cols.append("intercept")
-            df["intercept"] = 1
-
-        return df[keep_cols]
+        return keep_cols
 
 
 class VariantPredicate(object):
@@ -477,13 +497,6 @@ def _interaction(data, entity, interaction_target):
     return data[entity.id] * data[interaction_target.id]
 
 
-@transformation_handler("GENETIC_RISK_SCORE")
-def _grs(data, entity):
-    if not isinstance(entity, Expression):
-        raise ValueError("grs function requires an expression.")
-    return entity.eval()
-
-
 def _reset():
     TransformationManager.transformations = []
     DependencyManager.dependencies = {}
@@ -498,4 +511,3 @@ factor = TransformationManager("ENCODE_FACTOR")
 log10 = TransformationManager("LOG10")
 pow = TransformationManager("POW")
 interaction = TransformationManager("INTERACTION")
-grs = TransformationManager("GENETIC_RISK_SCORE")

@@ -151,37 +151,43 @@ def execute(phenotypes, genotypes, modelspec, subscribers=None,
     if SNPs in modelspec.predictors:
         _execute_gwas(genotypes, modelspec, subscribers, y, X,
                       variant_predicates, output_prefix)
-
+    # TODO pheWAS mode.
+    elif y.shape[1] > 1:
+        raise NotImplementedError("pheWAS mode is not implemented yet.")
     # Simple statistical test.
     else:
-        # There shouldn't be variant_predicates.
-        if len(variant_predicates) != 0:
-            logger.warning("Variant predicates are only used for GWAS "
-                           "analyses.")
+        _execute_simple(modelspec, subscribers, y, X, variant_predicates)
 
-        # Get the statistical test.
-        test = modelspec.test()
 
-        logger.info(
-            "Executing {} - Design matrix has shape: {}".format(test, X.shape)
-        )
+def _execute_simple(modelspec, subscribers, y, X, variant_predicates):
+    # There shouldn't be variant_predicates.
+    if len(variant_predicates) != 0:
+        logger.warning("Variant predicates are only used for GWAS "
+                       "analyses.")
 
-        # We don't need to worry about indexing or the sample order because
-        # both parameters are from the same df.
-        results = test.fit(y, X)
+    # Get the statistical test.
+    test = modelspec.test()
 
-        # Update the results with the variant metadata.
-        for entity in results:
-            if entity in modelspec.variant_metadata:
-                results[entity].update(modelspec.variant_metadata[entity])
+    logger.info(
+        "Executing {} - Design matrix has shape: {}".format(test, X.shape)
+    )
 
-        # Dispatch the results to the subscribers.
-        for subscriber in subscribers:
-            subscriber.init(modelspec)
-            try:
-                subscriber.handle(results)
-            except KeyError as e:
-                return subscribers_module.subscriber_error(e.args[0])
+    # We don't need to worry about indexing or the sample order because
+    # both parameters are from the same df.
+    results = test.fit(y, X)
+
+    # Update the results with the variant metadata.
+    for entity in results:
+        if entity in modelspec.variant_metadata:
+            results[entity].update(modelspec.variant_metadata[entity])
+
+    # Dispatch the results to the subscribers.
+    for subscriber in subscribers:
+        subscriber.init(modelspec)
+        try:
+            subscriber.handle(results)
+        except KeyError as e:
+            return subscribers_module.subscriber_error(e.args[0])
 
 
 def _execute_gwas(genotypes, modelspec, subscribers, y, X, variant_predicates,
