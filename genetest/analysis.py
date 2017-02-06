@@ -128,17 +128,6 @@ def execute(phenotypes, genotypes, modelspec, subscribers=None,
     # Exclude samples with missing outcome or covariable.
     data = data.dropna()
 
-    # Check if some factor levels are now noninformative.
-    bad_cols = data.columns[(
-        data.columns.str.startswith("TRANSFORM:ENCODE_FACTOR") &
-        (data.sum() == 0)
-    )]
-    logger.info(
-        "Dropping factor levels ({}) that had no variation after removing "
-        "missing values.".format(len(bad_cols))
-    )
-    data = data.drop(bad_cols, axis=1)
-
     # Extract y and X matrices
     y_cols = tuple(modelspec.outcome.keys())
     y = data[[modelspec.outcome[col].id for col in y_cols]]
@@ -147,26 +136,54 @@ def execute(phenotypes, genotypes, modelspec, subscribers=None,
     # Rename y columns
     y.columns = y_cols
 
-    # GWAS context.
-    if SNPs in modelspec.predictors:
+    # Drop uninformative factors.
+    bad_cols = _get_uninformative_factors(X)
+    if len(bad_cols):
+        logger.info(
+            "After removing missing values, dropping ({}) factor levels that "
+            "have no variation."
+            "".format(len(bad_cols))
+        )
+        X = X.drop(bad_cols, axis=1)
+
+    messages = {
+        "skipped": [],
+        "failed": []
+    }
+
+    if modelspec.stratify_by:
+        _execute_stratified(genotypes, modelspec, subscribers, y, X,
+                            variant_predicates, messages)
+    elif SNPs in modelspec.predictors:
         _execute_gwas(genotypes, modelspec, subscribers, y, X,
-                      variant_predicates, output_prefix)
-    # TODO pheWAS mode.
-    elif y.shape[1] > 1:
-        raise NotImplementedError("pheWAS mode is not implemented yet.")
-    # Stratified analysis.
-    elif modelspec.stratify_by:
-        _execute_stratified(modelspec, subscribers, y, X, variant_predicates)
-    # Simple statistical test.
+                      variant_predicates, messages)
     else:
-        _execute_simple(modelspec, subscribers, y, X, variant_predicates)
+        _execute_simple(modelspec, subscribers, y, X, variant_predicates,
+                        messages)
+
+    for subscriber in subscribers:
+        subscriber.close()
+
+    prefix = (output_prefix + "_") if output_prefix is not None else ""
+    if messages["failed"]:
+        with open(prefix + "failed_snps.txt", "w") as f:
+            for failed_snp in messages["failed"]:
+                f.write("{}\n".format(failed_snp))
+
+    if messages["skipped"]:
+        with open(prefix + "not_analyzed_snps.txt", "w") as f:
+            for failed_snp in messages["skipped"]:
+                f.write("{}\n".format(failed_snp))
 
 
-def _execute_stratified(modelspec, subscribers, y, X, variant_predicates):
+def _execute_stratified(genotypes, modelspec, subscribers, y, X,
+                        variant_predicates, messages):
     # Levels.
     stratification_variable = X[modelspec.stratify_by.id]
 
     X = X.drop(modelspec.stratify_by.id, axis=1)
+
+    gwas_mode = SNPs in modelspec.predictors
 
     for level in stratification_variable.dropna().unique():
         # Extract the stratification and execute the analysis.
@@ -174,15 +191,40 @@ def _execute_stratified(modelspec, subscribers, y, X, variant_predicates):
 
         mask = (stratification_variable == level)
 
-        _execute_simple(
-            modelspec, subscribers,
-            y.loc[mask, :],
-            X.loc[mask, :],
-            variant_predicates
-        )
+        # Drop columns that become uninformative after stratification.
+        this_x = X.loc[mask, :]
+        bad_cols = _get_uninformative_factors(this_x)
+        this_x = this_x.drop(bad_cols, axis=1)
+
+        if len(bad_cols):
+            logger.info(
+                "After stratification, dropping factor levels ({}) that have "
+                "no variation ".format(len(bad_cols))
+            )
+
+        if gwas_mode:
+            _execute_gwas(
+                genotypes, modelspec, subscribers, y.loc[mask, :], this_x,
+                variant_predicates
+            )
+        else:
+            _execute_simple(
+                modelspec, subscribers, y.loc[mask, :], this_x,
+                variant_predicates
+            )
 
 
-def _execute_simple(modelspec, subscribers, y, X, variant_predicates):
+def _get_uninformative_factors(df):
+    # Check if some factor levels are now noninformative.
+    bad_cols = df.columns[(
+        df.columns.str.startswith("TRANSFORM:ENCODE_FACTOR") &
+        (df.sum() == 0)
+    )]
+    return bad_cols
+
+
+def _execute_simple(modelspec, subscribers, y, X, variant_predicates,
+                    messages):
     # There shouldn't be variant_predicates.
     if len(variant_predicates) != 0:
         logger.warning("Variant predicates are only used for GWAS "
@@ -214,7 +256,7 @@ def _execute_simple(modelspec, subscribers, y, X, variant_predicates):
 
 
 def _execute_gwas(genotypes, modelspec, subscribers, y, X, variant_predicates,
-                  output_prefix):
+                  messages):
         cpus = multiprocessing.cpu_count() - 1
 
         # Pre-initialize the subscribers.
@@ -300,25 +342,17 @@ def _execute_gwas(genotypes, modelspec, subscribers, y, X, variant_predicates,
         while done_workers != len(workers):
             done_workers += _handle_result()
 
-        # Close the subscribers (important for opened IO streams).
-        for subscriber in subscribers:
-            subscriber.close()
-
         # Dump the failed SNPs to disk.
         failed.put(None)
-        prefix = (output_prefix + "_") if output_prefix is not None else ""
 
-        with open(prefix + "failed_snps.txt", "w") as f:
-            while not failed.empty():
-                snp = failed.get()
-
-                if snp:
-                    f.write(snp + '\n')
+        while not failed.empty():
+            snp = failed.get()
+            if snp:
+                messages["failed"].append(snp)
 
         # Dump the not analyzed SNPs to disk.
-        with open(prefix + "not_analyzed_snps.txt", "w") as f:
-            for snp in not_analyzed:
-                f.write(snp + '\n')
+        for snp in not_analyzed:
+            messages["skipped"].append(snp)
 
         # Sanity check that there is nothing important left in the queues.
         queues_iter = zip(
