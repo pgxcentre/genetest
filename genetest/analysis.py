@@ -154,9 +154,32 @@ def execute(phenotypes, genotypes, modelspec, subscribers=None,
     # TODO pheWAS mode.
     elif y.shape[1] > 1:
         raise NotImplementedError("pheWAS mode is not implemented yet.")
+    # Stratified analysis.
+    elif modelspec.stratify_by:
+        _execute_stratified(modelspec, subscribers, y, X, variant_predicates)
     # Simple statistical test.
     else:
         _execute_simple(modelspec, subscribers, y, X, variant_predicates)
+
+
+def _execute_stratified(modelspec, subscribers, y, X, variant_predicates):
+    # Levels.
+    stratification_variable = X[modelspec.stratify_by.id]
+
+    X = X.drop(modelspec.stratify_by.id, axis=1)
+
+    for level in stratification_variable.dropna().unique():
+        # Extract the stratification and execute the analysis.
+        [sub._set_stratification_level(level) for sub in subscribers]
+
+        mask = (stratification_variable == level)
+
+        _execute_simple(
+            modelspec, subscribers,
+            y.loc[mask, :],
+            X.loc[mask, :],
+            variant_predicates
+        )
 
 
 def _execute_simple(modelspec, subscribers, y, X, variant_predicates):

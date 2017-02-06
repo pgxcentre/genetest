@@ -23,9 +23,21 @@ class Subscriber(object):
     """Abstract class for subscribers."""
     def init(self, modelspec):
         self.modelspec = modelspec
+        self.stratification_level = None
 
     def close(self):
         pass
+
+    def _set_stratification_level(self, level):
+        """Changes the stratification level.
+
+        This method get called by analysis before data is pushed. It sets the
+        'current_level' instance variable which can be used to customize
+        reporting.
+
+        """
+        logger.debug("Setting stratification level='{}'.".format(level))
+        self.current_level = level
 
     def handle(self, results):
         """Handle results from a statistical test."""

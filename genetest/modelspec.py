@@ -418,9 +418,20 @@ class ModelSpec(object):
                     "'{}' is of type {}).".format(pred, type(pred))
                 )
 
+            # Some identifiers might have multiple associated columns (e.g.
+            # factor transformation).
             for col in df.columns:
                 if col.startswith(pred.id):
                     keep_cols.append(col)
+
+        if self.stratify_by:
+            if not isinstance(self.stratify_by, EntityIdentifier):
+                raise ValueError(
+                    "Statification variables are expected to be entity "
+                    "identifiers (and '{}' is of type {})."
+                    "".format(self.stratify_by, type(self.stratify_by))
+                )
+            keep_cols.append(self.stratify_by.id)
 
         return keep_cols
 
