@@ -426,6 +426,20 @@ class TestPlink(unittest.TestCase):
             _marker_info_fields_eq(self, expected, observed)
             self.assertTrue(expected.genotypes.equals(observed.genotypes))
 
+    def test_iter_marker_info(self):
+        """Tests the 'iter_marker_info' function."""
+        plink_geno = PlinkGenotypes(**self.parameters)
+
+        for observed, expected in zip(plink_geno.iter_marker_info(),
+                                      self.expected_additive_results):
+            # FIXME alleles are inverted, but it should be ok when considering
+            # the A1=minor convention.
+            for field in ("marker", "chrom", "pos", "minor", "major"):
+                self.assertEqual(
+                    getattr(observed, field),
+                    getattr(expected, field)
+                )
+
     def test_iter_marker_genotypes_additive(self):
         """Tests the 'iter_marker_genotypes' function (additive)."""
         plink_geno = PlinkGenotypes(**self.parameters)

@@ -118,7 +118,7 @@ class PlinkGenotypes(GenotypesContainer):
         """Iterate over marker information."""
         for idx, row in self.bim.iterrows():
             yield MarkerInfo(
-                row.snp, row.chrom, row.pos, row.a2, row.a1
+                row.name, row.chrom, row.pos, minor=row.a1, major=row.a2
             )
 
     def _create_genotypes(self, marker, genotypes):
