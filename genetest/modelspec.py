@@ -359,7 +359,7 @@ class ModelSpec(object):
 
                 # Compute the maf.
                 maf, minor, major, flip = get_maf(
-                    df[entity_id.id], g.minor, g.major
+                    df[entity_id.id], g.info.minor, g.info.major
                 )
 
                 if flip:
@@ -371,7 +371,7 @@ class ModelSpec(object):
 
                 # And save the variant metadata.
                 self.variant_metadata[entity.id] = {
-                    "name": marker, "chrom": g.chrom, "pos": g.pos,
+                    "name": marker, "chrom": g.info.chrom, "pos": g.info.pos,
                     "minor": minor, "major": major, "maf": maf
                 }
 

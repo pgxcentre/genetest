@@ -17,7 +17,9 @@ from collections import namedtuple
 import numpy as np
 import pandas as pd
 
-from .core import GenotypesContainer, Representation, MarkerGenotypes
+from .core import (
+    GenotypesContainer, Representation, MarkerGenotypes, MarkerInfo
+)
 
 
 __copyright__ = "Copyright 2016, Beaulieu-Saucier Pharmacogenomics Centre"
@@ -168,41 +170,28 @@ class Impute2Genotypes(GenotypesContainer):
             major=marker_info.a1,
         )
 
+        info = MarkerInfo(
+            marker=marker_info.marker,
+            chrom=self.encode_chrom(marker_info.chrom),
+            pos=marker_info.pos,
+            major=major, minor=minor,
+        )
+
         # Returning the value as DOSAGE representation
         if self._representation == Representation.DOSAGE:
-            return MarkerGenotypes(
-                genotypes=dosage,
-                marker=marker_info.marker,
-                chrom=self.encode_chrom(marker_info.chrom),
-                pos=marker_info.pos,
-                major=major,
-                minor=minor,
-            )
+            return MarkerGenotypes(info=info, genotypes=dosage,)
 
         # Normal additive values are necessary for ADDITIVE and GENOTYPIC
         geno = self.dosage2additive(dosage)
 
         # Returning the value as ADDITIVE representation
         if self._representation == Representation.ADDITIVE:
-            return MarkerGenotypes(
-                genotypes=geno,
-                marker=marker_info.marker,
-                chrom=self.encode_chrom(marker_info.chrom),
-                pos=marker_info.pos,
-                major=major,
-                minor=minor,
-            )
+            return MarkerGenotypes(info=info, genotypes=geno)
 
         # Returning the value as GENOTYPIC representation
         if self._representation == Representation.GENOTYPIC:
-            return MarkerGenotypes(
-                genotypes=self.additive2genotypic(geno),
-                chrom=self.encode_chrom(marker_info.chrom),
-                pos=marker_info.pos,
-                marker=marker_info.marker,
-                major=major,
-                minor=minor,
-            )
+            return MarkerGenotypes(info=info,
+                                   genotypes=self.additive2genotypic(geno))
 
     @staticmethod
     def _parse_impute2_line(line):

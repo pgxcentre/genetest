@@ -14,7 +14,9 @@ Container with fake genotype data for testing.
 import pandas as pd
 import numpy as np
 
-from .core import GenotypesContainer, MarkerGenotypes, Representation
+from .core import (
+    GenotypesContainer, MarkerGenotypes, MarkerInfo, Representation
+)
 
 
 __copyright__ = "Copyright 2016, Beaulieu-Saucier Pharmacogenomics Centre"
@@ -54,6 +56,10 @@ class _DummyGenotypes(GenotypesContainer):
     def close(self):
         pass
 
+    def iter_marker_info(self):
+        for snp, info in self.snp_info.values():
+            yield MarkerInfo(marker=snp, **info)
+
     def get_genotypes(self, marker, representation=Representation.ADDITIVE):
         """Returns a dataframe of genotypes encoded using the provided model.
 
@@ -72,11 +78,8 @@ class _DummyGenotypes(GenotypesContainer):
             raise NotImplementedError()
 
         genotypes = self.create_geno_df(self.data[marker], self.data.index)
-        return MarkerGenotypes(
-            genotypes=genotypes,
-            marker=marker,
-            **self.snp_info[marker]
-        )
+        info = MarkerInfo(marker=marker, **self.snp_info[marker])
+        return MarkerGenotypes(info, genotypes)
 
     def iter_marker_genotypes(self, representation=Representation.ADDITIVE):
         """Returns a dataframe of genotypes encoded using the provided model.

@@ -10,6 +10,7 @@
 # Commons, PO Box 1866, Mountain View, CA 94042, USA.
 
 
+import warnings
 import pickle
 import logging
 from tempfile import NamedTemporaryFile
@@ -33,6 +34,7 @@ __all__ = ["GenotypesContainer", "Representation", "MarkerGenotypes",
 
 # Logging
 logger = logging.getLogger(__name__)
+warnings.simplefilter("once", DeprecationWarning)
 
 
 # Genotype representation
@@ -43,11 +45,36 @@ Representation = SimpleNamespace(
 )
 
 
-# The genotypes that will be returned by the function
-MarkerGenotypes = namedtuple(
-    "MarkerGenotypes",
-    ["marker", "chrom", "pos", "genotypes", "major", "minor"],
-)
+class MarkerInfo(object):
+    __slots__ = ("marker", "chrom", "pos", "major", "minor")
+    def __init__(self, marker, chrom, pos, major, minor):
+        self.marker = marker
+        self.chrom = chrom
+        self.pos = pos
+        self.major = major
+        self.minor = minor
+
+
+class MarkerGenotypes(object):
+    __slots__ = ("info", "genotypes")
+    def __init__(self, info, genotypes):
+        self.info = info
+        self.genotypes = genotypes
+
+    def __getattr__(self, key):
+        out = getattr(self.info, key)
+        warnings.warn(
+            "Marker information is now stored in the info attribute of "
+            "MarkerGenotypes objects.",
+            DeprecationWarning
+        )
+        return out
+
+    def __getstate__(self):
+        return (self.info, self.genotypes)
+
+    def __setstate__(self, state):
+        self.info, self.genotypes = state
 
 
 def genotype_reader(container, arguments, markers, max_size, queue, tmpdir, n):
@@ -148,7 +175,7 @@ class GenotypesContainer(object):
         raise NotImplementedError()
 
     def iter_marker_genotypes(self, representation=Representation.ADDITIVE):
-        """Returns a dataframe of genotypes encoded using the provided model.
+        """Iterates over MarkerGenotypes objects.
 
         Args:
             representation (str): A valid genotype representation format (e.g.
@@ -158,6 +185,15 @@ class GenotypesContainer(object):
             MarkerGenotypes: A named tuple containing the dataframe with the
             encoded genotypes for all samples (the index of the dataframe will
             be the sample IDs), the minor and major alleles.
+
+        """
+        raise NotImplementedError()
+
+    def iter_marker_info(self):
+        """Iterate over marker information.
+
+        This is useful to iterate over descriptions of Markers without having
+        to read the actual genotypes.
 
         """
         raise NotImplementedError()

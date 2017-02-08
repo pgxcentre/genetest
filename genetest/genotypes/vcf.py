@@ -13,8 +13,9 @@ import gzip
 import pandas as pd
 from pysam import VariantFile
 
-from .core import GenotypesContainer, Representation, MarkerGenotypes
-
+from .core import (
+    GenotypesContainer, Representation, MarkerGenotypes, MarkerInfo
+)
 
 __copyright__ = "Copyright 2016, Beaulieu-Saucier Pharmacogenomics Centre"
 __license__ = "Attribution-NonCommercial 4.0 International (CC BY-NC 4.0)"
@@ -168,17 +169,18 @@ class VCFGenotypes(GenotypesContainer):
         if marker is None:
             marker = "{chrom}:{pos}".format(chrom=chrom, pos=pos)
 
+        info = MarkerInfo(
+            marker=marker, chrom=chrom, pos=pos, major=major, minor=minor
+        )
+
         # Returning the value as ADDITIVE representation
         if self._representation == Representation.ADDITIVE:
-            return MarkerGenotypes(genotypes=additive, marker=marker,
-                                   chrom=chrom, pos=pos, major=major,
-                                   minor=minor)
+            return MarkerGenotypes(info=info, genotypes=additive)
 
         # Returning the value as GENOTYPIC representation
         if self._representation == Representation.GENOTYPIC:
-            return MarkerGenotypes(genotypes=self.additive2genotypic(additive),
-                                   chrom=chrom, pos=pos, marker=marker,
-                                   major=major, minor=minor)
+            return MarkerGenotypes(info=info,
+                                   genotypes=self.additive2genotypic(additive))
 
     @staticmethod
     def format_genotype(geno):

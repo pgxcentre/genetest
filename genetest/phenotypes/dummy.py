@@ -38,12 +38,12 @@ class _DummyPhenotypes(PhenotypesContainer):
         pass
 
     def get_phenotypes(self, li=None):
+        if li is None:
+            li = self.data.columns
+
         for i in li:
             if i not in self.data.columns:
                 raise KeyError(i)
-
-        if li is None:
-            li = self.data.columns
 
         return self.data.loc[:, list(li)]
 

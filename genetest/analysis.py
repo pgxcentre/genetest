@@ -90,8 +90,8 @@ def _gwas_worker(q, results_q, failed, abort, fit, y, X):
         # Computing MAF
         maf, minor, major, flip = get_maf(
             genotypes=X.loc[missing, "SNPs"],
-            minor=snp.minor,
-            major=snp.major,
+            minor=snp.info.minor,
+            major=snp.info.major,
         )
         if flip:
             X.loc[:, "SNPs"] = 2 - X.loc[:, "SNPs"]
@@ -101,14 +101,14 @@ def _gwas_worker(q, results_q, failed, abort, fit, y, X):
             results = fit(y[missing], X[missing])
         except Exception as e:
             logger.debug("Exception raised during fitting:", e)
-            if snp.marker:
-                failed.put(snp.marker)
+            if snp.info.marker:
+                failed.put(snp.info.marker)
             continue
 
         # Update the results for the SNP with metadata.
         results["SNPs"].update({
-            "chrom": snp.chrom, "pos": snp.pos, "major": major,
-            "minor": minor, "name": snp.marker,
+            "chrom": snp.info.chrom, "pos": snp.info.pos, "major": major,
+            "minor": minor, "name": snp.info.marker,
         })
         results["SNPs"]["maf"] = maf
 
