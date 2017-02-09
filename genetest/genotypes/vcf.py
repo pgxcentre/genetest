@@ -170,7 +170,8 @@ class VCFGenotypes(GenotypesContainer):
             marker = "{chrom}:{pos}".format(chrom=chrom, pos=pos)
 
         info = MarkerInfo(
-            marker=marker, chrom=chrom, pos=pos, major=major, minor=minor
+            marker=marker, chrom=chrom, pos=pos, a1=minor, a2=major,
+            minor=MarkerInfo.A1
         )
 
         # Returning the value as ADDITIVE representation

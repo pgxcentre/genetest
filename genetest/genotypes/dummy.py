@@ -58,7 +58,9 @@ class _DummyGenotypes(GenotypesContainer):
 
     def iter_marker_info(self):
         for snp, info in self.snp_info.values():
-            yield MarkerInfo(marker=snp, **info)
+
+            yield MarkerInfo(marker=snp, chrom=info["chrom"], pos=info["pos"],
+                             a1=info["minor"], a2=info["major"])
 
     def get_genotypes(self, marker, representation=Representation.ADDITIVE):
         """Returns a dataframe of genotypes encoded using the provided model.
@@ -78,7 +80,11 @@ class _DummyGenotypes(GenotypesContainer):
             raise NotImplementedError()
 
         genotypes = self.create_geno_df(self.data[marker], self.data.index)
-        info = MarkerInfo(marker=marker, **self.snp_info[marker])
+        info = self.snp_info[marker]
+        info = MarkerInfo(marker=marker, chrom=info["chrom"], pos=info["pos"],
+                          a1=info["minor"], a2=info["major"],
+                          minor=MarkerInfo.A1)
+
         return MarkerGenotypes(info, genotypes)
 
     def iter_marker_genotypes(self, representation=Representation.ADDITIVE):

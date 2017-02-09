@@ -118,7 +118,7 @@ class PlinkGenotypes(GenotypesContainer):
         """Iterate over marker information."""
         for idx, row in self.bim.iterrows():
             yield MarkerInfo(
-                row.name, row.chrom, row.pos, minor=row.a1, major=row.a2
+                row.name, row.chrom, row.pos, a1=row.a1, a2=row.a2
             )
 
     def _create_genotypes(self, marker, genotypes):
@@ -145,7 +145,8 @@ class PlinkGenotypes(GenotypesContainer):
         )
 
         chrom, pos = self.bim.loc[marker, ["chrom", "pos"]].values
-        info = MarkerInfo(marker, chrom, pos, major, minor)
+        info = MarkerInfo(marker, chrom, pos, a1=minor, a2=major,
+                          minor=MarkerInfo.A1)
 
         # Returning the value as ADDITIVE representation
         if self._representation == Representation.ADDITIVE:

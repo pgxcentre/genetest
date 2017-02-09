@@ -90,8 +90,8 @@ def _gwas_worker(q, results_q, failed, abort, fit, y, X):
         # Computing MAF
         maf, minor, major, flip = get_maf(
             genotypes=X.loc[missing, "SNPs"],
-            minor=snp.info.minor,
-            major=snp.info.major,
+            minor=snp.info.get_minor(),
+            major=snp.info.get_major(),
         )
         if flip:
             X.loc[:, "SNPs"] = 2 - X.loc[:, "SNPs"]

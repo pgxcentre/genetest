@@ -359,7 +359,7 @@ class ModelSpec(object):
 
                 # Compute the maf.
                 maf, minor, major, flip = get_maf(
-                    df[entity_id.id], g.info.minor, g.info.major
+                    df[entity_id.id], g.info.get_minor(), g.info.get_major()
                 )
 
                 if flip:

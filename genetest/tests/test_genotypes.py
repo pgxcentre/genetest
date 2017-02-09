@@ -31,11 +31,14 @@ __license__ = "Attribution-NonCommercial 4.0 International (CC BY-NC 4.0)"
 
 
 def _marker_info_fields_eq(hisself, expected, observed):
-    for field in ("marker", "chrom", "pos", "minor", "major"):
+    for field in ("marker", "chrom", "pos"):
         hisself.assertEqual(
             getattr(expected.info, field),
             getattr(observed.info, field)
         )
+
+    hisself.assertEqual(observed.get_minor(), expected.get_minor())
+    hisself.assertEqual(observed.get_major(), expected.get_major())
 
 
 class TestCore(unittest.TestCase):
@@ -266,23 +269,23 @@ class TestPlink(unittest.TestCase):
         # The expected ADDITIVE results
         self.expected_additive_results = [
             MarkerGenotypes(
-                MarkerInfo(marker="marker_1", minor="C", major="T", chrom=1,
-                           pos=1),
+                MarkerInfo(marker="marker_1", a1="C", a2="T", chrom=1,
+                           pos=1, minor=MarkerInfo.A1),
                 genotypes=marker_1_add
             ),
             MarkerGenotypes(
-                MarkerInfo(marker="marker_2", minor="G", major="C", chrom=1,
-                           pos=2),
+                MarkerInfo(marker="marker_2", a1="G", a2="C", chrom=1,
+                           pos=2, minor=MarkerInfo.A1),
                 genotypes=marker_2_add
             ),
             MarkerGenotypes(
-                MarkerInfo(marker="marker_3", minor="T", major="A", chrom=2,
-                           pos=100),
+                MarkerInfo(marker="marker_3", a1="T", a2="A", chrom=2,
+                           pos=100, minor=MarkerInfo.A1),
                 genotypes=marker_3_add
             ),
             MarkerGenotypes(
-                MarkerInfo(marker="marker_4", minor="G", major="T", chrom=3,
-                           pos=230),
+                MarkerInfo(marker="marker_4", a1="G", a2="T", chrom=3,
+                           pos=230, minor=MarkerInfo.A1),
                 genotypes=marker_4_add
             ),
         ]
@@ -290,23 +293,23 @@ class TestPlink(unittest.TestCase):
         # The expected GENOTYPIC results
         self.expected_genotypic_results = [
             MarkerGenotypes(
-                MarkerInfo(marker="marker_1", minor="C", major="T", chrom=1,
-                           pos=1),
+                MarkerInfo(marker="marker_1", a1="C", a2="T", chrom=1,
+                           pos=1, minor=MarkerInfo.A1),
                 genotypes=marker_1_geno
             ),
             MarkerGenotypes(
-                MarkerInfo(marker="marker_2", minor="G", major="C", chrom=1,
-                           pos=2),
+                MarkerInfo(marker="marker_2", a1="G", a2="C", chrom=1,
+                           pos=2, minor=MarkerInfo.A1),
                 genotypes=marker_2_geno
             ),
             MarkerGenotypes(
-                MarkerInfo(marker="marker_3", minor="T", major="A", chrom=2,
-                           pos=100),
+                MarkerInfo(marker="marker_3", a1="T", a2="A", chrom=2,
+                           pos=100, minor=MarkerInfo.A1),
                 genotypes=marker_3_geno
             ),
             MarkerGenotypes(
-                MarkerInfo(marker="marker_4", minor="G", major="T", chrom=3,
-                            pos=230),
+                MarkerInfo(marker="marker_4", a1="G", a2="T", chrom=3,
+                            pos=230, minor=MarkerInfo.A1),
                 genotypes=marker_4_geno
             ),
         ]
@@ -434,11 +437,12 @@ class TestPlink(unittest.TestCase):
                                       self.expected_additive_results):
             # FIXME alleles are inverted, but it should be ok when considering
             # the A1=minor convention.
-            for field in ("marker", "chrom", "pos", "minor", "major"):
+            for field in ("marker", "chrom", "pos", "a1", "a2"):
                 self.assertEqual(
                     getattr(observed, field),
                     getattr(expected, field)
                 )
+
 
     def test_iter_marker_genotypes_additive(self):
         """Tests the 'iter_marker_genotypes' function (additive)."""
@@ -478,12 +482,7 @@ class TestPlink(unittest.TestCase):
 
         for observed, expected in zipped:
             self.assertTrue(isinstance(observed, MarkerGenotypes))
-            for field in ("marker", "chrom", "pos", "minor", "major"):
-                self.assertEqual(
-                    getattr(expected.info, field),
-                    getattr(observed.info, field)
-                )
-
+            _marker_info_fields_eq(self, expected, observed)
             self.assertTrue(expected.genotypes.equals(observed.genotypes))
 
 
@@ -615,23 +614,23 @@ class TestImpute2(unittest.TestCase):
         # The expected DOSAGE ressults
         self.expected_dosage_results = [
             MarkerGenotypes(
-                MarkerInfo(marker="marker_1", minor="C", major="T", chrom=1,
-                           pos=1),
+                MarkerInfo(marker="marker_1", a1="C", a2="T", chrom=1,
+                           pos=1, minor=MarkerInfo.A1),
                 genotypes=marker_1_dose
             ),
             MarkerGenotypes(
-                MarkerInfo(marker="marker_2", minor="G", major="C", chrom=1,
-                           pos=2),
+                MarkerInfo(marker="marker_2", a1="G", a2="C", chrom=1,
+                           pos=2, minor=MarkerInfo.A1),
                 genotypes=marker_2_dose
             ),
             MarkerGenotypes(
-                MarkerInfo(marker="marker_3", minor="T", major="A", chrom=2,
-                           pos=100),
+                MarkerInfo(marker="marker_3", a1="T", a2="A", chrom=2,
+                           pos=100, minor=MarkerInfo.A1),
                 genotypes=marker_3_dose
             ),
             MarkerGenotypes(
-                MarkerInfo(marker="marker_4", minor="G", major="T", chrom=3,
-                           pos=230),
+                MarkerInfo(marker="marker_4", a1="G", a2="T", chrom=3,
+                           pos=230, minor=MarkerInfo.A1),
                 genotypes=marker_4_dose
             ),
         ]
@@ -639,23 +638,23 @@ class TestImpute2(unittest.TestCase):
         # The expected ADDITIVE results
         self.expected_additive_results = [
             MarkerGenotypes(
-                MarkerInfo(marker="marker_1", minor="C", major="T", chrom=1,
-                           pos=1),
+                MarkerInfo(marker="marker_1", a1="C", a2="T", chrom=1,
+                           pos=1, minor=MarkerInfo.A1),
                 genotypes=marker_1_add
             ),
             MarkerGenotypes(
-                MarkerInfo(marker="marker_2", minor="G", major="C", chrom=1,
-                           pos=2),
+                MarkerInfo(marker="marker_2", a1="G", a2="C", chrom=1,
+                           pos=2, minor=MarkerInfo.A1),
                 genotypes=marker_2_add
             ),
             MarkerGenotypes(
-                MarkerInfo(marker="marker_3", minor="T", major="A", chrom=2,
-                           pos=100),
+                MarkerInfo(marker="marker_3", a1="T", a2="A", chrom=2,
+                           pos=100, minor=MarkerInfo.A1),
                 genotypes=marker_3_add
             ),
             MarkerGenotypes(
-                MarkerInfo(marker="marker_4", minor="G", major="T", chrom=3,
-                           pos=230),
+                MarkerInfo(marker="marker_4", a1="G", a2="T", chrom=3,
+                           pos=230, minor=MarkerInfo.A1),
                 genotypes=marker_4_add
             ),
         ]
@@ -663,23 +662,23 @@ class TestImpute2(unittest.TestCase):
         # The expected GENOTYPIC results
         self.expected_genotypic_results = [
             MarkerGenotypes(
-                MarkerInfo(marker="marker_1", minor="C", major="T", chrom=1,
-                           pos=1),
+                MarkerInfo(marker="marker_1", a1="C", a2="T", chrom=1,
+                           pos=1, minor=MarkerInfo.A1),
                 genotypes=marker_1_geno
             ),
             MarkerGenotypes(
-                MarkerInfo(marker="marker_2", minor="G", major="C", chrom=1,
-                           pos=2),
+                MarkerInfo(marker="marker_2", a1="G", a2="C", chrom=1,
+                           pos=2, minor=MarkerInfo.A1),
                 genotypes=marker_2_geno
             ),
             MarkerGenotypes(
-                MarkerInfo(marker="marker_3", minor="T", major="A", chrom=2,
-                           pos=100),
+                MarkerInfo(marker="marker_3", a1="T", a2="A", chrom=2,
+                           pos=100, minor=MarkerInfo.A1),
                 genotypes=marker_3_geno
             ),
             MarkerGenotypes(
-                MarkerInfo(marker="marker_4", minor="G", major="T", chrom=3,
-                           pos=230),
+                MarkerInfo(marker="marker_4", a1="G", a2="T", chrom=3,
+                           pos=230, minor=MarkerInfo.A1),
                 genotypes=marker_4_geno
             )
         ]
@@ -934,23 +933,23 @@ class TestVCF(unittest.TestCase):
         # The expected ADDITIVE results
         self.expected_additive_results = [
             MarkerGenotypes(
-                MarkerInfo(marker="1:1", minor="G", major="A", chrom=1,
-                           pos=1),
+                MarkerInfo(marker="1:1", a1="G", a2="A", chrom=1,
+                           pos=1, minor=MarkerInfo.A1),
                 genotypes=marker_1_add
             ),
             MarkerGenotypes(
-                MarkerInfo(marker="marker_2", minor="C", major="T", chrom=1,
-                           pos=2),
+                MarkerInfo(marker="marker_2", a1="C", a2="T", chrom=1,
+                           pos=2, minor=MarkerInfo.A1),
                 genotypes=marker_2_add
             ),
             MarkerGenotypes(
-                MarkerInfo(marker="marker_3", minor="A", major="T", chrom=2,
-                           pos=100),
+                MarkerInfo(marker="marker_3", a1="A", a2="T", chrom=2,
+                           pos=100, minor=MarkerInfo.A1),
                 genotypes=marker_3_add
             ),
             MarkerGenotypes(
-                MarkerInfo(marker="marker_4", minor="A", major="C", chrom=3,
-                           pos=230),
+                MarkerInfo(marker="marker_4", a1="A", a2="C", chrom=3,
+                           pos=230, minor=MarkerInfo.A1),
                 genotypes=marker_4_add
             ),
         ]
@@ -958,23 +957,23 @@ class TestVCF(unittest.TestCase):
         # The expected GENOTYPIC results
         self.expected_genotypic_results = [
             MarkerGenotypes(
-                MarkerInfo(marker="1:1", minor="G", major="A", chrom=1,
-                           pos=1),
+                MarkerInfo(marker="1:1", a1="G", a2="A", chrom=1,
+                           pos=1, minor=MarkerInfo.A1),
                 genotypes=marker_1_geno
             ),
             MarkerGenotypes(
-                MarkerInfo(marker="marker_2", minor="C", major="T", chrom=1,
-                           pos=2),
+                MarkerInfo(marker="marker_2", a1="C", a2="T", chrom=1,
+                           pos=2, minor=MarkerInfo.A1),
                 genotypes=marker_2_geno
             ),
             MarkerGenotypes(
-                MarkerInfo(marker="marker_3", minor="A", major="T", chrom=2,
-                           pos=100),
+                MarkerInfo(marker="marker_3", a1="A", a2="T", chrom=2,
+                           pos=100, minor=MarkerInfo.A1),
                 genotypes=marker_3_geno
             ),
             MarkerGenotypes(
-                MarkerInfo(marker="marker_4", minor="A", major="C", chrom=3,
-                           pos=230),
+                MarkerInfo(marker="marker_4", a1="A", a2="C", chrom=3,
+                           pos=230, minor=MarkerInfo.A1),
                 genotypes=marker_4_geno
             ),
         ]

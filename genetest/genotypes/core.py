@@ -45,14 +45,43 @@ Representation = SimpleNamespace(
 )
 
 
+class UnknownMinorAllele(Exception):
+    pass
+
+
 class MarkerInfo(object):
-    __slots__ = ("marker", "chrom", "pos", "major", "minor")
-    def __init__(self, marker, chrom, pos, major, minor):
+    __slots__ = ("marker", "chrom", "pos", "a1", "a2", "minor")
+    A1 = "A1"
+    A2 = "A2"
+
+    def __init__(self, marker, chrom, pos, a1, a2, minor=None):
         self.marker = marker
         self.chrom = chrom
         self.pos = pos
-        self.major = major
+
+        self.a1 = a1
+        self.a2 = a2
         self.minor = minor
+
+        if self.minor not in (None, MarkerInfo.A1, MarkerInfo.A2):
+            raise ValueError(
+                "'minor' should be one of: MarkerInfo.A1, MarkerInfo.A2 "
+                "or None."
+            )
+
+    def _get_allele(self, allele):
+        if self.minor == MarkerInfo.A1:
+            return self.a1 if allele == "minor" else self.a2
+        elif self.minor == MarkerInfo.A2:
+            return self.a2 if allele == "minor" else self.a1
+        else:
+            raise UnknownMinorAllele()
+
+    def get_minor(self):
+        return self._get_allele("minor")
+
+    def get_major(self):
+        return self._get_allele("major")
 
 
 class MarkerGenotypes(object):
