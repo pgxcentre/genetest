@@ -279,8 +279,8 @@ class TestPlink(unittest.TestCase):
                 genotypes=marker_2_add
             ),
             MarkerGenotypes(
-                MarkerInfo(marker="marker_3", a1="T", a2="A", chrom=2,
-                           pos=100, minor=MarkerInfo.A1),
+                MarkerInfo(marker="marker_3", a1="A", a2="T", chrom=2,
+                           pos=100, minor=MarkerInfo.A2),
                 genotypes=marker_3_add
             ),
             MarkerGenotypes(
@@ -309,7 +309,7 @@ class TestPlink(unittest.TestCase):
             ),
             MarkerGenotypes(
                 MarkerInfo(marker="marker_4", a1="G", a2="T", chrom=3,
-                            pos=230, minor=MarkerInfo.A1),
+                           pos=230, minor=MarkerInfo.A1),
                 genotypes=marker_4_geno
             ),
         ]
@@ -443,7 +443,6 @@ class TestPlink(unittest.TestCase):
                     getattr(expected, field)
                 )
 
-
     def test_iter_marker_genotypes_additive(self):
         """Tests the 'iter_marker_genotypes' function (additive)."""
         plink_geno = PlinkGenotypes(**self.parameters)
@@ -455,19 +454,6 @@ class TestPlink(unittest.TestCase):
         for observed, expected in zipped:
             self.assertTrue(isinstance(observed, MarkerGenotypes))
             _marker_info_fields_eq(self, expected, observed)
-            self.assertTrue(expected.genotypes.equals(observed.genotypes))
-
-    def test_iter_marker_genotypes_additive(self):
-        """Tests the 'iter_marker_genotypes' function (additive)."""
-        plink_geno = PlinkGenotypes(**self.parameters)
-
-        zipped = zip(
-            plink_geno.iter_marker_genotypes(),
-            self.expected_additive_results,
-        )
-        for observed, expected in zipped:
-            self.assertTrue(isinstance(observed, MarkerGenotypes))
-
             self.assertTrue(expected.genotypes.equals(observed.genotypes))
 
     def test_iter_marker_genotypes_genotypic(self):
