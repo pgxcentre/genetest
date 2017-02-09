@@ -147,7 +147,7 @@ class TestStatsLogistic(unittest.TestCase):
                                places=4)
         self.assertAlmostEqual(-np.log10(0.0128102164253392),
                                -np.log10(results["SNPs"]["p_value"]),
-                               places=5)
+                               places=4)
 
     @unittest.skip("Not implemented")
     def test_logistic_inter_snp1_inter_full(self):
@@ -370,7 +370,7 @@ class TestStatsLogistic(unittest.TestCase):
                                places=4)
         self.assertAlmostEqual(-np.log10(0.0128102164253392),
                                -np.log10(results["snp2"]["p_value"]),
-                               places=5)
+                               places=4)
 
     @unittest.skip("Not implemented")
     def test_logistic_snp2_inter(self):
