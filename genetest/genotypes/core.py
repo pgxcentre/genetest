@@ -19,7 +19,6 @@ import numpy as np
 import pandas as pd
 
 from types import SimpleNamespace
-from collections import namedtuple
 
 from ..statistics.descriptive import get_maf
 
@@ -86,6 +85,7 @@ class MarkerInfo(object):
 
 class MarkerGenotypes(object):
     __slots__ = ("info", "genotypes")
+
     def __init__(self, info, genotypes):
         self.info = info
         self.genotypes = genotypes
@@ -240,9 +240,9 @@ class GenotypesContainer(object):
 
         """
         genotypes = pd.DataFrame({"geno": genotypes}, index=samples)
-        genotypes.loc[genotypes.geno == -1, "geno"] = np.nan
         genotypes.index.name = "sample_id"
-        return genotypes
+        genotypes.replace(-1, np.nan, inplace=True)
+        return genotypes.astype(float)
 
     @staticmethod
     def check_genotypes(genotypes, minor, major):
@@ -263,7 +263,7 @@ class GenotypesContainer(object):
             minor=minor,
             major=major,
         )
-        if flip > 0.5:
+        if flip:
             genotypes.geno = 2 - genotypes.geno
 
         return genotypes, minor, major
