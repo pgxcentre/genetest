@@ -1,0 +1,21 @@
+# Grammar for model sepcifications.
+
+@@grammar :: ModelSpec
+
+model = outcome:name "~" predictors:predictors $;
+
+outcome = name;
+
+predictors = "+".{ expression }+;
+
+interaction = interaction:"*".{ name };
+
+SNPs = "SNPs";
+
+name = name:/[A-Za-z0-9_]+/;
+
+expression =
+    | SNPs ~
+    | name !"*"
+    | interaction
+    ;

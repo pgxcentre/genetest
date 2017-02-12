@@ -9,6 +9,7 @@
 
 import os
 import sys
+import subprocess
 
 from setuptools import setup, find_packages
 
@@ -46,12 +47,33 @@ def write_version_file(fn=None):
         a.close()
 
 
+def build_grako_parser():
+    base = os.path.abspath(
+        os.path.join(
+            os.path.dirname(__file__), "genetest", "modelspec"
+        )
+    )
+    target = os.path.join(base, "parser.py")
+
+    grammar = os.path.join(base, "modelspec.ebnf")
+
+    args = [
+        "python", "-m", "grako", grammar, "-o", target
+    ]
+    print("Building modelspec grammar parser.")
+    print(" ".join(args))
+    subprocess.run(args)
+
+
 def setup_package():
     # Checking the python version prior to installation
     check_python_version()
 
     # Saving the version into a file
     write_version_file()
+
+    # Build the grecko parser.
+    build_grako_parser()
 
     setup(
         name="genetest",
@@ -91,8 +113,6 @@ def setup_package():
                      "Topic :: Scientific/Engineering :: Bio-Informatics"],
         keywords="bioinformatics genetics statistics",
     )
-
-    return
 
 
 if __name__ == "__main__":

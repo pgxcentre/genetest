@@ -8,8 +8,8 @@ import operator
 
 import numpy as np
 
-from .statistics import model_map
-from .statistics.descriptive import get_maf
+from ..statistics import model_map
+from ..statistics.descriptive import get_maf
 
 
 SNPs = "SNPs"
