@@ -98,6 +98,7 @@ class Print(Subscriber):
 class RowWriter(Subscriber):
     def __init__(self, filename=None, columns=None, header=False, sep="\t",
                  append=False):
+        # columns needs to be a list of 2-tuples ('col', result object or str).
         self.header = header
         self.columns = columns
         self.sep = sep

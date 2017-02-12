@@ -20,7 +20,7 @@ from .core import ModelSpec
 
 __all__ = [
     "ModelSpec", "parse_modelspec", "result", "phenotypes", "genotypes",
-    "factor", "log10", "pow", "interaction", "reset"
+    "factor", "log10", "pow", "interaction", "SNPs", "_reset"
 ]
 
 
@@ -34,4 +34,6 @@ log10 = core.log10
 pow = core.pow
 interaction = core.interaction
 
-reset = core._reset()
+SNPs = core.SNPs
+
+_reset = core._reset

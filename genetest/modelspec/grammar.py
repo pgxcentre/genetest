@@ -13,6 +13,9 @@ except ImportError:
 
 
 class ModelSpecSemantics(object):
+    def __init__(self):
+        self.entities = {}
+
     def SNPs(self, ast):
         return SNPs
 
