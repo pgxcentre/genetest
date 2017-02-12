@@ -25,6 +25,9 @@ class ModelSpecSemantics(object):
     def name(self, ast):
         return phenotypes[ast["name"]]
 
+    def integer(self, ast):
+        return int(ast["int"])
+
     def _default(self, ast):
         return ast
 

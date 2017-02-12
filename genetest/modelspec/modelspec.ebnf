@@ -2,7 +2,9 @@
 
 @@grammar :: ModelSpec
 
-model = outcome:name "~" predictors:predictors $;
+model = outcome:name
+        ["|" ~ condition:name ["=" ~ level:integer]]
+        "~" predictors:predictors $;
 
 outcome = name;
 
@@ -13,6 +15,9 @@ interaction = interaction:"*".{ name };
 SNPs = "SNPs";
 
 name = name:/[A-Za-z0-9_]+/;
+
+# num = num:/-?[0-9]+(\.[0-9]+)?/;
+integer = int:/[0-9]+/;
 
 expression =
     | SNPs ~
