@@ -56,6 +56,7 @@ class StatsLinear(StatsModels):
             "MODEL": {
                 "r_squared_adj": fitted.rsquared_adj,
                 "log_likelihood": fitted.llf,
+                "nobs": fitted.nobs
             }
         }
 

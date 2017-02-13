@@ -2,7 +2,7 @@
 Semantics for the grako parser.
 """
 
-from .core import SNPs, interaction, phenotypes
+from .core import SNPs, interaction, phenotypes, genotypes, factor
 
 
 try:
@@ -22,11 +22,17 @@ class ModelSpecSemantics(object):
     def interaction(self, ast):
         return interaction(*ast["interaction"])
 
-    def name(self, ast):
+    def phenotype(self, ast):
         return phenotypes[ast["name"]]
 
     def integer(self, ast):
         return int(ast["int"])
+
+    def genotype(self, ast):
+        return genotypes[ast["variant"]]
+
+    def factor(self, ast):
+        return factor(ast["phen"], name=ast["as_"])
 
     def _default(self, ast):
         return ast

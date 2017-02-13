@@ -116,7 +116,7 @@ def _gwas_worker(q, results_q, failed, abort, fit, y, X):
 
 
 def execute(phenotypes, genotypes, modelspec, subscribers=None,
-            variant_predicates=None, output_prefix=None):
+            variant_predicates=None, output_prefix=None, subgroup=None):
     if subscribers is None:
         subscribers = [subscribers_module.Print()]
 
@@ -137,7 +137,7 @@ def execute(phenotypes, genotypes, modelspec, subscribers=None,
     y.columns = y_cols
 
     # Drop uninformative factors.
-    bad_cols = _get_uninformative_factors(X)
+    bad_cols = _get_uninformative_factors(X, modelspec)
     if len(bad_cols):
         logger.info(
             "After removing missing values, dropping ({}) factor levels that "
@@ -153,7 +153,7 @@ def execute(phenotypes, genotypes, modelspec, subscribers=None,
 
     if modelspec.stratify_by:
         _execute_stratified(genotypes, modelspec, subscribers, y, X,
-                            variant_predicates, messages)
+                            variant_predicates, subgroup, messages)
     elif SNPs in modelspec.predictors:
         _execute_gwas(genotypes, modelspec, subscribers, y, X,
                       variant_predicates, messages)
@@ -177,15 +177,23 @@ def execute(phenotypes, genotypes, modelspec, subscribers=None,
 
 
 def _execute_stratified(genotypes, modelspec, subscribers, y, X,
-                        variant_predicates, messages):
+                        variant_predicates, subgroup, messages):
     # Levels.
     stratification_variable = X[modelspec.stratify_by.id]
+    if subgroup is None:
+        subgroup = stratification_variable.dropna().unique()
+    else:
+        subgroup = [subgroup]
 
     X = X.drop(modelspec.stratify_by.id, axis=1)
 
     gwas_mode = SNPs in modelspec.predictors
 
-    for level in stratification_variable.dropna().unique():
+    for level in subgroup:
+        logger.debug("Subgroup {}={}.".format(
+            modelspec.stratify_by, level
+        ))
+
         # Extract the stratification and execute the analysis.
         [sub._set_stratification_level(level) for sub in subscribers]
 
@@ -193,7 +201,7 @@ def _execute_stratified(genotypes, modelspec, subscribers, y, X,
 
         # Drop columns that become uninformative after stratification.
         this_x = X.loc[mask, :]
-        bad_cols = _get_uninformative_factors(this_x)
+        bad_cols = _get_uninformative_factors(this_x, modelspec)
         this_x = this_x.drop(bad_cols, axis=1)
 
         if len(bad_cols):
@@ -205,21 +213,28 @@ def _execute_stratified(genotypes, modelspec, subscribers, y, X,
         if gwas_mode:
             _execute_gwas(
                 genotypes, modelspec, subscribers, y.loc[mask, :], this_x,
-                variant_predicates
+                variant_predicates, messages
             )
         else:
             _execute_simple(
                 modelspec, subscribers, y.loc[mask, :], this_x,
-                variant_predicates
+                variant_predicates, messages
             )
 
 
-def _get_uninformative_factors(df):
-    # Check if some factor levels are now noninformative.
-    bad_cols = df.columns[(
-        df.columns.str.startswith("TRANSFORM:ENCODE_FACTOR") &
-        (df.sum() == 0)
-    )]
+def _get_uninformative_factors(df, modelspec):
+    factor_cols = [
+        i[2] for i in modelspec.transformations if i[0] == "ENCODE_FACTOR"
+    ]
+
+    bad_cols = []
+    zero_cols = df.columns[df.sum() == 0]
+    for col in zero_cols:
+        for factor_col in factor_cols:
+            if col.startswith(factor_col.id):
+                bad_cols.append(col)
+                break
+
     return bad_cols
 
 

@@ -357,6 +357,13 @@ class ModelSpec(object):
                 g.genotypes.columns = [entity_id.id]
                 df = df.join(g.genotypes, how="inner")
 
+                if df.shape[0] == 0:
+                    raise ValueError(
+                        "No sample left after joining. Perhaps the sample IDs "
+                        "in the genotypes and phenotypes containers are "
+                        "different."
+                    )
+
                 # Compute the maf.
                 maf, minor, major, flip = get_maf(
                     df[entity_id.id], g.info.get_minor(), g.info.get_major()
@@ -474,6 +481,7 @@ def _encode_factor(data, entity):
     out = {}
 
     v = data[entity.id]
+    nulls = v.isnull()
 
     # Pandas category.
     if hasattr(v, "cat"):
@@ -486,12 +494,14 @@ def _encode_factor(data, entity):
         return out
 
     # Any other data type.
-    levels = sorted(np.unique(v))
+    levels = sorted(np.unique(v[~nulls]))
     for i, level in enumerate(levels):
         # First level is the reference.
         if i == 0:
             continue
-        out["level{}".format(level)] = (v == level).astype(int)
+        level_name = "level{}".format(level)
+        out[level_name] = (v == level).astype(int)
+        out[level_name][nulls] = np.nan
 
     return out
 
