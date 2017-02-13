@@ -15,10 +15,11 @@
 @@grammar :: ModelSpec
 
 model = outcome:phenotype
-        [ condition:condition ]
+        [ "|" ~ conditions:condition_group ]
         "~" predictors:predictors $;
 
-condition = "|" ~ name:phenotype_or_variant ["=" ~ level:integer];
+condition_group = ",".{ condition };
+condition = name:phenotype_or_variant ["=" level:integer];
 
 genotype = "g(" ~ variant:name ")";
 
