@@ -3,13 +3,14 @@
 #
 #   y ~ x1 + x2                 # Standard model with covariates.
 #   y ~ x2 + x2 + x1 * x2       # Interaction.
+#   y ~ x + x1 * x2 as z        # Named interaction.
 #   y | male ~ x                # Stratified analysis.
 #   y | diabetes = 0 ~ x        # Subgroup analysis.
 #   y | g(rs12345) ~ x          # Genetic subgroup analysis.
 #   y ~ g(rs12345) + x          # Genetic analysis.
 #   y ~ SNPs + x                # GWAS.
 #   y ~ factor(x)               # Factors.
-#   y ~ factor(x) as x          # Factors that result in named transformations.
+#   y ~ factor(x) as x          # Factors that result in a named transformation.
 
 @@grammar :: ModelSpec
 
@@ -30,7 +31,8 @@ predictors = "+".{ expression }+;
 # Not using phenotype_or_variant to avoid the semantic methods from getting
 # called in the lookahead.
 interaction = &((genotype | name) "*")
-              interaction:"*".{ phenotype_or_variant };
+              interaction:"*".{ phenotype_or_variant }
+              ["as" as:name];
 
 SNPs = "SNPs";
 

@@ -20,7 +20,7 @@ class ModelSpecSemantics(object):
         return SNPs
 
     def interaction(self, ast):
-        return interaction(*ast["interaction"])
+        return interaction(*ast["interaction"], name=ast["as_"])
 
     def phenotype(self, ast):
         return phenotypes[ast["name"]]
