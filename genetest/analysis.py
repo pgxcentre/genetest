@@ -121,6 +121,10 @@ def execute(phenotypes, genotypes, modelspec, subscribers=None,
     if subscribers is None:
         subscribers = [subscribers_module.Print()]
 
+    # Initialize the subscribers.
+    for subscriber in subscribers:
+        subscriber.init(modelspec)
+
     if variant_predicates is None:
         variant_predicates = []
 
@@ -298,7 +302,6 @@ def _execute_simple(modelspec, subscribers, y, X, variant_predicates,
 
     # Dispatch the results to the subscribers.
     for subscriber in subscribers:
-        subscriber.init(modelspec)
         try:
             subscriber.handle(results)
         except KeyError as e:
@@ -308,10 +311,6 @@ def _execute_simple(modelspec, subscribers, y, X, variant_predicates,
 def _execute_gwas(genotypes, modelspec, subscribers, y, X, variant_predicates,
                   messages):
         cpus = multiprocessing.cpu_count() - 1
-
-        # Pre-initialize the subscribers.
-        for subscriber in subscribers:
-            subscriber.init(modelspec)
 
         # Create queues for failing SNPs and the consumer queue.
         failed = multiprocessing.Queue()
