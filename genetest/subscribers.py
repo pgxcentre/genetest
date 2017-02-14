@@ -22,7 +22,7 @@ logger = logging.getLogger(__name__)
 class Subscriber(object):
     """Abstract class for subscribers."""
     def __init__(self):
-        self.stratification_level = None
+        self._reset_subset()
 
     def init(self, modelspec):
         """Method that gets called by analysis to initialize or reinitialize
@@ -34,18 +34,18 @@ class Subscriber(object):
     def close(self):
         pass
 
-    def _set_stratification_level(self, level):
-        """Changes the stratification level.
+    def _update_current_subset(self, info):
+        """Updates information on which part of the dataset is analyzed.
 
-        This method get called by analysis before data is pushed. It sets the
-        'stratification_level' instance variable which can be used to customize
-        reporting.
+        This method get called by analysis before data is pushed.
 
         Subclasses should not have to modify this method.
 
         """
-        logger.debug("Setting stratification level='{}'.".format(level))
-        self.stratification_level = level
+        self.subset_info = info
+
+    def _reset_subset(self):
+        self.subset_info = None
 
     def handle(self, results):
         """Handle results from a statistical test."""

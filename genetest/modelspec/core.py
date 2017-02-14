@@ -238,15 +238,21 @@ class ModelSpec(object):
                                     a callable that returns an instance of a
                                     statistical test.
             no_intercept (bool): Controls if a column of ones is to be added.
-            stratify_by (EntityIdentifier): An EntityIdentifier to stratify
-                                            the analysis.
+            stratify_by (list): A list of EntityIdentifier instances
+                                to stratify the analysis.
 
         """
         self.outcome = self._clean_outcome(outcome)
         self.predictors = self._clean_predictors(predictors)
         self.test = self._clean_test(test)
         self.no_intercept = no_intercept
-        self.stratify_by = stratify_by
+
+        if hasattr(stratify_by, "__iter__"):
+            self.stratify_by = stratify_by
+        elif stratify_by is not None:
+            self.stratify_by = list(stratify_by)
+        else:
+            self.stratify_by = None
 
         # SNP metadata is stored in the modelspec because it is obtained as a
         # consequence of building the data matrix.
@@ -431,14 +437,15 @@ class ModelSpec(object):
                 if col.startswith(pred.id):
                     keep_cols.append(col)
 
-        if self.stratify_by:
-            if not isinstance(self.stratify_by, EntityIdentifier):
-                raise ValueError(
-                    "Statification variables are expected to be entity "
-                    "identifiers (and '{}' is of type {})."
-                    "".format(self.stratify_by, type(self.stratify_by))
-                )
-            keep_cols.append(self.stratify_by.id)
+        if self.stratify_by is not None:
+            for col in self.stratify_by:
+                if not isinstance(col, EntityIdentifier):
+                    raise ValueError(
+                        "Statification variables are expected to be entity "
+                        "identifiers (and '{}' is of type {})."
+                        "".format(col, type(col))
+                    )
+                keep_cols.append(col.id)
 
         return keep_cols
 
