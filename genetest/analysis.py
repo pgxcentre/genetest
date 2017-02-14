@@ -211,10 +211,11 @@ def _execute_stratified(genotypes, modelspec, subscribers, y, X,
         )
 
         # Extract the stratification and execute the analysis.
+        subset_info = {
+            translations[var.id]: level for var, level in current_subset
+        }
         for sub in subscribers:
-            sub._update_current_subset(
-                {translations[var.id]: level for var, level in current_subset}
-            )
+            sub._update_current_subset(subset_info)
 
         # Drop columns that become uninformative after stratification.
         this_x = X.loc[idx, :]
@@ -223,6 +224,20 @@ def _execute_stratified(genotypes, modelspec, subscribers, y, X,
 
         # Also drop the columns from the stratification variables.
         this_x = this_x.drop([i.id for i in modelspec.stratify_by], axis=1)
+
+        # Make sure everything went ok.
+        if this_x.shape[0] == 0:
+            raise ValueError(
+                "No samples left in subgroup analysis ({}). Are all requested "
+                "levels valid?"
+                "".format(subset_info)
+            )
+        elif this_x.shape[1] == 0:
+            raise ValueError(
+                "No columns left in subgroup analysis ({}). Maybe there are "
+                "no samples with non-null values in the requested subgroup."
+                "".format(subset_info)
+            )
 
         if len(bad_cols):
             logger.info(
