@@ -12,6 +12,7 @@ Run a full statistical analysis.
 
 
 import queue
+import itertools
 import multiprocessing
 import logging
 
@@ -116,9 +117,13 @@ def _gwas_worker(q, results_q, failed, abort, fit, y, X):
 
 
 def execute(phenotypes, genotypes, modelspec, subscribers=None,
-            variant_predicates=None, output_prefix=None):
+            variant_predicates=None, output_prefix=None, subgroups=None):
     if subscribers is None:
         subscribers = [subscribers_module.Print()]
+
+    # Initialize the subscribers.
+    for subscriber in subscribers:
+        subscriber.init(modelspec)
 
     if variant_predicates is None:
         variant_predicates = []
@@ -137,7 +142,7 @@ def execute(phenotypes, genotypes, modelspec, subscribers=None,
     y.columns = y_cols
 
     # Drop uninformative factors.
-    bad_cols = _get_uninformative_factors(X)
+    bad_cols = _get_uninformative_factors(X, modelspec)
     if len(bad_cols):
         logger.info(
             "After removing missing values, dropping ({}) factor levels that "
@@ -151,9 +156,9 @@ def execute(phenotypes, genotypes, modelspec, subscribers=None,
         "failed": []
     }
 
-    if modelspec.stratify_by:
+    if modelspec.stratify_by is not None:
         _execute_stratified(genotypes, modelspec, subscribers, y, X,
-                            variant_predicates, messages)
+                            variant_predicates, subgroups, messages)
     elif SNPs in modelspec.predictors:
         _execute_gwas(genotypes, modelspec, subscribers, y, X,
                       variant_predicates, messages)
@@ -177,24 +182,66 @@ def execute(phenotypes, genotypes, modelspec, subscribers=None,
 
 
 def _execute_stratified(genotypes, modelspec, subscribers, y, X,
-                        variant_predicates, messages):
+                        variant_predicates, subgroups, messages):
     # Levels.
-    stratification_variable = X[modelspec.stratify_by.id]
+    assert len(modelspec.stratify_by) == len(subgroups)
 
-    X = X.drop(modelspec.stratify_by.id, axis=1)
+    var_levels = []
+    for i, subgroup in enumerate(subgroups):
+        if subgroup is None:
+            levels = X[modelspec.stratify_by[i].id].dropna().unique()
+            var_levels.append(levels)
+        elif hasattr(subgroup, "__iter__"):
+            var_levels.append(subgroup)
+        else:
+            var_levels.append([subgroup])
+
+    # This create a iterable of all level combinations to analyze:
+    # assume x = 1, 2 and y = 3
+    # Then subsets = [[1, 3], [2, 3]]
+    # The order from modelspec.stratify_by is kept.
+    subsets = itertools.product(*var_levels)
 
     gwas_mode = SNPs in modelspec.predictors
+    translations = modelspec.get_translations()
 
-    for level in stratification_variable.dropna().unique():
+    for levels in subsets:
+        # current_subset is an iterable of (entity, level) pairs.
+        current_subset = list(zip(modelspec.stratify_by, levels))
+
+        # Build the filtering vector.
+        idx = np.logical_and.reduce(
+            [X[var.id] == level for var, level in current_subset]
+        )
+
         # Extract the stratification and execute the analysis.
-        [sub._set_stratification_level(level) for sub in subscribers]
-
-        mask = (stratification_variable == level)
+        subset_info = {
+            translations[var.id]: level for var, level in current_subset
+        }
+        for sub in subscribers:
+            sub._update_current_subset(subset_info)
 
         # Drop columns that become uninformative after stratification.
-        this_x = X.loc[mask, :]
-        bad_cols = _get_uninformative_factors(this_x)
+        this_x = X.loc[idx, :]
+        bad_cols = _get_uninformative_factors(this_x, modelspec)
         this_x = this_x.drop(bad_cols, axis=1)
+
+        # Also drop the columns from the stratification variables.
+        this_x = this_x.drop([i.id for i in modelspec.stratify_by], axis=1)
+
+        # Make sure everything went ok.
+        if this_x.shape[0] == 0:
+            raise ValueError(
+                "No samples left in subgroup analysis ({}). Are all requested "
+                "levels valid?"
+                "".format(subset_info)
+            )
+        elif this_x.shape[1] == 0:
+            raise ValueError(
+                "No columns left in subgroup analysis ({}). Maybe there are "
+                "no samples with non-null values in the requested subgroup."
+                "".format(subset_info)
+            )
 
         if len(bad_cols):
             logger.info(
@@ -204,22 +251,29 @@ def _execute_stratified(genotypes, modelspec, subscribers, y, X,
 
         if gwas_mode:
             _execute_gwas(
-                genotypes, modelspec, subscribers, y.loc[mask, :], this_x,
-                variant_predicates
+                genotypes, modelspec, subscribers, y.loc[idx, :], this_x,
+                variant_predicates, messages
             )
         else:
             _execute_simple(
-                modelspec, subscribers, y.loc[mask, :], this_x,
-                variant_predicates
+                modelspec, subscribers, y.loc[idx, :], this_x,
+                variant_predicates, messages
             )
 
 
-def _get_uninformative_factors(df):
-    # Check if some factor levels are now noninformative.
-    bad_cols = df.columns[(
-        df.columns.str.startswith("TRANSFORM:ENCODE_FACTOR") &
-        (df.sum() == 0)
-    )]
+def _get_uninformative_factors(df, modelspec):
+    factor_cols = [
+        i[2] for i in modelspec.transformations if i[0] == "ENCODE_FACTOR"
+    ]
+
+    bad_cols = []
+    zero_cols = df.columns[df.sum() == 0]
+    for col in zero_cols:
+        for factor_col in factor_cols:
+            if col.startswith(factor_col.id):
+                bad_cols.append(col)
+                break
+
     return bad_cols
 
 
@@ -248,7 +302,6 @@ def _execute_simple(modelspec, subscribers, y, X, variant_predicates,
 
     # Dispatch the results to the subscribers.
     for subscriber in subscribers:
-        subscriber.init(modelspec)
         try:
             subscriber.handle(results)
         except KeyError as e:
@@ -258,10 +311,6 @@ def _execute_simple(modelspec, subscribers, y, X, variant_predicates,
 def _execute_gwas(genotypes, modelspec, subscribers, y, X, variant_predicates,
                   messages):
         cpus = multiprocessing.cpu_count() - 1
-
-        # Pre-initialize the subscribers.
-        for subscriber in subscribers:
-            subscriber.init(modelspec)
 
         # Create queues for failing SNPs and the consumer queue.
         failed = multiprocessing.Queue()

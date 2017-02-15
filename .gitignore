@@ -12,6 +12,8 @@ docs/_build
 genetest.egg-info/
 genetest/version.py
 
+genetest/modelspec/parser.py
+
 .coverage
 htmlcov
 

@@ -8,8 +8,8 @@ import operator
 
 import numpy as np
 
-from .statistics import model_map
-from .statistics.descriptive import get_maf
+from ..statistics import model_map
+from ..statistics.descriptive import get_maf
 
 
 SNPs = "SNPs"
@@ -238,15 +238,21 @@ class ModelSpec(object):
                                     a callable that returns an instance of a
                                     statistical test.
             no_intercept (bool): Controls if a column of ones is to be added.
-            stratify_by (EntityIdentifier): An EntityIdentifier to stratify
-                                            the analysis.
+            stratify_by (list): A list of EntityIdentifier instances
+                                to stratify the analysis.
 
         """
         self.outcome = self._clean_outcome(outcome)
         self.predictors = self._clean_predictors(predictors)
         self.test = self._clean_test(test)
         self.no_intercept = no_intercept
-        self.stratify_by = stratify_by
+
+        if hasattr(stratify_by, "__iter__"):
+            self.stratify_by = stratify_by
+        elif stratify_by is not None:
+            self.stratify_by = list(stratify_by)
+        else:
+            self.stratify_by = None
 
         # SNP metadata is stored in the modelspec because it is obtained as a
         # consequence of building the data matrix.
@@ -357,6 +363,13 @@ class ModelSpec(object):
                 g.genotypes.columns = [entity_id.id]
                 df = df.join(g.genotypes, how="inner")
 
+                if df.shape[0] == 0:
+                    raise ValueError(
+                        "No sample left after joining. Perhaps the sample IDs "
+                        "in the genotypes and phenotypes containers are "
+                        "different."
+                    )
+
                 # Compute the maf.
                 maf, minor, major, flip = get_maf(
                     df[entity_id.id], g.info.get_minor(), g.info.get_major()
@@ -424,14 +437,15 @@ class ModelSpec(object):
                 if col.startswith(pred.id):
                     keep_cols.append(col)
 
-        if self.stratify_by:
-            if not isinstance(self.stratify_by, EntityIdentifier):
-                raise ValueError(
-                    "Statification variables are expected to be entity "
-                    "identifiers (and '{}' is of type {})."
-                    "".format(self.stratify_by, type(self.stratify_by))
-                )
-            keep_cols.append(self.stratify_by.id)
+        if self.stratify_by is not None:
+            for col in self.stratify_by:
+                if not isinstance(col, EntityIdentifier):
+                    raise ValueError(
+                        "Statification variables are expected to be entity "
+                        "identifiers (and '{}' is of type {})."
+                        "".format(col, type(col))
+                    )
+                keep_cols.append(col.id)
 
         return keep_cols
 
@@ -474,6 +488,7 @@ def _encode_factor(data, entity):
     out = {}
 
     v = data[entity.id]
+    nulls = v.isnull()
 
     # Pandas category.
     if hasattr(v, "cat"):
@@ -486,12 +501,14 @@ def _encode_factor(data, entity):
         return out
 
     # Any other data type.
-    levels = sorted(np.unique(v))
+    levels = sorted(np.unique(v[~nulls]))
     for i, level in enumerate(levels):
         # First level is the reference.
         if i == 0:
             continue
-        out["level{}".format(level)] = (v == level).astype(int)
+        level_name = "level{}".format(level)
+        out[level_name] = (v == level).astype(int)
+        out[level_name][nulls] = np.nan
 
     return out
 
