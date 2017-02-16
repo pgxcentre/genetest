@@ -110,6 +110,7 @@ class TestStatsLogistic(unittest.TestCase):
         self.assertEqual(1234, results["SNPs"]["pos"])
         self.assertEqual("T", results["SNPs"]["minor"])
         self.assertEqual("C", results["SNPs"]["major"])
+        self.assertAlmostEqual(0.3749333333333334, results["SNPs"]["maf"])
 
         # Checking the marker statistics (according to SAS)
         self.assertAlmostEqual(-2.24198635855498, results["SNPs"]["coef"],
@@ -133,6 +134,7 @@ class TestStatsLogistic(unittest.TestCase):
         self.assertEqual(9618, results["SNPs"]["pos"])
         self.assertEqual("C", results["SNPs"]["minor"])
         self.assertEqual("A", results["SNPs"]["major"])
+        self.assertAlmostEqual(0.41590833333333332, results["SNPs"]["maf"])
 
         # Checking the marker statistics (according to SAS)
         self.assertAlmostEqual(1.12532308347075, results["SNPs"]["coef"],
@@ -176,6 +178,7 @@ class TestStatsLogistic(unittest.TestCase):
         self.assertEqual(1234, results["snp1"]["pos"])
         self.assertEqual("T", results["snp1"]["minor"])
         self.assertEqual("C", results["snp1"]["major"])
+        self.assertAlmostEqual(0.3749333333333334, results["snp1"]["maf"])
 
         # Checking the marker statistics (according to SAS)
         self.assertAlmostEqual(-2.24198635855498, results["snp1"]["coef"],
@@ -224,6 +227,7 @@ class TestStatsLogistic(unittest.TestCase):
         self.assertEqual(1234, results["snp1"]["pos"])
         self.assertEqual("T", results["snp1"]["minor"])
         self.assertEqual("C", results["snp1"]["major"])
+        self.assertAlmostEqual(0.3749333333333334, results["snp1"]["maf"])
 
         # Checking the marker statistics (according to SAS)
         self.assertAlmostEqual(0.0015311482968189, results[inter.id]["coef"],
@@ -318,6 +322,7 @@ class TestStatsLogistic(unittest.TestCase):
         self.assertEqual(9618, results["snp2"]["pos"])
         self.assertEqual("C", results["snp2"]["minor"])
         self.assertEqual("A", results["snp2"]["major"])
+        self.assertAlmostEqual(0.41590833333333332, results["snp2"]["maf"])
 
         # Checking the marker statistics (according to SAS)
         self.assertAlmostEqual(1.12532308347075, results["snp2"]["coef"],
@@ -366,6 +371,7 @@ class TestStatsLogistic(unittest.TestCase):
         self.assertEqual(9618, results["snp2"]["pos"])
         self.assertEqual("C", results["snp2"]["minor"])
         self.assertEqual("A", results["snp2"]["major"])
+        self.assertAlmostEqual(0.41590833333333332, results["snp2"]["maf"])
 
         # Checking the marker statistics (according to SAS)
         self.assertAlmostEqual(0.0239292800721822, results[inter.id]["coef"],

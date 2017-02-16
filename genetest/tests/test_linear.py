@@ -117,6 +117,7 @@ class TestStatsLinear(unittest.TestCase):
         self.assertEqual(1234, results["SNPs"]["pos"])
         self.assertEqual("T", results["SNPs"]["minor"])
         self.assertEqual("C", results["SNPs"]["major"])
+        self.assertAlmostEqual(0.016666666666666666, results["SNPs"]["maf"])
 
         # Checking the marker statistics (according to SAS)
         self.assertAlmostEqual(113.19892138658, results["SNPs"]["coef"])
@@ -135,6 +136,14 @@ class TestStatsLinear(unittest.TestCase):
 
         # Checking the second marker (snp2)
         results = gwas_results["snp2"]
+        self.assertEqual("snp2", results["SNPs"]["name"])
+        self.assertEqual("3", results["SNPs"]["chrom"])
+        self.assertEqual(9618, results["SNPs"]["pos"])
+        self.assertEqual("C", results["SNPs"]["minor"])
+        self.assertEqual("A", results["SNPs"]["major"])
+        self.assertAlmostEqual(0.20833333333333334, results["SNPs"]["maf"])
+
+        # Checking the marker statistics (according to SAS)
         self.assertAlmostEqual(25.6638410624231, results["SNPs"]["coef"])
         self.assertAlmostEqual(7.02442421875627, results["SNPs"]["std_err"])
         self.assertAlmostEqual(11.5865803512147, results["SNPs"]["lower_ci"])
@@ -151,6 +160,14 @@ class TestStatsLinear(unittest.TestCase):
 
         # Checking the third marker (snp3)
         results = gwas_results["snp3"]
+        self.assertEqual("snp3", results["SNPs"]["name"])
+        self.assertEqual("2", results["SNPs"]["chrom"])
+        self.assertEqual(1519, results["SNPs"]["pos"])
+        self.assertEqual("G", results["SNPs"]["minor"])
+        self.assertEqual("T", results["SNPs"]["major"])
+        self.assertAlmostEqual(0.29166666666666669, results["SNPs"]["maf"])
+
+        # Checking the marker statistics (according to SAS)
         self.assertAlmostEqual(0.08097682855889, results["SNPs"]["coef"])
         self.assertAlmostEqual(6.6803747245602, results["SNPs"]["std_err"])
         self.assertAlmostEqual(-13.3067932886126, results["SNPs"]["lower_ci"])
@@ -166,6 +183,14 @@ class TestStatsLinear(unittest.TestCase):
 
         # Checking the fourth marker (snp4)
         results = gwas_results["snp4"]
+        self.assertEqual("snp4", results["SNPs"]["name"])
+        self.assertEqual("1", results["SNPs"]["chrom"])
+        self.assertEqual(5871, results["SNPs"]["pos"])
+        self.assertEqual("G", results["SNPs"]["minor"])
+        self.assertEqual("A", results["SNPs"]["major"])
+        self.assertAlmostEqual(0.275, results["SNPs"]["maf"])
+
+        # Checking the marker statistics (according to SAS)
         self.assertAlmostEqual(-17.0933815760203, results["SNPs"]["coef"])
         self.assertAlmostEqual(6.49570434323821, results["SNPs"]["std_err"])
         self.assertAlmostEqual(-30.1110639788755, results["SNPs"]["lower_ci"])
@@ -206,6 +231,7 @@ class TestStatsLinear(unittest.TestCase):
         self.assertEqual(1234, results["snp1"]["pos"])
         self.assertEqual("T", results["snp1"]["minor"])
         self.assertEqual("C", results["snp1"]["major"])
+        self.assertAlmostEqual(0.016666666666666666, results["snp1"]["maf"])
 
         # The number of observations and parameters
         n = self.phenotypes.data.shape[0]
@@ -258,6 +284,7 @@ class TestStatsLinear(unittest.TestCase):
         self.assertEqual(1234, results["snp1"]["pos"])
         self.assertEqual("T", results["snp1"]["minor"])
         self.assertEqual("C", results["snp1"]["major"])
+        self.assertAlmostEqual(0.016666666666666666, results["snp1"]["maf"])
 
         # The number of observations and parameters
         n = self.phenotypes.data.shape[0]
@@ -364,6 +391,7 @@ class TestStatsLinear(unittest.TestCase):
         self.assertEqual(9618, results["snp2"]["pos"])
         self.assertEqual("C", results["snp2"]["minor"])
         self.assertEqual("A", results["snp2"]["major"])
+        self.assertAlmostEqual(0.20833333333333334, results["snp2"]["maf"])
 
         # The number of observations and parameters
         n = self.phenotypes.data.shape[0]
@@ -416,6 +444,7 @@ class TestStatsLinear(unittest.TestCase):
         self.assertEqual(9618, results["snp2"]["pos"])
         self.assertEqual("C", results["snp2"]["minor"])
         self.assertEqual("A", results["snp2"]["major"])
+        self.assertAlmostEqual(0.20833333333333334, results["snp2"]["maf"])
 
         # The number of observations and parameters
         n = self.phenotypes.data.shape[0]
@@ -465,6 +494,7 @@ class TestStatsLinear(unittest.TestCase):
         self.assertEqual(1519, results["snp3"]["pos"])
         self.assertEqual("G", results["snp3"]["minor"])
         self.assertEqual("T", results["snp3"]["major"])
+        self.assertAlmostEqual(0.29166666666666669, results["snp3"]["maf"])
 
         # The number of observations and parameters
         n = self.phenotypes.data.shape[0]
@@ -516,6 +546,7 @@ class TestStatsLinear(unittest.TestCase):
         self.assertEqual(1519, results["snp3"]["pos"])
         self.assertEqual("G", results["snp3"]["minor"])
         self.assertEqual("T", results["snp3"]["major"])
+        self.assertAlmostEqual(0.29166666666666669, results["snp3"]["maf"])
 
         # The number of observations and parameters
         n = self.phenotypes.data.shape[0]
@@ -566,6 +597,7 @@ class TestStatsLinear(unittest.TestCase):
         self.assertEqual(5871, results["snp4"]["pos"])
         self.assertEqual("G", results["snp4"]["minor"])
         self.assertEqual("A", results["snp4"]["major"])
+        self.assertAlmostEqual(0.275, results["snp4"]["maf"])
 
         # The number of observations and parameters
         n = self.phenotypes.data.shape[0]
@@ -617,6 +649,7 @@ class TestStatsLinear(unittest.TestCase):
         self.assertEqual(5871, results["snp4"]["pos"])
         self.assertEqual("G", results["snp4"]["minor"])
         self.assertEqual("A", results["snp4"]["major"])
+        self.assertAlmostEqual(0.275, results["snp4"]["maf"])
 
         # The number of observations and parameters
         n = self.phenotypes.data.shape[0]
