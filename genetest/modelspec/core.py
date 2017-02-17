@@ -493,22 +493,17 @@ def _encode_factor(data, entity):
     nulls = v.isnull()
 
     # Pandas category.
+    levels = None
     if hasattr(v, "cat"):
-        for i, cat in enumerate(v.cat.categories):
-            # Set the first level as the reference.
-            if i == 0:
-                continue
-            out[cat] = (v == cat).astype(int)
+        levels = sorted(v.cat.categories)
+    else:
+        levels = sorted(v[~nulls].unique())
 
-        return out
-
-    # Any other data type.
-    levels = sorted(np.unique(v[~nulls]))
     for i, level in enumerate(levels):
         # First level is the reference.
         if i == 0:
             continue
-        level_name = "level{}".format(level)
+        level_name = "level.{}".format(level)
         out[level_name] = (v == level).astype(float)
         out[level_name][nulls] = np.nan
 
