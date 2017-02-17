@@ -24,8 +24,8 @@ __all__ = ["TextPhenotypes"]
 
 
 class TextPhenotypes(PhenotypesContainer):
-    def __init__(self, filename, sample_column, field_separator,
-                 missing_values, repeated_measurements):
+    def __init__(self, filename, sample_column="sample", field_separator="\t",
+                 missing_values=None, repeated_measurements=False):
         """Instantiate a new TextPhenotypes object.
 
         Args:
