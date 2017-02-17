@@ -35,8 +35,8 @@ _Impute2Line = namedtuple("_Impute2Line",
 
 class Impute2Genotypes(GenotypesContainer):
     def __init__(self, filename, sample_filename,
-                 representation=Representation.ADDITIVE,
-                 probability_threshold=0):
+                 representation=Representation.DOSAGE,
+                 probability_threshold=0.9):
         """Instantiate a new Impute2Genotypes object.
 
         Args:

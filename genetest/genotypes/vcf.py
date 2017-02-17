@@ -25,7 +25,7 @@ __all__ = ["VCFGenotypes"]
 
 
 class VCFGenotypes(GenotypesContainer):
-    def __init__(self, filename, representation):
+    def __init__(self, filename, representation=Representation.ADDITIVE):
         """Instantiate a new VCFGenotypes object.
 
         Args:

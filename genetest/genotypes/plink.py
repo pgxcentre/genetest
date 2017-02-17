@@ -23,7 +23,7 @@ __all__ = ["PlinkGenotypes"]
 
 
 class PlinkGenotypes(GenotypesContainer):
-    def __init__(self, prefix, representation):
+    def __init__(self, prefix, representation=Representation.ADDITIVE):
         """Instantiate a new PlinkGenotypes object.
 
         Args:
