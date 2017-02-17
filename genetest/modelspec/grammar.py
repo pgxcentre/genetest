@@ -2,13 +2,19 @@
 Semantics for the grako parser.
 """
 
+import logging
+
 from .core import SNPs, interaction, phenotypes, genotypes, factor
+
+
+logger = logging.getLogger(__name__)
 
 
 try:
     from .parser import ModelSpecParser
     PARSER_AVAIL = True
-except ImportError:
+except ImportError as e:
+    logger.warning("No parser available: " + str(e))
     PARSER_AVAIL = False
 
 
