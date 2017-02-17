@@ -5,6 +5,8 @@ Utilities to build statistical models.
 
 import uuid
 import operator
+import itertools
+import functools
 
 import numpy as np
 
@@ -406,7 +408,7 @@ class ModelSpec(object):
             f = transformation_handler.handlers[action]
             res = f(df, source, *params)
 
-            # Some tranformations return multiple columns. We create all the
+            # Some transformations return multiple columns. We create all the
             # relevant columns in the dataframe.
             if isinstance(res, dict):
                 for key, col in res.items():
@@ -507,7 +509,7 @@ def _encode_factor(data, entity):
         if i == 0:
             continue
         level_name = "level{}".format(level)
-        out[level_name] = (v == level).astype(int)
+        out[level_name] = (v == level).astype(float)
         out[level_name][nulls] = np.nan
 
     return out
@@ -519,10 +521,37 @@ def _pow(data, entity, power):
 
 
 @transformation_handler("INTERACTION")
-def _interaction(data, entity, interaction_target):
-    # It is possible that there are multiple levels in the interaction_target.
-    # This is TODO
-    return data[entity.id] * data[interaction_target.id]
+def _interaction(data, *entities):
+    # Finding all the columns for all the targets
+    column_names = tuple(
+        tuple(name for name in data.columns if name.startswith(entity.id))
+        for entity in entities
+    )
+
+    # Finding the level column names if there are factors
+    factor_levels = tuple(
+        tuple(name[len(entity.id)+1:] for name in names)
+        for names, entity in zip(column_names, entities)
+    )
+
+    # Creating the final columns
+    out = {}
+    for cols, level_names in zip(itertools.product(*column_names),
+                                 itertools.product(*factor_levels)):
+        # Getting the key (for factors, if present)
+        key = ":".join(level_names).strip(":")
+
+        # Computing the multiplication of all the columns
+        mult = functools.reduce(np.multiply, (data[col] for col in cols))
+
+        # If the key is empty, it means there are no factors in the interaction
+        # term, hence there is only one resulting column and we return it
+        if key == "":
+            return mult
+
+        out[key] = mult
+
+    return out
 
 
 def _reset():
