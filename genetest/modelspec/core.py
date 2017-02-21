@@ -3,6 +3,7 @@ Utilities to build statistical models.
 """
 
 
+import re
 import uuid
 import operator
 import itertools
@@ -533,7 +534,7 @@ def _interaction(data, *entities):
     for cols, level_names in zip(itertools.product(*column_names),
                                  itertools.product(*factor_levels)):
         # Getting the key (for factors, if present)
-        key = ":".join(level_names).strip(":")
+        key = re.sub(":{2,}", "", ":".join(level_names).strip(":"))
 
         # Computing the multiplication of all the columns
         mult = functools.reduce(np.multiply, (data[col] for col in cols))
