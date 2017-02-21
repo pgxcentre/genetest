@@ -485,6 +485,11 @@ def _log10(data, entity):
     return np.log10(data[entity.id])
 
 
+@transformation_handler("LN")
+def _ln(data, entity):
+    return np.log(data[entity.id])
+
+
 @transformation_handler("ENCODE_FACTOR")
 def _encode_factor(data, entity):
     out = {}
@@ -561,5 +566,6 @@ genotypes = DependencyManager("GENOTYPES")
 
 factor = TransformationManager("ENCODE_FACTOR")
 log10 = TransformationManager("LOG10")
+ln = TransformationManager("LN")
 pow = TransformationManager("POW")
 interaction = TransformationManager("INTERACTION")

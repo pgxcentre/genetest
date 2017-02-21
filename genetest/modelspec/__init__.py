@@ -31,6 +31,7 @@ genotypes = core.genotypes
 
 factor = core.factor
 log10 = core.log10
+ln = core.ln
 pow = core.pow
 interaction = core.interaction
 
