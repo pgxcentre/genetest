@@ -118,16 +118,15 @@ class TestGrammar(unittest.TestCase):
                 err_msg="The predictor '{}' is not as expected".format(name),
             )
 
-    @unittest.skip("Not implemented")
     def test_pow(self):
         """Tests a power transformation."""
-        # Creating the model specification
-        predictors = [spec.genotypes.snp, spec.pow(spec.phenotypes.var1, 3)]
-        modelspec = spec.ModelSpec(
-            outcome=spec.phenotypes.pheno,
-            predictors=predictors,
-            test="linear",
-        )
+        # Parsing the formula and removing the conditions
+        model = spec.parse_formula("pheno ~ g(snp) + pow(var1, 4)")
+        model["test"] = StatsLinear
+        del model["conditions"]
+
+        # Creating the model
+        modelspec = spec.ModelSpec(**model)
 
         # Gathering the observed matrix
         matrix = modelspec.create_data_matrix(
@@ -149,7 +148,8 @@ class TestGrammar(unittest.TestCase):
                         "The outcomes are not as expected")
 
         # Checking the predictors
-        for predictor, power, name in zip(predictors, (1, 3), ("snp", "var1")):
+        predictors = [spec.genotypes.snp, spec.pow(spec.phenotypes.var1, 4)]
+        for predictor, power, name in zip(predictors, (1, 4), ("snp", "var1")):
             # Comparing the values
             np.testing.assert_array_equal(
                 matrix.loc[self.data.index, predictor.id].values,
@@ -158,17 +158,17 @@ class TestGrammar(unittest.TestCase):
                         "expected".format(name, power),
             )
 
-    @unittest.skip("Not implemented")
     def test_log(self):
         """Tests log transformations (log10 and ln)."""
-        # Creating the model specification
-        predictors = [spec.genotypes.snp, spec.log10(spec.phenotypes.var1),
-                      spec.ln(spec.phenotypes.var1)]
-        modelspec = spec.ModelSpec(
-            outcome=spec.phenotypes.pheno,
-            predictors=predictors,
-            test="linear",
+        # Parsing the formula and removing the conditions
+        model = spec.parse_formula(
+            "pheno ~ g(snp) + var1 + log10(var1) + ln(var1)"
         )
+        model["test"] = StatsLinear
+        del model["conditions"]
+
+        # Creating the model
+        modelspec = spec.ModelSpec(**model)
 
         # Gathering the observed matrix
         matrix = modelspec.create_data_matrix(
@@ -176,7 +176,7 @@ class TestGrammar(unittest.TestCase):
         )
 
         # Checking the shape of the matrix
-        self.assertEqual((self.data.shape[0], 5), matrix.shape,
+        self.assertEqual((self.data.shape[0], 6), matrix.shape,
                          "The observed matrix is not of the right shape")
 
         # Checking the intercept
@@ -191,7 +191,7 @@ class TestGrammar(unittest.TestCase):
 
         # Checking the predictors
         translations = modelspec.get_translations()
-        for predictor in predictors[:1]:
+        for predictor in (spec.genotypes.snp, spec.phenotypes.var1):
             # Getting the name of the predictor
             name = translations[predictor.id]
 
@@ -203,15 +203,16 @@ class TestGrammar(unittest.TestCase):
             )
 
         # Checking the log transform
-        for predictor, transform, name in zip(predictors[1:],
-                                              (np.log10, np.log),
+        predictors = (spec.log10(spec.phenotypes.var1),
+                      spec.ln(spec.phenotypes.var1))
+        for predictor, transform, name in zip(predictors, (np.log10, np.log),
                                               ("var1", "var1")):
             # Comparing the values
             np.testing.assert_array_equal(
                 matrix.loc[self.data.index, predictor.id].values,
                 transform(self.data[name].values),
-                err_msg="The predictor '{}**{}' is not as "
-                        "expected".format(name, transform.__name__),
+                err_msg="The predictor '{}({})' is not as "
+                        "expected".format(transform.__name__, name),
             )
 
     def test_encode_factor(self):
