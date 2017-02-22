@@ -25,6 +25,12 @@ genotype = "g(" ~ variant:name ")";
 
 factor = "factor(" ~ phen:phenotype ")" ["as" as:name];
 
+pow = "pow(" ~ phen:phenotype ", " ~ power:integer ")" ["as" as:name];
+
+ln = "ln(" ~ phen:phenotype ")" ["as" as:name];
+
+log10 = "log10(" ~ phen:phenotype ")" ["as" as:name];
+
 outcome = phenotype;
 
 predictors = "+".{ expression }+;
@@ -51,5 +57,8 @@ expression =
     | interaction
     | genotype
     | factor
+    | ln
+    | log10
+    | pow
     | phenotype
     ;

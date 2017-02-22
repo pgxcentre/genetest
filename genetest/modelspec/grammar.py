@@ -5,7 +5,8 @@ Semantics for the grako parser.
 import logging
 import warnings
 
-from .core import SNPs, interaction, phenotypes, genotypes, factor
+from .core import (SNPs, interaction, phenotypes, genotypes, factor, pow,
+                   log10, ln)
 
 
 logger = logging.getLogger(__name__)
@@ -40,6 +41,15 @@ class ModelSpecSemantics(object):
 
     def factor(self, ast):
         return factor(ast["phen"], name=ast["as_"])
+
+    def pow(self, ast):
+        return pow(ast["phen"], ast["power"], name=ast["as_"])
+
+    def ln(self, ast):
+        return ln(ast["phen"])
+
+    def log10(self, ast):
+        return log10(ast["phen"])
 
     def _default(self, ast):
         return ast
