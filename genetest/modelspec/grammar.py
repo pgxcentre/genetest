@@ -3,6 +3,7 @@ Semantics for the grako parser.
 """
 
 import logging
+import warnings
 
 from .core import SNPs, interaction, phenotypes, genotypes, factor
 
@@ -46,8 +47,14 @@ class ModelSpecSemantics(object):
 
 def parse_modelspec(s):
     """Use the modelspec grammar to parse kwargs for modelspec."""
+    warnings.warn("use 'parse_formula' instead", DeprecationWarning)
+    return parse_formula(s)
+
+
+def parse_formula(f):
+    """Use the modelspec grammar to parse a formula for the modelspec."""
     if not PARSER_AVAIL:
         return
 
-    parser = ModelSpecParser()
-    return parser.parse(s, rule_name="model", semantics=ModelSpecSemantics())
+    parser = ModelSpecParser(parseinfo=False)
+    return parser.parse(f, rule_name="model", semantics=ModelSpecSemantics())
