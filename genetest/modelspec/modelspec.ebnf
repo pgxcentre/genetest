@@ -25,14 +25,20 @@ genotype = "g(" ~ variant:name ")";
 
 factor = "factor(" ~ phen:phenotype ")" ["as" as:name];
 
+pow = "pow(" ~ phen:phenotype ", " ~ power:integer ")" ["as" as:name];
+
+ln = "ln(" ~ phen:phenotype ")" ["as" as:name];
+
+log10 = "log10(" ~ phen:phenotype ")" ["as" as:name];
+
 outcome = phenotype;
 
 predictors = "+".{ expression }+;
 
 # Not using phenotype_or_variant to avoid the semantic methods from getting
 # called in the lookahead.
-interaction = &((genotype | name) "*")
-              interaction:"*".{ phenotype_or_variant }
+interaction = &((genotype | "factor(" name ")" | name ) "*")
+              interaction:"*".{ factor | phenotype_or_variant }
               ["as" as:name];
 
 SNPs = "SNPs";
@@ -51,5 +57,8 @@ expression =
     | interaction
     | genotype
     | factor
+    | ln
+    | log10
+    | pow
     | phenotype
     ;

@@ -261,48 +261,51 @@ class TestStatsCoxPH(unittest.TestCase):
 
         # TODO: Check the other predictors
 
-    @unittest.skip("Not implemented")
-    def test_coxph_snp1_inter_category(self):
+    def test_coxph_snp1_inter_categorical(self):
         """Tests coxph first SNP (interaction, category)."""
-        # Preparing the data
-        pheno = self.data.loc[:, ["tte", "event", "age", "var1", "gender"]]
-        geno = self.data[["snp1"]].rename(columns={"snp1": "geno"})
+        # The variables which are factors
+        gender = spec.factor(spec.phenotypes.gender)
 
-        # Permuting the genotypes
-        geno = geno.iloc[np.random.permutation(geno.shape[0]), :]
+        # The interaction term
+        inter = spec.interaction(gender, spec.genotypes.snp1)
 
-        # Adding the data to the object
-        self.dummy.set_phenotypes(pheno)
-
-        # Preparing the matrices
-        y, X = self.coxph_inter_cat.create_matrices(self.dummy)
-
-        # Merging with genotype
-        y, X = self.coxph_inter_cat.merge_matrices_genotypes(y, X, geno)
-
-        # Fitting
-        self.coxph_inter_cat.fit(y, X)
-
-        # Checking the results (according to SAS)
-        # SAS doesn't compute a hazard ratio (and its 95% CI) for interaction
-        # (since it would be interpretable)
-        self.assertAlmostEqual(
-            -1.34428789715448, self.coxph_inter_cat.results.coef, places=3,
+        # Creating the model specification
+        modelspec = spec.ModelSpec(
+            outcome=dict(tte=spec.phenotypes.tte, event=spec.phenotypes.event),
+            predictors=[spec.genotypes.snp1, spec.phenotypes.age,
+                        spec.phenotypes.var1, gender, inter],
+            test="coxph",
         )
-        self.assertAlmostEqual(
-            1.7731990844019, self.coxph_inter_cat.results.std_err, places=5,
+
+        # Performing the analysis and retrieving the results
+        subscriber = subscribers.ResultsMemory()
+        analysis.execute(
+            self.phenotypes, self.genotypes, modelspec,
+            subscribers=[subscriber],
         )
-        self.assertAlmostEqual(
-            np.exp(-1.34428789715448), self.coxph_inter_cat.results.hr,
-            places=4,
-        )
-        self.assertAlmostEqual(
-            0.57473756080668, self.coxph_inter_cat.results.z_value**2,
-            places=3,
-        )
-        self.assertAlmostEqual(
-            0.44838245349613, self.coxph_inter_cat.results.p_value, places=4,
-        )
+        results = subscriber.results[0]
+
+        # Checking the marker information (it's a flip)
+        self.assertEqual("snp1", results["snp1"]["name"])
+        self.assertEqual("3", results["snp1"]["chrom"])
+        self.assertEqual(1234, results["snp1"]["pos"])
+        self.assertEqual("C", results["snp1"]["minor"])
+        self.assertEqual("T", results["snp1"]["major"])
+        self.assertAlmostEqual(0.48162903225806442, results["snp1"]["maf"])
+
+        # Checking the results (according to R)
+        col = inter.id + ":level.2"
+        self.assertAlmostEqual(1.34436505435604148, results[col]["coef"])
+        self.assertAlmostEqual(1.77319747152157015, results[col]["std_err"])
+        self.assertAlmostEqual(3.8357502743054757, results[col]["hr"])
+        self.assertAlmostEqual(0.118713989626776345,
+                               results[col]["hr_lower_ci"], places=3)
+        self.assertAlmostEqual(123.936363465590887,
+                               results[col]["hr_upper_ci"], places=0)
+        self.assertAlmostEqual(0.7581586799819029, results[col]["z_value"])
+        self.assertAlmostEqual(0.448355994218403997, results[col]["p_value"])
+
+        # TODO: Check the other predictors
 
     def test_coxph_snp2(self):
         """Tests coxph regression with the second SNP."""

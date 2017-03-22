@@ -310,59 +310,61 @@ class TestStatsLinear(unittest.TestCase):
 
         # TODO: Check the other predictors
 
-    @unittest.skip("Not implemented")
     def test_linear_snp1_inter_categorical(self):
         """Tests linear regression for first SNP (inter, category)."""
-        # Preparing the data
-        pheno = self.data.loc[:, ["pheno1", "age", "var1", "gender"]]
-        geno = self.data[["snp1"]].rename(columns={"snp1": "geno"})
+        # The variables which are factors
+        gender = spec.factor(spec.phenotypes.gender)
 
-        # Permuting the genotypes
-        geno = geno.iloc[np.random.permutation(geno.shape[0]), :]
+        # The interaction term
+        inter = spec.interaction(gender, spec.genotypes.snp1)
 
-        # Adding the data to the object
-        self.dummy.set_phenotypes(pheno)
-
-        # Preparing the matrices
-        y, X = self.ols_inter_categorical.create_matrices(self.dummy)
-        self.assertFalse("geno" in X.columns)
-
-        # Merging with genotype
-        y, X = self.ols_inter_categorical.merge_matrices_genotypes(y, X, geno)
-
-        # Fitting
-        self.ols_inter_categorical.fit(y, X)
-
-        # The number of observation and parameters that were fitted
-        n = X.shape[0]
-        p = X.shape[1] - 1
-
-        # Checking the results (according to SAS)
-        self.assertAlmostEqual(
-            -74.5163756952978, self.ols_inter_categorical.results.coef,
+        # Creating the model specification
+        modelspec = spec.ModelSpec(
+            outcome=spec.phenotypes.pheno1,
+            predictors=[spec.genotypes.snp1, spec.phenotypes.age,
+                        spec.phenotypes.var1, gender, inter],
+            test="linear",
         )
-        self.assertAlmostEqual(
-            40.2210255975831, self.ols_inter_categorical.results.std_err,
+
+        # Performing the analysis and retrieving the results
+        subscriber = subscribers.ResultsMemory()
+        analysis.execute(
+            self.phenotypes, self.genotypes, modelspec,
+            subscribers=[subscriber],
         )
-        self.assertAlmostEqual(
-            -155.154676865573, self.ols_inter_categorical.results.lower_ci,
-            places=6,
-        )
-        self.assertAlmostEqual(
-            6.12192547497808, self.ols_inter_categorical.results.upper_ci,
-            places=6,
-        )
-        self.assertAlmostEqual(
-            -1.8526721929183, self.ols_inter_categorical.results.t_value,
-        )
-        self.assertAlmostEqual(
-            -np.log10(0.06939763567525),
-            -np.log10(self.ols_inter_categorical.results.p_value),
-        )
+        results = subscriber.results[0]
+
+        # Checking the marker information
+        self.assertEqual("snp1", results["snp1"]["name"])
+        self.assertEqual("3", results["snp1"]["chrom"])
+        self.assertEqual(1234, results["snp1"]["pos"])
+        self.assertEqual("T", results["snp1"]["minor"])
+        self.assertEqual("C", results["snp1"]["major"])
+        self.assertAlmostEqual(0.016666666666666666, results["snp1"]["maf"])
+
+        # The number of observations and parameters
+        n = self.phenotypes.data.shape[0]
+        p = 5
+
+        # Checking the marker statistics (according to SAS)
+        col = inter.id + ":level.2"
+        self.assertAlmostEqual(-74.5163756952978, results[col]["coef"])
+        self.assertAlmostEqual(40.2210255975831, results[col]["std_err"])
+        self.assertAlmostEqual(-155.154676865573, results[col]["lower_ci"],
+                               places=6)
+        self.assertAlmostEqual(6.12192547497808, results[col]["upper_ci"],
+                               places=6)
+        self.assertAlmostEqual(-1.8526721929183, results[col]["t_value"])
+        self.assertAlmostEqual(-np.log10(0.06939763567525),
+                               -np.log10(results[col]["p_value"]))
+
+        # Checking the model r squared (adjusted) (according to SAS)
         self.assertAlmostEqual(
             1 - (n - 1) * (1 - 0.39367309450771)/((n - 1) - p),
-            self.ols_inter_categorical.results.rsquared_adj,
+            results["MODEL"]["r_squared_adj"],
         )
+
+        # TODO: Check the other predictors
 
     def test_linear_snp2(self):
         """Tests linear regression with the second SNP."""

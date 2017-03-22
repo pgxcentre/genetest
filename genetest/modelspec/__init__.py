@@ -14,13 +14,13 @@ __license__ = "CC BY-NC 4.0"
 
 
 from . import core
-from .grammar import parse_modelspec
 from .core import ModelSpec
+from .grammar import parse_modelspec, parse_formula
 
 
 __all__ = [
-    "ModelSpec", "parse_modelspec", "result", "phenotypes", "genotypes",
-    "factor", "log10", "pow", "interaction", "SNPs", "_reset"
+    "ModelSpec", "parse_modelspec", "parse_formula", "result", "phenotypes",
+    "genotypes", "factor", "log10", "pow", "interaction", "SNPs", "_reset"
 ]
 
 
@@ -31,6 +31,7 @@ genotypes = core.genotypes
 
 factor = core.factor
 log10 = core.log10
+ln = core.ln
 pow = core.pow
 interaction = core.interaction
 
