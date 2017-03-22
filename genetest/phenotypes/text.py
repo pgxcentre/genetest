@@ -102,6 +102,10 @@ class TextPhenotypes(PhenotypesContainer):
             self.get_nb_variables(),
         )
 
+    def merge(self, other):
+        """Merge this instance with another."""
+        self._phenotypes = pd.merge(self._phenotypes, other._phenotypes)
+
     def get_phenotypes(self, li=None):
         """Returns a dataframe of phenotypes.
 
