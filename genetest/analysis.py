@@ -16,7 +16,9 @@ import itertools
 import multiprocessing
 import logging
 
-from .modelspec import SNPs
+from .modelspec import SNPs, ModelSpec
+from .modelspec.grammar import parse_formula
+from .statistics import model_map
 from .statistics.descriptive import get_maf
 from . import subscribers as subscribers_module
 
@@ -114,6 +116,35 @@ def _gwas_worker(q, results_q, failed, abort, fit, y, X):
         results["SNPs"]["maf"] = maf
 
         results_q.put(results)
+
+
+def execute_formula(phenotypes, genotypes, formula, test, test_kwargs=None,
+                    subscribers=None, variant_predicates=None,
+                    output_prefix=None):
+
+    model = parse_formula(formula)
+
+    # Handle the statistical test.
+    if test_kwargs is None:
+        test_kwargs = {}
+
+    if hasattr(test, "__call__"):
+        model["test"] = lambda: test(**test_kwargs)
+    else:
+        model["test"] = lambda: model_map[test](**test_kwargs)
+
+    # Handle the conditions and stratification.
+    conditions = model.pop("conditions")
+    if conditions is not None:
+        model["stratify_by"] = [i["name"] for i in conditions]
+        subgroups = [i["level"] for i in conditions]
+    else:
+        subgroups = None
+
+    modelspec = ModelSpec(**model)
+
+    return execute(phenotypes, genotypes, modelspec, subscribers,
+                   variant_predicates, output_prefix, subgroups)
 
 
 def execute(phenotypes, genotypes, modelspec, subscribers=None,
