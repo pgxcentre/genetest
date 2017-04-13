@@ -9,10 +9,15 @@
 
 
 import unittest
+from os import path
+from tempfile import TemporaryDirectory
 
 import numpy as np
 import pandas as pd
 from pkg_resources import resource_filename
+
+from pyplink import PyPlink
+from geneparse.plink import PlinkReader
 
 from ..statistics.core import StatsError
 from ..statistics.models.linear import StatsLinear
@@ -21,7 +26,6 @@ from .. import analysis
 from .. import subscribers
 from .. import modelspec as spec
 from ..phenotypes.dummy import _DummyPhenotypes
-from ..genotypes.dummy import _DummyGenotypes
 
 
 __copyright__ = "Copyright 2016, Beaulieu-Saucier Pharmacogenomics Centre"
@@ -52,29 +56,44 @@ class TestStatsLinear(unittest.TestCase):
             axis=1,
         )
 
-        # Creating the dummy genotype container
-        cls.genotypes = _DummyGenotypes()
-        cls.genotypes.data = cls.data.drop(
-            ["pheno1", "age", "var1", "gender"],
-            axis=1,
-        )
-        cls.genotypes.snp_info = {
-            "snp1": {"chrom": "3", "pos": 1234, "major": "C", "minor": "T"},
-            "snp2": {"chrom": "3", "pos": 9618, "major": "A", "minor": "C"},
-            "snp3": {"chrom": "2", "pos": 1519, "major": "T", "minor": "G"},
-            "snp4": {"chrom": "1", "pos": 5871, "major": "A", "minor": "G"},
-            "snp5": {"chrom": "X", "pos": 2938, "major": "C", "minor": "T"},
-        }
+        # Creating a temporary directory
+        cls.tmp_dir = TemporaryDirectory(prefix="genetest_")
+
+        # The plink file prefix
+        cls.plink_prefix = path.join(cls.tmp_dir.name, "input")
+
+        # Permuting the sample to add a bit of randomness
+        new_sample_order = np.random.permutation(cls.data.index)
+
+        # Creating the BED file
+        with PyPlink(cls.plink_prefix, "w") as bed:
+            for snp in [s for s in cls.data.columns if s.startswith("snp")]:
+                bed.write_genotypes(cls.data.loc[new_sample_order, snp])
+
+        # Creating the BIM file
+        with open(cls.plink_prefix + ".bim", "w") as bim:
+            print(3, "snp1", 0, 1234, "T", "C", sep="\t", file=bim)
+            print(3, "snp2", 0, 9618, "C", "A", sep="\t", file=bim)
+            print(2, "snp3", 0, 1519, "G", "T", sep="\t", file=bim)
+            print(1, "snp4", 0, 5871, "G", "A", sep="\t", file=bim)
+            print(23, "snp5", 0, 2938, "T", "C", sep="\t", file=bim)
+
+        # Creating the FAM file
+        with open(cls.plink_prefix + ".fam", "w") as fam:
+            for sample in new_sample_order:
+                print(sample, sample, 0, 0, 0, -9, file=fam)
+
+        # Creating the genotype parser
+        cls.genotypes = PlinkReader(cls.plink_prefix)
+
+    @classmethod
+    def tearDownClass(cls):
+        cls.tmp_dir.cleanup()
+        cls.genotypes.close()
 
     def setUp(self):
         # Resetting the model specification
         spec._reset()
-
-        # Reordering the columns and the rows of the genotype data frame
-        self.genotypes.data = self.genotypes.data.iloc[
-            np.random.permutation(self.genotypes.data.shape[0]),
-            np.random.permutation(self.genotypes.data.shape[1])
-        ]
 
         # Reordering the columns and the rows of the phenotype data frame
         self.phenotypes.data = self.phenotypes.data.iloc[
