@@ -80,7 +80,10 @@ class StatsCoxPH(StatsModels):
 
         # Results about the model fit
         out = {
-            "MODEL": {"log_likelihood": fitted.llf},
+            "MODEL": {
+                "log_likelihood": fitted.llf,
+                "nobs": X.shape[0],
+            },
         }
 
         # Computing the confidence intervals only once

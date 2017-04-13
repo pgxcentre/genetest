@@ -47,7 +47,10 @@ class StatsLogistic(StatsModels):
 
         # Results about the model fit.
         out = {
-            "MODEL": {"log_likelihood": fitted.llf},
+            "MODEL": {
+                "log_likelihood": fitted.llf,
+                "nobs": fitted.nobs
+            },
         }
 
         for param in parameters:
