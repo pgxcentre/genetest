@@ -9,14 +9,18 @@
 
 
 import unittest
+from os import path
+from tempfile import TemporaryDirectory
 
 import numpy as np
 import pandas as pd
 from scipy.stats import binom
 
+from pyplink import PyPlink
+from geneparse.plink import PlinkReader
+
 from .. import modelspec as spec
 from ..phenotypes.dummy import _DummyPhenotypes
-from ..genotypes.dummy import _DummyGenotypes
 
 
 __copyright__ = "Copyright 2016, Beaulieu-Saucier Pharmacogenomics Centre"
@@ -49,13 +53,35 @@ class TestModelSpec(unittest.TestCase):
         cls.phenotypes = _DummyPhenotypes()
         cls.phenotypes.data = cls.data[phenotypes].copy()
 
-        # Creating the dummy genotype container
-        genotypes = ["snp"]
-        cls.genotypes = _DummyGenotypes()
-        cls.genotypes.data = cls.data[genotypes].copy()
-        cls.genotypes.snp_info = {
-            "snp": {"chrom": "3", "pos": 1234, "major": "C", "minor": "T"},
-        }
+        # Creating a temporary directory
+        cls.tmp_dir = TemporaryDirectory(prefix="genetest_")
+
+        # The plink file prefix
+        cls.plink_prefix = path.join(cls.tmp_dir.name, "input")
+
+        # Permuting the sample to add a bit of randomness
+        new_sample_order = np.random.permutation(cls.data.index)
+
+        # Creating the BED file
+        with PyPlink(cls.plink_prefix, "w") as bed:
+            bed.write_genotypes(cls.data.loc[new_sample_order, "snp"])
+
+        # Creating the BIM file
+        with open(cls.plink_prefix + ".bim", "w") as bim:
+            print(1, "snp", 0, 1, "B", "A", sep="\t", file=bim)
+
+        # Creating the FAM file
+        with open(cls.plink_prefix + ".fam", "w") as fam:
+            for sample in new_sample_order:
+                print(sample, sample, 0, 0, 0, -9, file=fam)
+
+        # Creating the genotype parser
+        cls.genotypes = PlinkReader(cls.plink_prefix)
+
+    @classmethod
+    def tearDownClass(cls):
+        cls.tmp_dir.cleanup()
+        cls.genotypes.close()
 
     def setUp(self):
         # Resetting the model specification
@@ -65,12 +91,6 @@ class TestModelSpec(unittest.TestCase):
         self.phenotypes.data = self.phenotypes.data.iloc[
             np.random.permutation(self.phenotypes.data.shape[0]),
             np.random.permutation(self.phenotypes.data.shape[1])
-        ]
-
-        # Reordering the rows of the phenotype container
-        self.genotypes.data = self.genotypes.data.iloc[
-            np.random.permutation(self.genotypes.data.shape[0]),
-            np.random.permutation(self.genotypes.data.shape[1])
         ]
 
     def test_reset(self):
@@ -125,6 +145,91 @@ class TestModelSpec(unittest.TestCase):
             np.testing.assert_array_equal(
                 matrix.loc[self.data.index, predictor.id].values,
                 self.data[name].values,
+                err_msg="The predictor '{}' is not as expected".format(name),
+            )
+
+    def test_no_intersect(self):
+        """Tests when no intersect between phenotypes and genotypes."""
+        # Creating a new phenotype container
+        phenotypes = _DummyPhenotypes()
+        phenotypes.data = self.data[["pheno", "var1"]].copy()
+        phenotypes.data.index = ["s" + s for s in phenotypes.data.index]
+
+        # Creating the model specification
+        modelspec = spec.ModelSpec(
+            outcome=spec.phenotypes.pheno,
+            predictors=[spec.genotypes.snp, spec.phenotypes.var1],
+            test="linear",
+        )
+
+        # Gathering the observed matrix
+        with self.assertRaises(ValueError):
+            modelspec.create_data_matrix(phenotypes, self.genotypes)
+
+    def test_smaller_intersect(self):
+        """Tests when the sample intersect is smaller between containers."""
+        # Choosing 10 samples to exclude from the dataset
+        to_exclude = np.random.choice(self.data.index, 10, replace=False)
+
+        # Removing 5 samples from the phenotypes
+        phenotypes = _DummyPhenotypes()
+        phenotypes.data = self.data.drop(to_exclude[:5], axis=0)
+
+        # Removing the next 5 for the genotypes
+        plink_prefix = self.plink_prefix + "_less"
+        geno_data = self.data.drop(to_exclude[5:], axis=0)
+        with PyPlink(plink_prefix, "w") as bed:
+            bed.write_genotypes(geno_data.snp)
+
+        # Creating the BIM file
+        with open(plink_prefix + ".bim", "w") as bim:
+            print(1, "snp", 0, 1, "B", "A", sep="\t", file=bim)
+
+        # Creating the FAM file
+        with open(plink_prefix + ".fam", "w") as fam:
+            for sample in geno_data.index:
+                print(sample, sample, 0, 0, 0, -9, file=fam)
+
+        # Creating the model specification
+        predictors = [spec.genotypes.snp, spec.phenotypes.var1,
+                      spec.phenotypes.var2]
+        modelspec = spec.ModelSpec(
+            outcome=spec.phenotypes.pheno,
+            predictors=predictors,
+            test="linear",
+        )
+
+        # Gathering the observed matrix
+        with PlinkReader(plink_prefix) as genotypes:
+            matrix = modelspec.create_data_matrix(phenotypes, genotypes)
+
+        # Subset of the new data
+        data = self.data.drop(to_exclude, axis=0)
+
+        # Checking the shape of the matrix
+        self.assertEqual((data.shape[0], 5), matrix.shape,
+                         "The observed matrix is not of the right shape")
+
+        # Checking the intercept
+        self.assertEqual([1], matrix.intercept.unique().tolist(),
+                         "The intercept is not as expected")
+
+        # Checking the outcome
+        outcome_col = spec.phenotypes.pheno.id
+        outcomes = matrix.loc[data.index, outcome_col]
+        self.assertTrue(outcomes.equals(data.pheno),
+                        "The outcomes are not as expected")
+
+        # Checking the predictors
+        translations = modelspec.get_translations()
+        for predictor in predictors:
+            # Getting the name of the predictor
+            name = translations[predictor.id]
+
+            # Comparing the values
+            np.testing.assert_array_equal(
+                matrix.loc[data.index, predictor.id].values,
+                data[name].values,
                 err_msg="The predictor '{}' is not as expected".format(name),
             )
 
