@@ -14,9 +14,10 @@ import numpy as np
 import pandas as pd
 from scipy.stats import binom
 
+from geneparse.dataframe import DataFrameReader
+
 from .. import modelspec as spec
 from ..phenotypes.dummy import _DummyPhenotypes
-from ..genotypes.dummy import _DummyGenotypes
 from ..statistics.models.linear import StatsLinear
 
 
@@ -51,12 +52,17 @@ class TestGrammar(unittest.TestCase):
         cls.phenotypes.data = cls.data[phenotypes].copy()
 
         # Creating the dummy genotype container
-        genotypes = ["snp"]
-        cls.genotypes = _DummyGenotypes()
-        cls.genotypes.data = cls.data[genotypes].copy()
-        cls.genotypes.snp_info = {
-            "snp": {"chrom": "3", "pos": 1234, "major": "C", "minor": "T"},
-        }
+        map_info = pd.DataFrame(
+            {"chrom": ["3"],
+             "pos": [1234],
+             "a1": ["T"],
+             "a2": ["C"]},
+            index=["snp"],
+        )
+        cls.genotypes = DataFrameReader(
+            dataframe=cls.data[["snp"]].copy(),
+            map_info=map_info,
+        )
 
     def setUp(self):
         # Resetting the model specification
@@ -66,12 +72,6 @@ class TestGrammar(unittest.TestCase):
         self.phenotypes.data = self.phenotypes.data.iloc[
             np.random.permutation(self.phenotypes.data.shape[0]),
             np.random.permutation(self.phenotypes.data.shape[1])
-        ]
-
-        # Reordering the rows of the phenotype container
-        self.genotypes.data = self.genotypes.data.iloc[
-            np.random.permutation(self.genotypes.data.shape[0]),
-            np.random.permutation(self.genotypes.data.shape[1])
         ]
 
     def test_simple_formula(self):
