@@ -104,7 +104,7 @@ class TextPhenotypes(PhenotypesContainer):
 
     def merge(self, other):
         """Merge this instance with another."""
-        self._phenotypes = pd.merge(self._phenotypes, other._phenotypes)
+        self._phenotypes = self._phenotypes.join(other._phenotypes)
 
     def get_phenotypes(self, li=None):
         """Returns a dataframe of phenotypes.

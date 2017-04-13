@@ -62,7 +62,7 @@ def build_grako_parser():
     ]
     print("Building modelspec grammar parser.")
     print(" ".join(args))
-    subprocess.run(args)
+    subprocess.check_call(args)
 
 
 def setup_package():
