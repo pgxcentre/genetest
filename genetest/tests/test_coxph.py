@@ -14,13 +14,14 @@ import numpy as np
 import pandas as pd
 from pkg_resources import resource_filename
 
+from geneparse.dataframe import DataFrameReader
+
 from ..statistics.core import StatsError
 
 from .. import analysis
 from .. import subscribers
 from .. import modelspec as spec
 from ..phenotypes.dummy import _DummyPhenotypes
-from ..genotypes.dummy import _DummyGenotypes
 
 
 __copyright__ = "Copyright 2016, Beaulieu-Saucier Pharmacogenomics Centre"
@@ -51,28 +52,33 @@ class TestStatsCoxPH(unittest.TestCase):
             axis=1,
         )
 
-        # Creating the dummy genotype container
-        cls.genotypes = _DummyGenotypes()
-        cls.genotypes.data = cls.data.drop(
-            ["tte", "event", "age", "var1", "gender"],
-            axis=1,
+        # Permuting the sample to add a bit of randomness
+        new_sample_order = np.random.permutation(cls.data.index)
+
+        # Creating the genotypes data frame
+        genotypes = cls.data.loc[
+            new_sample_order,
+            [_ for _ in cls.data.columns if _.startswith("snp")],
+        ].copy()
+
+        # Creating the mapping information
+        map_info = pd.DataFrame(
+            {"chrom": [3, 3, 2, 1],
+             "pos": [1234, 9618, 1519, 5871],
+             "a1": ["T", "C", "G", "G"],
+             "a2": ["C", "A", "T", "A"]},
+            index=["snp1", "snp2", "snp3", "snp4"],
         )
-        cls.genotypes.snp_info = {
-            "snp1": {"chrom": "3", "pos": 1234, "major": "C", "minor": "T"},
-            "snp2": {"chrom": "3", "pos": 9618, "major": "A", "minor": "C"},
-            "snp3": {"chrom": "2", "pos": 1519, "major": "T", "minor": "G"},
-            "snp4": {"chrom": "1", "pos": 5871, "major": "A", "minor": "G"},
-        }
+
+        # Creating the genotype parser
+        cls.genotypes = DataFrameReader(
+            dataframe=genotypes,
+            map_info=map_info,
+        )
 
     def setUp(self):
         # Resetting the model specification
         spec._reset()
-
-        # Reordering the columns and the rows of the genotype data frame
-        self.genotypes.data = self.genotypes.data.iloc[
-            np.random.permutation(self.genotypes.data.shape[0]),
-            np.random.permutation(self.genotypes.data.shape[1])
-        ]
 
         # Reordering the columns and the rows of the phenotype data frame
         self.phenotypes.data = self.phenotypes.data.iloc[
