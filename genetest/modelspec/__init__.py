@@ -20,7 +20,8 @@ from .grammar import parse_modelspec, parse_formula
 
 __all__ = [
     "ModelSpec", "parse_modelspec", "parse_formula", "result", "phenotypes",
-    "genotypes", "factor", "log10", "pow", "interaction", "SNPs", "_reset"
+    "genotypes", "factor", "log10", "pow", "interaction", "SNPs", "_reset",
+    "pheWAS"
 ]
 
 
@@ -38,3 +39,5 @@ interaction = core.interaction
 SNPs = core.SNPs
 
 _reset = core._reset
+
+PheWAS = core.PheWAS

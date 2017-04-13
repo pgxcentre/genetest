@@ -11,12 +11,13 @@ Run a full statistical analysis.
 # Commons, PO Box 1866, Mountain View, CA 94042, USA.
 
 
+import time
 import queue
 import itertools
 import multiprocessing
 import logging
 
-from .modelspec import SNPs, ModelSpec
+from .modelspec import SNPs, ModelSpec, PheWAS
 from .modelspec.grammar import parse_formula
 from .statistics import model_map
 from .statistics.descriptive import get_maf
@@ -177,6 +178,12 @@ def execute(phenotypes, genotypes, modelspec, subscribers=None,
     if variant_predicates is None:
         variant_predicates = []
 
+    # We branch out early if it is a pheWAS analysis because the data
+    # preparation steps are pretty different.
+    if isinstance(modelspec.outcome, PheWAS):
+        return _execute_phewas(phenotypes, genotypes, modelspec, subscribers,
+                               variant_predicates, output_prefix, subgroups)
+
     data = modelspec.create_data_matrix(phenotypes, genotypes)
 
     # Exclude samples with missing outcome or covariable.
@@ -230,7 +237,111 @@ def execute(phenotypes, genotypes, modelspec, subscribers=None,
                 f.write("{}\n".format(failed_snp))
 
 
-# TODO: Fix for geneparse
+def _execute_phewas(phenotypes, genotypes, modelspec, subscribers,
+                    variant_predicates, output_prefix, subgroups):
+    # Check that invalid options were not set.
+    if subgroups:
+        raise NotImplementedError(
+            "Stratified analyses for pheWAS are not supported yet."
+        )
+
+    if variant_predicates:
+        raise ValueError(
+            "Variant predicates can only be used in the context of GWAS "
+            "analyses."
+        )
+
+    # Create the matrices.
+    data = modelspec.create_data_matrix(phenotypes, genotypes)
+
+    # Prepare synchronized data structures.
+    results_queue = multiprocessing.Queue()
+    phen_queue = multiprocessing.Queue()
+    abort = multiprocessing.Event()
+
+    # Create workers.
+    cpus = 2
+    predictors = modelspec.predictors
+    workers = []
+    fit = modelspec.test().fit
+    for worker in range(cpus):
+        this_data = data.copy()
+
+        worker = multiprocessing.Process(
+            target=_phewas_worker,
+            args=(this_data, predictors, abort, fit, phen_queue, results_queue)
+        )
+
+        workers.append(worker)
+        worker.start()
+
+    # Fill the phenotypes queue.
+    for entity in modelspec.outcome.li:
+        if entity not in modelspec.predictors:
+            phen_queue.put(entity)
+
+    phen_queue.put(None)
+
+    # Pass results to the subscribers until it's done.
+    translations = modelspec.get_translations()
+    n_workers_done = 0
+    while n_workers_done != len(workers):
+        try:
+            res = results_queue.get(False)
+        except queue.Empty:
+            time.sleep(1)
+            continue
+
+        if res is None:
+            n_workers_done += 1
+            continue
+
+        res["outcome"] = translations[res["outcome"].id]
+        for subscriber in subscribers:
+            try:
+                subscriber.handle(res)
+            except KeyError as e:
+                subscribers_module.subscriber_error(e.args[0], abort)
+
+    for worker in workers:
+        worker.join()
+
+    logger.info("PheWAS complete.")
+
+
+def _phewas_worker(data, predictors, abort, fit, phen_queue, results_queue):
+
+    predictors = [i.id for i in predictors]
+    if "intercept" in data.columns:
+        predictors.append("intercept")
+
+    X = data[predictors]
+
+    while not abort.is_set():
+        # Get an outcome.
+        y = phen_queue.get()
+
+        # Sentinel check.
+        if y is None:
+            phen_queue.put(None)
+            results_queue.put(None)
+            logger.debug("Worker Done")
+            return
+
+        y_data = data[[y.id]]
+        not_missing = _missing(y_data, X)
+
+        try:
+            results = fit(y_data[not_missing], X[not_missing])
+        except Exception as e:
+            logger.debug("Exception raised during fitting:", e)
+            print(e)
+            continue
+
+        results["outcome"] = y
+        results_queue.put(results)
+
+
 def _execute_stratified(genotypes, modelspec, subscribers, y, X,
                         variant_predicates, subgroups, messages):
     # Levels.
@@ -384,7 +495,7 @@ def _execute_gwas(genotypes, modelspec, subscribers, y, X, variant_predicates,
             workers.append(worker)
             worker.start()
 
-        # Works signal the end of their work by appending None to the results
+        # Workers signal the end of their work by appending None to the results
         # queue. Hence, there should be as many Nones as workers in the
         # results queue by the end of the results processing.
         done_workers = 0

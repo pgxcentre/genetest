@@ -20,6 +20,12 @@ SNPs = "SNPs"
 model = "MODEL"
 
 
+class PheWAS(object):
+    """A collection of EntityIdentifiers used to describe pheWAS analyses."""
+    def __init__(self, li=None):
+        self.li = li
+
+
 class transformation_handler(object):
     handlers = {}
 
@@ -332,17 +338,45 @@ class ModelSpec(object):
             genotypes (geneparse.core.Genotypes): The genotypes.
 
         """
-        # Extract the phenotype dependencies.
         PHENOTYPES = "PHENOTYPES"
 
-        phen_keys = [
-            k[1] for k, v in self.dependencies.items() if k[0] == PHENOTYPES
-        ]
+        # Extract the phenotype dependencies.
+        if isinstance(self.outcome, PheWAS) and self.outcome.li is None:
+            # Get all the phenotypes.
+            df = phenotypes.get_phenotypes()
 
-        df = phenotypes.get_phenotypes(phen_keys)
-        df.columns = [
-            self.dependencies[(PHENOTYPES, k)].id for k in phen_keys
-        ]
+            # Create entities if needed for the outcomes.
+            self.outcome.li = []
+
+            col_names = []
+            for col in df.columns:
+                # Get an entity if it already exists.
+                entity = self.dependencies.get((PHENOTYPES, col))
+
+                # Create the entity if it didn't exist.
+                if entity is None:
+                    entity = EntityIdentifier()
+                    self.dependencies[(PHENOTYPES, col)] = entity
+
+                # If the entity is not in the predictors, we should analyze it
+                # in the pheWAS.
+                if entity not in self.predictors:
+                    self.outcome.li.append(entity)
+
+                col_names.append(entity.id)
+
+            df.columns = col_names
+
+        else:
+            phen_keys = [
+                k[1] for k, v in self.dependencies.items()
+                if k[0] == PHENOTYPES
+            ]
+
+            df = phenotypes.get_phenotypes(phen_keys)
+            df.columns = [
+                self.dependencies[(PHENOTYPES, k)].id for k in phen_keys
+            ]
 
         # Extract the genotype dependencies.
         markers = self.get_tested_variants()
@@ -431,7 +465,13 @@ class ModelSpec(object):
         return df
 
     def _filter_columns(self, df):
-        keep_cols = [v.id for v in self.outcome.values()]
+        if isinstance(self.outcome, PheWAS):
+            keep_cols = [
+                v.id for v in self.outcome.li if v not in self.predictors
+            ]
+        else:
+            keep_cols = [v.id for v in self.outcome.values()]
+
         for pred in self.predictors:
             if pred is SNPs:
                 continue
