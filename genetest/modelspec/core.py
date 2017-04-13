@@ -10,6 +10,7 @@ import itertools
 import functools
 
 import numpy as np
+import pandas as pd
 
 from ..statistics import model_map
 from ..statistics.descriptive import get_maf
@@ -327,8 +328,8 @@ class ModelSpec(object):
         """Create the data matrix given data containers.
 
         Args:
-            phenotypes (PhenotypeContainer): The PhenotypeContainer instance.
-            genotypes (GenotypeContainer): The GenotypeContainer instance.
+            phenotypes (PhenotypeContainer): The phenotypes.
+            genotypes (geneparse.core.Genotypes): The genotypes.
 
         """
         # Extract the phenotype dependencies.
@@ -354,16 +355,24 @@ class ModelSpec(object):
                 entity_id = self.dependencies[("GENOTYPES", marker)]
 
                 try:
-                    g = genotypes.get_genotypes(marker)
+                    g = genotypes.get_variant_by_name(marker)
                 except:
                     raise ValueError(
                         "Could not find '{}' in genotypes container."
                         "".format(marker)
                     )
 
+                # Checking we have a single value and using it
+                if len(g) != 1:
+                    raise ValueError("{}: invalid marker name".format(marker))
+                g = g.pop()
+
                 # Rename the genotypes column before joining.
-                g.genotypes.columns = [entity_id.id]
-                df = df.join(g.genotypes, how="inner")
+                df = df.join(
+                    pd.Series(g.genotypes, index=genotypes.get_samples(),
+                              name=entity_id.id),
+                    how="inner",
+                )
 
                 if df.shape[0] == 0:
                     raise ValueError(
@@ -374,7 +383,7 @@ class ModelSpec(object):
 
                 # Compute the maf.
                 maf, minor, major, flip = get_maf(
-                    df[entity_id.id], g.info.get_minor(), g.info.get_major()
+                    df[entity_id.id], g.coded, g.reference,
                 )
 
                 if flip:
@@ -386,8 +395,8 @@ class ModelSpec(object):
 
                 # And save the variant metadata.
                 self.variant_metadata[entity.id] = {
-                    "name": marker, "chrom": g.info.chrom, "pos": g.info.pos,
-                    "minor": minor, "major": major, "maf": maf
+                    "name": marker, "chrom": g.variant.chrom, "pos":
+                    g.variant.pos, "minor": minor, "major": major, "maf": maf
                 }
 
         # Apply transformations.

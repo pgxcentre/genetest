@@ -23,6 +23,7 @@ from .statistics.descriptive import get_maf
 from . import subscribers as subscribers_module
 
 import numpy as np
+import pandas as pd
 
 
 logger = logging.getLogger(__name__)
@@ -61,7 +62,20 @@ def _missing(y, X):
     return ~(y_missing | X_missing)
 
 
-def _gwas_worker(q, results_q, failed, abort, fit, y, X):
+def _generate_sample_order(x_samples, geno_samples):
+    """Create the order for samples between X and genotypes."""
+    geno_index = np.array(
+        [i for i, s in enumerate(geno_samples) if s in x_samples],
+        dtype=int,
+    )
+    return geno_index, geno_samples.values[geno_index]
+
+
+def _gwas_worker(q, results_q, failed, abort, fit, y, X, samples):
+    # The sample order (to add genotypes to the X data frame
+    geno_index = None
+    sample_order = None
+
     # Get a SNP.
     while not abort.is_set():
         # Get a SNP from the Queue.
@@ -74,44 +88,48 @@ def _gwas_worker(q, results_q, failed, abort, fit, y, X):
             logger.debug("Worker Done")
             return
 
-        # Compute union between indices.
-        union = snp.genotypes.index & X.index
-        if len(union) == 0:
-            abort.set()
-            raise ValueError(
-                "Genotype and phenotype data have non-overlapping indices."
-            )
-        no_geno = X.index.difference(snp.genotypes.index)
+        # Compute union between indices if not already done
+        if sample_order is None or geno_index is None:
+            # Checking the intersection
+            geno_index, sample_order = _generate_sample_order(X.index, samples)
 
-        # Set the genotypes.
-        if no_geno.shape[0] > 0:
-            X.loc[no_geno, "SNPs"] = np.nan
-        X.loc[union, "SNPs"] = snp.genotypes.loc[union, "geno"]
+            # Do we have an intersect
+            if geno_index.shape[0] == 0:
+                abort.set()
+                raise ValueError(
+                    "Genotype and phenotype data have non-overlapping indices."
+                )
 
-        missing = _missing(y, X)
+        # Set all to missing genotypes
+        X.loc[:, "SNPs"] = np.nan
+
+        # Set the genotypes
+        X.loc[sample_order, "SNPs"] = snp.genotypes[geno_index]
+
+        not_missing = _missing(y, X)
 
         # Computing MAF
         maf, minor, major, flip = get_maf(
-            genotypes=X.loc[missing, "SNPs"],
-            minor=snp.info.get_minor(),
-            major=snp.info.get_major(),
+            genotypes=X.loc[not_missing, "SNPs"],
+            minor=snp.coded,
+            major=snp.reference,
         )
         if flip:
             X.loc[:, "SNPs"] = 2 - X.loc[:, "SNPs"]
 
-        # Compute.
+        # Computing
         try:
-            results = fit(y[missing], X[missing])
+            results = fit(y[not_missing], X[not_missing])
         except Exception as e:
             logger.debug("Exception raised during fitting:", e)
-            if snp.info.marker:
-                failed.put(snp.info.marker)
+            if snp.variant.name:
+                failed.put(snp.variant.name)
             continue
 
         # Update the results for the SNP with metadata.
         results["SNPs"].update({
-            "chrom": snp.info.chrom, "pos": snp.info.pos, "major": major,
-            "minor": minor, "name": snp.info.marker,
+            "chrom": snp.variant.chrom, "pos": snp.variant.pos, "major": major,
+            "minor": minor, "name": snp.variant.name,
         })
         results["SNPs"]["maf"] = maf
 
@@ -212,6 +230,7 @@ def execute(phenotypes, genotypes, modelspec, subscribers=None,
                 f.write("{}\n".format(failed_snp))
 
 
+# TODO: Fix for geneparse
 def _execute_stratified(genotypes, modelspec, subscribers, y, X,
                         variant_predicates, subgroups, messages):
     # Levels.
@@ -355,10 +374,11 @@ def _execute_gwas(genotypes, modelspec, subscribers, y, X, variant_predicates,
             this_y = y.copy()
             this_X = X.copy()
             fit = modelspec.test().fit
+            samples = pd.Index(genotypes.get_samples())
 
             worker = multiprocessing.Process(
                 target=_gwas_worker,
-                args=(q, results, failed, abort, fit, this_y, this_X)
+                args=(q, results, failed, abort, fit, this_y, this_X, samples)
             )
 
             workers.append(worker)
@@ -397,10 +417,10 @@ def _execute_gwas(genotypes, modelspec, subscribers, y, X, variant_predicates,
 
         # Start filling the consumer queue and listening for results.
         not_analyzed = []
-        for snp in genotypes.iter_marker_genotypes():
+        for snp in genotypes.iter_genotypes():
             # Pass through the list of variant filtering predicates.
             try:
-                if not all([f(snp) for f in variant_predicates]):
+                if not all([f(snp.genotypes) for f in variant_predicates]):
                     not_analyzed.append(snp.marker)
                     continue
 
