@@ -34,7 +34,7 @@ class StatsLogistic(StatsModels):
             X (pandas.DataFrame): The matrix of exogenous variables.
 
         """
-        # Creating the OLS model from StatsModels and fitting it
+        # Creating the GLM model from StatsModels and fitting it
         model = sm.GLM(y, X, family=sm.families.Binomial())
         try:
             fitted = model.fit()
@@ -47,7 +47,7 @@ class StatsLogistic(StatsModels):
 
         # Results about the model fit.
         out = {
-            "MODEL": {"log_likelihood": fitted.llf}
+            "MODEL": {"log_likelihood": fitted.llf},
         }
 
         for param in parameters:
