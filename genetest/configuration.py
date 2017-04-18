@@ -12,8 +12,6 @@
 
 from configparser import ConfigParser
 
-from .genotypes import available_formats as geno_formats, \
-                       format_map as geno_map
 from .phenotypes import available_formats as pheno_formats, \
                         format_map as pheno_map
 from .statistics import available_models as stats_models, model_map

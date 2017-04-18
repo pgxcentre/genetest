@@ -13,7 +13,6 @@ import unittest
 from tempfile import TemporaryDirectory
 
 from ..phenotypes.text import TextPhenotypes
-from ..genotypes.impute2 import Impute2Genotypes
 from ..statistics.models.survival import StatsCoxPH
 
 from ..configuration import AnalysisConfiguration
