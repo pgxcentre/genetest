@@ -11,7 +11,8 @@
 
 from pyplink import PyPlink
 
-from .core import GenotypesContainer, Representation, MarkerGenotypes
+from .core import (GenotypesContainer, Representation, MarkerGenotypes,
+                   MarkerInfo)
 
 
 __copyright__ = "Copyright 2016, Beaulieu-Saucier Pharmacogenomics Centre"
@@ -22,7 +23,7 @@ __all__ = ["PlinkGenotypes"]
 
 
 class PlinkGenotypes(GenotypesContainer):
-    def __init__(self, prefix, representation):
+    def __init__(self, prefix, representation=Representation.ADDITIVE):
         """Instantiate a new PlinkGenotypes object.
 
         Args:
@@ -93,7 +94,7 @@ class PlinkGenotypes(GenotypesContainer):
         )
 
     def iter_marker_genotypes(self):
-        """Returns a dataframe of genotypes encoded using the provided model.
+        """Iterates on available markers.
 
         Returns:
             MarkerGenotypes: A named tuple containing the dataframe with the
@@ -111,6 +112,13 @@ class PlinkGenotypes(GenotypesContainer):
             yield self._create_genotypes(
                 marker=marker,
                 genotypes=genotypes,
+            )
+
+    def iter_marker_info(self):
+        """Iterate over marker information."""
+        for idx, row in self.bim.iterrows():
+            yield MarkerInfo(
+                row.name, row.chrom, row.pos, a1=row.a1, a2=row.a2
             )
 
     def _create_genotypes(self, marker, genotypes):
@@ -136,19 +144,17 @@ class PlinkGenotypes(GenotypesContainer):
             major=self.bim.loc[marker, "a2"],
         )
 
+        chrom, pos = self.bim.loc[marker, ["chrom", "pos"]].values
+        info = MarkerInfo(marker, chrom, pos, a1=minor, a2=major,
+                          minor=MarkerInfo.A1)
+
         # Returning the value as ADDITIVE representation
         if self._representation == Representation.ADDITIVE:
-            return MarkerGenotypes(genotypes=additive, marker=marker,
-                                   chrom=self.bim.loc[marker, "chrom"],
-                                   pos=self.bim.loc[marker, "pos"],
-                                   major=major, minor=minor)
+            return MarkerGenotypes(info, additive)
 
         # Returning the value as GENOTYPIC representation
         if self._representation == Representation.GENOTYPIC:
-            return MarkerGenotypes(genotypes=self.additive2genotypic(additive),
-                                   chrom=self.bim.loc[marker, "chrom"],
-                                   pos=self.bim.loc[marker, "pos"],
-                                   marker=marker, major=major, minor=minor)
+            return MarkerGenotypes(info, self.additive2genotypic(additive))
 
     def get_nb_samples(self):
         """Returns the number of samples.

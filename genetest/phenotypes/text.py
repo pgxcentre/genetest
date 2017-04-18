@@ -24,8 +24,8 @@ __all__ = ["TextPhenotypes"]
 
 
 class TextPhenotypes(PhenotypesContainer):
-    def __init__(self, filename, sample_column, field_separator,
-                 missing_values, repeated_measurements):
+    def __init__(self, filename, sample_column="sample", field_separator="\t",
+                 missing_values=None, repeated_measurements=False):
         """Instantiate a new TextPhenotypes object.
 
         Args:
@@ -101,6 +101,10 @@ class TextPhenotypes(PhenotypesContainer):
             self.get_nb_samples(),
             self.get_nb_variables(),
         )
+
+    def merge(self, other):
+        """Merge this instance with another."""
+        self._phenotypes = self._phenotypes.join(other._phenotypes)
 
     def get_phenotypes(self, li=None):
         """Returns a dataframe of phenotypes.

@@ -1,21 +1,21 @@
-project_x.phenotypes package
+genetest.phenotypes package
 ============================
 
 Submodules
 ----------
 
-project_x.phenotypes.core module
+genetest.phenotypes.core module
 --------------------------------
 
-.. automodule:: project_x.phenotypes.core
+.. automodule:: genetest.phenotypes.core
     :members:
     :undoc-members:
     :show-inheritance:
 
-project_x.phenotypes.text module
+genetest.phenotypes.text module
 --------------------------------
 
-.. automodule:: project_x.phenotypes.text
+.. automodule:: genetest.phenotypes.text
     :members:
     :undoc-members:
     :show-inheritance:
@@ -24,7 +24,7 @@ project_x.phenotypes.text module
 Module contents
 ---------------
 
-.. automodule:: project_x.phenotypes
+.. automodule:: genetest.phenotypes
     :members:
     :undoc-members:
     :show-inheritance:

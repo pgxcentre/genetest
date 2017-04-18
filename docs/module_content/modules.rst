@@ -1,7 +1,7 @@
-project_x
+genetest
 =========
 
 .. toctree::
    :maxdepth: 4
 
-   project_x
+   genetest

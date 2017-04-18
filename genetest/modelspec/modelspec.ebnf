@@ -1,0 +1,64 @@
+# Grammar for model sepcifications.
+# Examples:
+#
+#   y ~ x1 + x2                 # Standard model with covariates.
+#   y ~ x2 + x2 + x1 * x2       # Interaction.
+#   y ~ x + x1 * x2 as z        # Named interaction.
+#   y | male ~ x                # Stratified analysis.
+#   y | diabetes = 0 ~ x        # Subgroup analysis.
+#   y | g(rs12345) ~ x          # Genetic subgroup analysis.
+#   y ~ g(rs12345) + x          # Genetic analysis.
+#   y ~ SNPs + x                # GWAS.
+#   y ~ factor(x)               # Factors.
+#   y ~ factor(x) as x          # Factors that result in a named transformation.
+
+@@grammar :: ModelSpec
+
+model = outcome:phenotype
+        [ "|" ~ conditions:condition_group ]
+        "~" predictors:predictors $;
+
+condition_group = ",".{ condition };
+condition = name:phenotype_or_variant ["=" level:integer];
+
+genotype = "g(" ~ variant:name ")";
+
+factor = "factor(" ~ phen:phenotype ")" ["as" as:name];
+
+pow = "pow(" ~ phen:phenotype ", " ~ power:integer ")" ["as" as:name];
+
+ln = "ln(" ~ phen:phenotype ")" ["as" as:name];
+
+log10 = "log10(" ~ phen:phenotype ")" ["as" as:name];
+
+outcome = phenotype;
+
+predictors = "+".{ expression }+;
+
+# Not using phenotype_or_variant to avoid the semantic methods from getting
+# called in the lookahead.
+interaction = &((genotype | "factor(" name ")" | name ) "*")
+              interaction:"*".{ factor | phenotype_or_variant }
+              ["as" as:name];
+
+SNPs = "SNPs";
+
+phenotype = name:name;
+
+name = /[A-Za-z0-9_:]+/;
+
+phenotype_or_variant = genotype | phenotype;
+
+# num = num:/-?[0-9]+(\.[0-9]+)?/;
+integer = int:/[0-9]+/;
+
+expression =
+    | SNPs
+    | interaction
+    | genotype
+    | factor
+    | ln
+    | log10
+    | pow
+    | phenotype
+    ;

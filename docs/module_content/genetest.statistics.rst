@@ -1,4 +1,4 @@
-project_x.statistics package
+genetest.statistics package
 ============================
 
 Subpackages
@@ -6,23 +6,23 @@ Subpackages
 
 .. toctree::
 
-    project_x.statistics.models
+    genetest.statistics.models
 
 Submodules
 ----------
 
-project_x.statistics.core module
+genetest.statistics.core module
 --------------------------------
 
-.. automodule:: project_x.statistics.core
+.. automodule:: genetest.statistics.core
     :members:
     :undoc-members:
     :show-inheritance:
 
-project_x.statistics.descriptive module
+genetest.statistics.descriptive module
 ---------------------------------------
 
-.. automodule:: project_x.statistics.descriptive
+.. automodule:: genetest.statistics.descriptive
     :members:
     :undoc-members:
     :show-inheritance:
@@ -31,7 +31,7 @@ project_x.statistics.descriptive module
 Module contents
 ---------------
 
-.. automodule:: project_x.statistics
+.. automodule:: genetest.statistics
     :members:
     :undoc-members:
     :show-inheritance:

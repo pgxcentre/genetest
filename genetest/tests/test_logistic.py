@@ -14,12 +14,14 @@ import numpy as np
 import pandas as pd
 from pkg_resources import resource_filename
 
+from geneparse.dataframe import DataFrameReader
+
 from ..statistics.core import StatsError
 
 from .. import analysis
+from .. import subscribers
 from .. import modelspec as spec
 from ..phenotypes.dummy import _DummyPhenotypes
-from ..genotypes.dummy import _DummyGenotypes
 
 
 __copyright__ = "Copyright 2016, Beaulieu-Saucier Pharmacogenomics Centre"
@@ -50,27 +52,33 @@ class TestStatsLogistic(unittest.TestCase):
             axis=1,
         )
 
-        # Creating the dummy genotype container
-        cls.genotypes = _DummyGenotypes()
-        cls.genotypes.data = cls.data.drop(
-            ["pheno2", "age", "var1", "gender"],
-            axis=1,
+        # Permuting the sample to add a bit of randomness
+        new_sample_order = np.random.permutation(cls.data.index)
+
+        # Creating the genotypes data frame
+        genotypes = cls.data.loc[
+            new_sample_order,
+            [_ for _ in cls.data.columns if _.startswith("snp")],
+        ].copy()
+
+        # Creating the mapping information
+        map_info = pd.DataFrame(
+            {"chrom": ["3", "3", "2"],
+             "pos": [1234, 9618, 1519],
+             "a1": ["T", "C", "G"],
+             "a2": ["C", "A", "T"]},
+            index=["snp1", "snp2", "snp3"],
         )
-        cls.genotypes.snp_info = {
-            "snp1": {"chrom": "3", "pos": 1234, "major": "C", "minor": "T"},
-            "snp2": {"chrom": "3", "pos": 9618, "major": "A", "minor": "C"},
-            "snp3": {"chrom": "2", "pos": 1519, "major": "T", "minor": "G"},
-        }
+
+        # Creating the genotype parser
+        cls.genotypes = DataFrameReader(
+            dataframe=genotypes,
+            map_info=map_info,
+        )
 
     def setUp(self):
         # Resetting the model specification
         spec._reset()
-
-        # Reordering the columns and the rows of the genotype data frame
-        self.genotypes.data = self.genotypes.data.iloc[
-            np.random.permutation(self.genotypes.data.shape[0]),
-            np.random.permutation(self.genotypes.data.shape[1])
-        ]
 
         # Reordering the columns and the rows of the phenotype data frame
         self.phenotypes.data = self.phenotypes.data.iloc[
@@ -92,7 +100,7 @@ class TestStatsLogistic(unittest.TestCase):
         )
 
         # Performing the analysis and retrieving the results
-        subscriber = analysis.ResultsMemory()
+        subscriber = subscribers.ResultsMemory()
         analysis.execute(
             self.phenotypes, self.genotypes, modelspec,
             subscribers=[subscriber],
@@ -109,6 +117,7 @@ class TestStatsLogistic(unittest.TestCase):
         self.assertEqual(1234, results["SNPs"]["pos"])
         self.assertEqual("T", results["SNPs"]["minor"])
         self.assertEqual("C", results["SNPs"]["major"])
+        self.assertAlmostEqual(0.3749333333333334, results["SNPs"]["maf"])
 
         # Checking the marker statistics (according to SAS)
         self.assertAlmostEqual(-2.24198635855498, results["SNPs"]["coef"],
@@ -132,6 +141,7 @@ class TestStatsLogistic(unittest.TestCase):
         self.assertEqual(9618, results["SNPs"]["pos"])
         self.assertEqual("C", results["SNPs"]["minor"])
         self.assertEqual("A", results["SNPs"]["major"])
+        self.assertAlmostEqual(0.41590833333333332, results["SNPs"]["maf"])
 
         # Checking the marker statistics (according to SAS)
         self.assertAlmostEqual(1.12532308347075, results["SNPs"]["coef"],
@@ -146,104 +156,7 @@ class TestStatsLogistic(unittest.TestCase):
                                places=4)
         self.assertAlmostEqual(-np.log10(0.0128102164253392),
                                -np.log10(results["SNPs"]["p_value"]),
-                               places=5)
-
-    @unittest.skip("Not implemented")
-    def test_logistic_inter_snp1_inter_full(self):
-        """Tests logistic regression with the first SNP (interaction, full)."""
-        # Preparing the data
-        pheno = self.data.loc[:, ["pheno2", "age", "var1", "gender"]]
-        geno = self.data[["snp1"]].rename(
-            columns={"snp1": "geno"},
-        )
-
-        # Permuting the genotypes
-        geno = geno.iloc[np.random.permutation(geno.shape[0]), :]
-
-        # Adding the data to the object
-        self.dummy.set_phenotypes(pheno)
-
-        # Preparing the matrices
-        y, X = self.logistic_inter.create_matrices(self.dummy)
-        self.assertFalse("geno" in X.columns)
-
-        # Merging with genotype
-        y, X = self.logistic_inter.merge_matrices_genotypes(y, X, geno)
-
-        # Fitting
-        self.logistic_inter.fit(y, X)
-
-        # Checking the results (according to SAS)
-        self.assertAlmostEqual(
-            0.001531148296819, self.logistic_inter.results.coef, places=6,
-        )
-        self.assertAlmostEqual(
-            0.0423504567007674, self.logistic_inter.results.std_err,
-        )
-        self.assertAlmostEqual(
-            -0.0814742215655, self.logistic_inter.results.lower_ci, places=6,
-        )
-        self.assertAlmostEqual(
-            0.08453651815914, self.logistic_inter.results.upper_ci,
-        )
-        self.assertAlmostEqual(
-            0.0013071285938734, self.logistic_inter.results.z_value**2,
-            places=6,
-        )
-        self.assertAlmostEqual(
-            0.97115937855364, self.logistic_inter.results.p_value, places=5,
-        )
-
-    @unittest.skip("Not implemented")
-    def test_logistic_inter_snp1_inter_category_full(self):
-        """Tests logistic regression first SNP (inter, full, category)."""
-        # Preparing the data
-        pheno = self.data.loc[:, ["pheno2", "age", "var1", "gender"]]
-        geno = self.data[["snp1"]].rename(
-            columns={"snp1": "geno"},
-        )
-
-        # Permuting the genotypes
-        geno = geno.iloc[np.random.permutation(geno.shape[0]), :]
-
-        # Adding the data to the object
-        self.dummy.set_phenotypes(pheno)
-
-        # Preparing the matrices
-        y, X = self.logistic_inter_cat.create_matrices(self.dummy)
-        self.assertFalse("geno" in X.columns)
-
-        # Merging with genotype
-        y, X = self.logistic_inter_cat.merge_matrices_genotypes(y, X, geno)
-
-        # Fitting
-        self.logistic_inter_cat.fit(y, X)
-
-        # Checking the results (according to SAS)
-        self.assertAlmostEqual(
-            -0.0089544870073693, self.logistic_inter_cat.results.coef,
-            places=4,
-        )
-        self.assertAlmostEqual(
-            1.19878325025509, self.logistic_inter_cat.results.std_err,
-            places=5,
-        )
-        self.assertAlmostEqual(
-            -2.35852648277723, self.logistic_inter_cat.results.lower_ci,
-            places=4,
-        )
-        self.assertAlmostEqual(
-            2.34061750876249, self.logistic_inter_cat.results.upper_ci,
-            places=5,
-        )
-        self.assertAlmostEqual(
-            0.0000557956175619, self.logistic_inter_cat.results.z_value**2,
-            places=6,
-        )
-        self.assertAlmostEqual(
-            0.99404013987338, self.logistic_inter_cat.results.p_value,
-            places=5,
-        )
+                               places=4)
 
     def test_logistic_snp1(self):
         """Tests logistic regression with the first SNP."""
@@ -259,7 +172,7 @@ class TestStatsLogistic(unittest.TestCase):
         )
 
         # Performing the analysis and retrieving the results
-        subscriber = analysis.ResultsMemory()
+        subscriber = subscribers.ResultsMemory()
         analysis.execute(
             self.phenotypes, self.genotypes, modelspec,
             subscribers=[subscriber],
@@ -272,6 +185,7 @@ class TestStatsLogistic(unittest.TestCase):
         self.assertEqual(1234, results["snp1"]["pos"])
         self.assertEqual("T", results["snp1"]["minor"])
         self.assertEqual("C", results["snp1"]["major"])
+        self.assertAlmostEqual(0.3749333333333334, results["snp1"]["maf"])
 
         # Checking the marker statistics (according to SAS)
         self.assertAlmostEqual(-2.24198635855498, results["snp1"]["coef"],
@@ -288,45 +202,103 @@ class TestStatsLogistic(unittest.TestCase):
                                -np.log10(results["snp1"]["p_value"]),
                                places=5)
 
-    @unittest.skip("Not implemented")
+        # TODO: Check the other predictors
+
     def test_logistic_snp1_inter(self):
         """Tests logistic regression with the first SNP (interaction)."""
-        # Preparing the data
-        data = self.data[["pheno2", "age", "var1", "gender", "snp1"]].rename(
-            columns={"snp1": "geno"},
+        # The variables which are factors
+        gender = spec.factor(spec.phenotypes.gender)
+
+        # The interaction term
+        inter = spec.interaction(spec.phenotypes.var1, spec.genotypes.snp1)
+
+        # Creating the model specification
+        modelspec = spec.ModelSpec(
+            outcome=spec.phenotypes.pheno2,
+            predictors=[spec.genotypes.snp1, spec.phenotypes.age,
+                        spec.phenotypes.var1, gender, inter],
+            test="logistic",
         )
 
-        # Adding the data to the object
-        self.dummy.set_phenotypes(data)
+        # Performing the analysis and retrieving the results
+        subscriber = subscribers.ResultsMemory()
+        analysis.execute(
+            self.phenotypes, self.genotypes, modelspec,
+            subscribers=[subscriber],
+        )
+        results = subscriber.results[0]
 
-        # Preparing the matrices
-        y, X = self.logistic_inter.create_matrices(
-            self.dummy, create_dummy=False,
+        # Checking the marker information
+        self.assertEqual("snp1", results["snp1"]["name"])
+        self.assertEqual("3", results["snp1"]["chrom"])
+        self.assertEqual(1234, results["snp1"]["pos"])
+        self.assertEqual("T", results["snp1"]["minor"])
+        self.assertEqual("C", results["snp1"]["major"])
+        self.assertAlmostEqual(0.3749333333333334, results["snp1"]["maf"])
+
+        # Checking the marker statistics (according to SAS)
+        self.assertAlmostEqual(0.0015311482968189, results[inter.id]["coef"],
+                               places=6)
+        self.assertAlmostEqual(0.0423504567007674,
+                               results[inter.id]["std_err"])
+        self.assertAlmostEqual(-0.0814742215655, results[inter.id]["lower_ci"],
+                               places=6)
+        self.assertAlmostEqual(0.08453651815914, results[inter.id]["upper_ci"])
+        self.assertAlmostEqual(0.0013071285938733,
+                               results[inter.id]["t_value"]**2, places=6)
+        self.assertAlmostEqual(0.9711593785536400,
+                               results[inter.id]["p_value"], places=5)
+
+        # TODO: Check the other predictors
+
+    def test_logistic_snp1_inter_categorical(self):
+        """Tests logistic regression first SNP (inter, category)."""
+        # The variables which are factors
+        gender = spec.factor(spec.phenotypes.gender)
+
+        # The interaction term
+        inter = spec.interaction(gender, spec.genotypes.snp1)
+
+        # Creating the model specification
+        modelspec = spec.ModelSpec(
+            outcome=spec.phenotypes.pheno2,
+            predictors=[spec.genotypes.snp1, spec.phenotypes.age,
+                        spec.phenotypes.var1, gender, inter],
+            test="logistic",
         )
 
-        # Fitting
-        self.logistic_inter.fit(y, X)
+        # Performing the analysis and retrieving the results
+        subscriber = subscribers.ResultsMemory()
+        analysis.execute(
+            self.phenotypes, self.genotypes, modelspec,
+            subscribers=[subscriber],
+        )
+        results = subscriber.results[0]
 
-        # Checking the results (according to SAS)
-        self.assertAlmostEqual(
-            0.0015311482968189, self.logistic_inter.results.coef, places=6,
-        )
-        self.assertAlmostEqual(
-            0.0423504567007674, self.logistic_inter.results.std_err,
-        )
-        self.assertAlmostEqual(
-            -0.0814742215655, self.logistic_inter.results.lower_ci, places=6,
-        )
-        self.assertAlmostEqual(
-            0.08453651815914, self.logistic_inter.results.upper_ci,
-        )
-        self.assertAlmostEqual(
-            0.0013071285938733, self.logistic_inter.results.z_value**2,
-            places=6,
-        )
-        self.assertAlmostEqual(
-            0.9711593785536400, self.logistic_inter.results.p_value, places=5,
-        )
+        # Checking the marker information
+        self.assertEqual("snp1", results["snp1"]["name"])
+        self.assertEqual("3", results["snp1"]["chrom"])
+        self.assertEqual(1234, results["snp1"]["pos"])
+        self.assertEqual("T", results["snp1"]["minor"])
+        self.assertEqual("C", results["snp1"]["major"])
+        self.assertAlmostEqual(0.3749333333333334, results["snp1"]["maf"])
+
+        # Checking the marker statistics (according to SAS)
+        col = inter.id + ":level.2"
+        self.assertAlmostEqual(-0.0089544870073693, results[col]["coef"],
+                               places=4)
+        self.assertAlmostEqual(1.19878325025509, results[col]["std_err"],
+                               places=5)
+        self.assertAlmostEqual(-2.35852648277723, results[col]["lower_ci"],
+                               places=4)
+        self.assertAlmostEqual(2.34061750876249, results[col]["upper_ci"],
+                               places=5)
+        self.assertAlmostEqual(np.log10(0.0000557956175619),
+                               np.log10(results[col]["t_value"]**2), places=2)
+        self.assertAlmostEqual(0.99404013987338, results[col]["p_value"],
+                               places=5)
+
+        # TODO: Check the other predictors
 
     def test_logistic_snp2(self):
         """Tests logistic regression with the second SNP."""
@@ -342,7 +314,7 @@ class TestStatsLogistic(unittest.TestCase):
         )
 
         # Performing the analysis and retrieving the results
-        subscriber = analysis.ResultsMemory()
+        subscriber = subscribers.ResultsMemory()
         analysis.execute(
             self.phenotypes, self.genotypes, modelspec,
             subscribers=[subscriber],
@@ -355,6 +327,7 @@ class TestStatsLogistic(unittest.TestCase):
         self.assertEqual(9618, results["snp2"]["pos"])
         self.assertEqual("C", results["snp2"]["minor"])
         self.assertEqual("A", results["snp2"]["major"])
+        self.assertAlmostEqual(0.41590833333333332, results["snp2"]["maf"])
 
         # Checking the marker statistics (according to SAS)
         self.assertAlmostEqual(1.12532308347075, results["snp2"]["coef"],
@@ -369,47 +342,57 @@ class TestStatsLogistic(unittest.TestCase):
                                places=4)
         self.assertAlmostEqual(-np.log10(0.0128102164253392),
                                -np.log10(results["snp2"]["p_value"]),
-                               places=5)
+                               places=4)
 
-    @unittest.skip("Not implemented")
+        # TODO: Check the other predictors
+
     def test_logistic_snp2_inter(self):
         """Tests logistic regression with the second SNP (interaction)."""
-        # Preparing the data
-        data = self.data[["pheno2", "age", "var1", "gender", "snp2"]].rename(
-            columns={"snp2": "geno"},
+        # The variables which are factors
+        gender = spec.factor(spec.phenotypes.gender)
+
+        # The interaction term
+        inter = spec.interaction(spec.phenotypes.var1, spec.genotypes.snp2)
+
+        # Creating the model specification
+        modelspec = spec.ModelSpec(
+            outcome=spec.phenotypes.pheno2,
+            predictors=[spec.genotypes.snp2, spec.phenotypes.age,
+                        spec.phenotypes.var1, gender, inter],
+            test="logistic",
         )
 
-        # Adding the data to the object
-        self.dummy.set_phenotypes(data)
+        # Performing the analysis and retrieving the results
+        subscriber = subscribers.ResultsMemory()
+        analysis.execute(
+            self.phenotypes, self.genotypes, modelspec,
+            subscribers=[subscriber],
+        )
+        results = subscriber.results[0]
 
-        # Preparing the matrices
-        y, X = self.logistic_inter.create_matrices(
-            self.dummy, create_dummy=False,
-        )
+        # Checking the marker information
+        self.assertEqual("snp2", results["snp2"]["name"])
+        self.assertEqual("3", results["snp2"]["chrom"])
+        self.assertEqual(9618, results["snp2"]["pos"])
+        self.assertEqual("C", results["snp2"]["minor"])
+        self.assertEqual("A", results["snp2"]["major"])
+        self.assertAlmostEqual(0.41590833333333332, results["snp2"]["maf"])
 
-        # Fitting
-        self.logistic_inter.fit(y, X)
+        # Checking the marker statistics (according to SAS)
+        self.assertAlmostEqual(0.0239292800721822, results[inter.id]["coef"],
+                               places=5)
+        self.assertAlmostEqual(0.0342619407842591,
+                               results[inter.id]["std_err"], places=6)
+        self.assertAlmostEqual(-0.0432228899054096,
+                               results[inter.id]["lower_ci"], places=5)
+        self.assertAlmostEqual(0.09108145004977, results[inter.id]["upper_ci"],
+                               places=5)
+        self.assertAlmostEqual(0.48779275460699,
+                               results[inter.id]["t_value"]**2, places=3)
+        self.assertAlmostEqual(0.48491356159603, results[inter.id]["p_value"],
+                               places=4)
 
-        # Checking the results (according to SAS)
-        self.assertAlmostEqual(
-            0.0239292800721822, self.logistic_inter.results.coef, places=5,
-        )
-        self.assertAlmostEqual(
-            0.0342619407842591, self.logistic_inter.results.std_err, places=6,
-        )
-        self.assertAlmostEqual(
-            -0.0432228899054096, self.logistic_inter.results.lower_ci,
-            places=5,
-        )
-        self.assertAlmostEqual(
-            0.09108145004977, self.logistic_inter.results.upper_ci, places=5,
-        )
-        self.assertAlmostEqual(
-            0.48779275460699, self.logistic_inter.results.z_value**2, places=3,
-        )
-        self.assertAlmostEqual(
-            0.48491356159603, self.logistic_inter.results.p_value, places=4,
-        )
+        # TODO: Check the other predictors
 
     def test_logistic_snp3(self):
         """Tests logistic regression with the third SNP (raises StatsError)."""
@@ -428,33 +411,28 @@ class TestStatsLogistic(unittest.TestCase):
         with self.assertRaises(StatsError):
             analysis.execute(
                 self.phenotypes, self.genotypes, modelspec,
-                subscribers=[analysis.ResultsMemory()],
+                subscribers=[subscribers.ResultsMemory()],
             )
 
-    @unittest.skip("Not implemented")
     def test_logistic_snp3_inter(self):
         """Tests logistic regression third SNP (raises StatsError, inter)."""
-        # Preparing the data
-        data = self.data[["pheno2", "age", "var1", "gender", "snp3"]].rename(
-            columns={"snp3": "geno"},
+        # The variables which are factors
+        gender = spec.factor(spec.phenotypes.gender)
+
+        # The interaction term
+        inter = spec.interaction(spec.phenotypes.var1, spec.genotypes.snp2)
+
+        # Creating the model specification
+        modelspec = spec.ModelSpec(
+            outcome=spec.phenotypes.pheno2,
+            predictors=[spec.genotypes.snp3, spec.phenotypes.age,
+                        spec.phenotypes.var1, gender, inter],
+            test="logistic",
         )
 
-        # Adding the data to the object
-        self.dummy.set_phenotypes(data)
-
-        # Preparing the matrices
-        y, X = self.logistic_inter.create_matrices(
-            self.dummy, create_dummy=False,
-        )
-
-        # Fitting
+        # Performing the analysis and retrieving the results
         with self.assertRaises(StatsError):
-            self.logistic_inter.fit(y, X)
-
-        # All the value should be NaN
-        self.assertTrue(np.isnan(self.logistic_inter.results.coef))
-        self.assertTrue(np.isnan(self.logistic_inter.results.std_err))
-        self.assertTrue(np.isnan(self.logistic_inter.results.lower_ci))
-        self.assertTrue(np.isnan(self.logistic_inter.results.upper_ci))
-        self.assertTrue(np.isnan(self.logistic_inter.results.z_value))
-        self.assertTrue(np.isnan(self.logistic_inter.results.p_value))
+            analysis.execute(
+                self.phenotypes, self.genotypes, modelspec,
+                subscribers=[subscribers.ResultsMemory()],
+            )

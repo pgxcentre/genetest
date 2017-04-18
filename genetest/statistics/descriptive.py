@@ -10,6 +10,9 @@
 # Commons, PO Box 1866, Mountain View, CA 94042, USA.
 
 
+import numpy as np
+
+
 __all__ = ["get_maf"]
 
 
@@ -37,8 +40,7 @@ def get_maf(genotypes, minor, major):
         are excluded. If there are no genotypes, ``NaN`` is returned.
 
     """
-    nb_geno = genotypes.shape[0] - genotypes.isnull().sum()
-    maf = genotypes.sum(skipna=True) / (2 * nb_geno)
+    maf = np.nanmean(genotypes) / 2
 
     if maf > 0.5:
         return 1 - maf, major, minor, True

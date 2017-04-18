@@ -1,37 +1,37 @@
-project_x.genotypes package
+genetest.genotypes package
 ===========================
 
 Submodules
 ----------
 
-project_x.genotypes.core module
+genetest.genotypes.core module
 -------------------------------
 
-.. automodule:: project_x.genotypes.core
+.. automodule:: genetest.genotypes.core
     :members:
     :undoc-members:
     :show-inheritance:
 
-project_x.genotypes.impute2 module
+genetest.genotypes.impute2 module
 ----------------------------------
 
-.. automodule:: project_x.genotypes.impute2
+.. automodule:: genetest.genotypes.impute2
     :members:
     :undoc-members:
     :show-inheritance:
 
-project_x.genotypes.plink module
+genetest.genotypes.plink module
 --------------------------------
 
-.. automodule:: project_x.genotypes.plink
+.. automodule:: genetest.genotypes.plink
     :members:
     :undoc-members:
     :show-inheritance:
 
-project_x.genotypes.vcf module
+genetest.genotypes.vcf module
 ------------------------------
 
-.. automodule:: project_x.genotypes.vcf
+.. automodule:: genetest.genotypes.vcf
     :members:
     :undoc-members:
     :show-inheritance:
@@ -40,7 +40,7 @@ project_x.genotypes.vcf module
 Module contents
 ---------------
 
-.. automodule:: project_x.genotypes
+.. automodule:: genetest.genotypes
     :members:
     :undoc-members:
     :show-inheritance:

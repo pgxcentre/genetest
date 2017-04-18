@@ -17,7 +17,9 @@ from collections import namedtuple
 import numpy as np
 import pandas as pd
 
-from .core import GenotypesContainer, Representation, MarkerGenotypes
+from .core import (
+    GenotypesContainer, Representation, MarkerGenotypes, MarkerInfo
+)
 
 
 __copyright__ = "Copyright 2016, Beaulieu-Saucier Pharmacogenomics Centre"
@@ -32,8 +34,9 @@ _Impute2Line = namedtuple("_Impute2Line",
 
 
 class Impute2Genotypes(GenotypesContainer):
-    def __init__(self, filename, sample_filename, representation,
-                 probability_threshold):
+    def __init__(self, filename, sample_filename,
+                 representation=Representation.DOSAGE,
+                 probability_threshold=0.9):
         """Instantiate a new Impute2Genotypes object.
 
         Args:
@@ -125,6 +128,21 @@ class Impute2Genotypes(GenotypesContainer):
             impute2_line=self._impute2_file.readline(),
         )
 
+    def iter_marker_info(self):
+        """Iterate over all available markers without reading genotypes."""
+        if self._impute2_index is None:
+            raise NotImplementedError("Not implemented when IMPUTE2 file is "
+                                      "not indexed (see genipe)")
+
+        for name, row in self._impute2_index.iterrows():
+            # Seeking to the right place in the file
+            f = self._impute2_file
+            f.seek(int(row.seek))
+            chrom, name, pos, a1, a2 = f.read(1024).split(" ")[:5]
+            pos = int(pos)
+
+            yield MarkerInfo(marker=name, chrom=chrom, pos=pos, a1=a1, a2=a2)
+
     def iter_marker_genotypes(self):
         """Returns a dataframe of genotypes encoded using the provided model.
 
@@ -168,41 +186,29 @@ class Impute2Genotypes(GenotypesContainer):
             major=marker_info.a1,
         )
 
+        info = MarkerInfo(
+            marker=marker_info.marker,
+            chrom=self.encode_chrom(marker_info.chrom),
+            pos=marker_info.pos,
+            a1=minor, a2=major,
+            minor=MarkerInfo.A1
+        )
+
         # Returning the value as DOSAGE representation
         if self._representation == Representation.DOSAGE:
-            return MarkerGenotypes(
-                genotypes=dosage,
-                marker=marker_info.marker,
-                chrom=self.encode_chrom(marker_info.chrom),
-                pos=marker_info.pos,
-                major=major,
-                minor=minor,
-            )
+            return MarkerGenotypes(info=info, genotypes=dosage)
 
         # Normal additive values are necessary for ADDITIVE and GENOTYPIC
         geno = self.dosage2additive(dosage)
 
         # Returning the value as ADDITIVE representation
         if self._representation == Representation.ADDITIVE:
-            return MarkerGenotypes(
-                genotypes=geno,
-                marker=marker_info.marker,
-                chrom=self.encode_chrom(marker_info.chrom),
-                pos=marker_info.pos,
-                major=major,
-                minor=minor,
-            )
+            return MarkerGenotypes(info=info, genotypes=geno)
 
         # Returning the value as GENOTYPIC representation
         if self._representation == Representation.GENOTYPIC:
-            return MarkerGenotypes(
-                genotypes=self.additive2genotypic(geno),
-                chrom=self.encode_chrom(marker_info.chrom),
-                pos=marker_info.pos,
-                marker=marker_info.marker,
-                major=major,
-                minor=minor,
-            )
+            return MarkerGenotypes(info=info,
+                                   genotypes=self.additive2genotypic(geno))
 
     @staticmethod
     def _parse_impute2_line(line):
