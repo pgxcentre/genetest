@@ -390,7 +390,7 @@ class ModelSpec(object):
 
                 try:
                     g = genotypes.get_variant_by_name(marker)
-                except:
+                except (KeyError, ValueError):
                     raise ValueError(
                         "Could not find '{}' in genotypes container."
                         "".format(marker)
