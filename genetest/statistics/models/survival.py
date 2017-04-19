@@ -87,7 +87,7 @@ class StatsCoxPH(StatsModels):
         }
 
         # Computing the confidence intervals only once
-        conf_int = fitted.conf_int()
+        conf_ints = fitted.conf_int()
 
         # Getting the values for each parameters
         for i, param in enumerate(parameters):
@@ -99,8 +99,8 @@ class StatsCoxPH(StatsModels):
                 "coef": fitted.params[i],
                 "std_err": fitted.bse[i],
                 "hr": np.exp(fitted.params[i]),
-                "hr_lower_ci": np.exp(conf_int[i, 0]),
-                "hr_upper_ci": np.exp(conf_int[i, 1]),
+                "hr_lower_ci": np.exp(conf_ints[i, 0]),
+                "hr_upper_ci": np.exp(conf_ints[i, 1]),
                 "z_value": fitted.tvalues[i],
                 "p_value": fitted.pvalues[i],
             }
