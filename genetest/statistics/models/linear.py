@@ -60,14 +60,17 @@ class StatsLinear(StatsModels):
             }
         }
 
+        # Getting the confidence intervals
+        conf_ints = fitted.conf_int()
+
         # Results about individual model parameters.
         parameters = fitted.params.index
         for param in parameters:
             out[param] = {
                 "coef": fitted.params[param],
                 "std_err": fitted.bse[param],
-                "lower_ci": fitted.conf_int().loc[param, 0],
-                "upper_ci": fitted.conf_int().loc[param, 1],
+                "lower_ci": conf_ints.loc[param, 0],
+                "upper_ci": conf_ints.loc[param, 1],
                 "t_value": fitted.tvalues[param],
                 "p_value": fitted.pvalues[param],
             }

@@ -16,6 +16,7 @@ import queue
 import itertools
 import multiprocessing
 import logging
+from itertools import chain
 
 from .modelspec import SNPs, ModelSpec, PheWAS
 from .modelspec.grammar import parse_formula
@@ -65,11 +66,27 @@ def _missing(y, X):
 
 def _generate_sample_order(x_samples, geno_samples):
     """Create the order for samples between X and genotypes."""
-    geno_index = np.array(
+    # Generating the order for the genotypes
+    geno_order = np.array(
         [i for i, s in enumerate(geno_samples) if s in x_samples],
         dtype=int,
     )
-    return geno_index, geno_samples.values[geno_index]
+
+    # Generating the order for the X matrix
+    x_order = geno_samples.values[geno_order]
+
+    if x_samples.duplicated().any():
+        # The are duplicated samples, so we need to duplicate the genotype
+        # indexes
+        logger.debug("Duplicated samples found")
+        counts = x_samples.value_counts()
+        geno_order = np.array(
+            list(chain(*[[geno_samples.get_loc(s)]*counts[s]
+                         for s in x_order])),
+            dtype=int,
+        )
+
+    return geno_order, x_order
 
 
 def _gwas_worker(q, results_q, failed, abort, fit, y, X, samples):

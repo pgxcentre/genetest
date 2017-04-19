@@ -15,8 +15,8 @@ from setuptools import setup, find_packages
 
 
 MAJOR = 0
-MINOR = 0
-MICRO = 1
+MINOR = 1
+MICRO = 0
 VERSION = "{0}.{1}.{2}".format(MAJOR, MINOR, MICRO)
 
 
@@ -92,14 +92,14 @@ def setup_package():
         license="CC BY-NC 4.0",
         test_suite="genetest.tests.test_suite",
         zip_safe=False,
-        install_requires=["numpy >= 1.11.0", "pandas >= 0.18.0",
-                          "pyplink >= 1.2.0", "setuptools >= 26.1.0",
-                          "statsmodels >= 0.8.0", "pysam >= 0.9.0",
-                          "grako >= 3.10.0", "scipy >= 0.11.0"],
+        install_requires=["numpy >= 1.12.0", "pandas >= 0.19.0",
+                          "setuptools >= 26.1.0", "statsmodels >= 0.8.0",
+                          "grako >= 3.10.0", "scipy >= 0.19.0",
+                          "geneparse >= 0.1.0"],
         packages=find_packages(),
         package_data={"genetest.tests": ["data/genotypes/*",
                                          "data/statistics/*"]},
-        classifiers=["Development Status :: 1 - Planning",
+        classifiers=["Development Status :: 4 - Beta",
                      "Intended Audience :: Science/Research",
                      "License :: Free for non-commercial use",
                      "Operating System :: Unix",

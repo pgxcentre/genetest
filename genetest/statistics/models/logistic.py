@@ -53,6 +53,9 @@ class StatsLogistic(StatsModels):
             },
         }
 
+        # Getting the confidence intervals
+        conf_ints = fitted.conf_int()
+
         for param in parameters:
             # If GWAS, check that inference could be done on the SNP.
             if param == "SNPs" and np.isnan(fitted.pvalues[param]):
@@ -61,8 +64,8 @@ class StatsLogistic(StatsModels):
             out[param] = {
                 "coef": fitted.params[param],
                 "std_err": fitted.bse[param],
-                "lower_ci": fitted.conf_int().loc[param, 0],
-                "upper_ci": fitted.conf_int().loc[param, 1],
+                "lower_ci": conf_ints.loc[param, 0],
+                "upper_ci": conf_ints.loc[param, 1],
                 "t_value": fitted.tvalues[param],
                 "p_value": fitted.pvalues[param],
             }
