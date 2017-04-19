@@ -9,8 +9,6 @@
 # Commons, PO Box 1866, Mountain View, CA 94042, USA.
 
 
-from collections import defaultdict
-
 import pandas as pd
 
 from .core import PhenotypesContainer
@@ -25,7 +23,8 @@ __all__ = ["TextPhenotypes"]
 
 class TextPhenotypes(PhenotypesContainer):
     def __init__(self, filename, sample_column="sample", field_separator="\t",
-                 missing_values=None, repeated_measurements=False):
+                 missing_values=None, repeated_measurements=False,
+                 keep_sample_column=False):
         """Instantiate a new TextPhenotypes object.
 
         Args:
@@ -45,52 +44,17 @@ class TextPhenotypes(PhenotypesContainer):
                                        na_values=missing_values)
 
         # If there are repeated measurements, the sample column will have
-        # duplicated values. We need to recode this to be able to set the index
-        # properly. We will save the old samples in a different column for
-        # later.
-        if repeated_measurements:
-            if "_ori_sample_names_" in self._phenotypes.columns:
-                raise ValueError("phenotypes should not contain a column "
-                                 "named '_ori_sample_names_'")
-
-            # Recoding the samples
-            sample_counter = defaultdict(int)
-            sample_index = [s for s in self._phenotypes[sample_column]]
-            for i in range(len(sample_index)):
-                sample = sample_index[i]
-                sample_index[i] = "{}_{}".format(
-                    sample,
-                    sample_counter[sample],
-                )
-                sample_counter[sample] += 1
-
-            # Saving the original values
-            self._phenotypes["_ori_sample_names_"] = self._phenotypes[
-                sample_column
-            ]
-
-            # Changing the sample column
-            self._phenotypes[sample_column] = sample_index
-
-        # Setting the index
+        # duplicated values. We will set the index, but we won't verify its
+        # integrity. Otherwise, we will check the index's integrity.
+        self._repeated = repeated_measurements
         self._phenotypes = self._phenotypes.set_index(
             sample_column,
-            verify_integrity=True,
+            verify_integrity=not repeated_measurements,
+            drop=not keep_sample_column,
         )
 
         # Renaming the index
         self._phenotypes.index.name = "sample_id"
-
-        # Saving the original sample names for later use (if required)
-        if repeated_measurements:
-            self._ori_sample_names = self._phenotypes[["_ori_sample_names_"]]
-            self._phenotypes = self._phenotypes.drop(
-                "_ori_sample_names_",
-                axis=1,
-            )
-
-        # Saving the repeated measurements
-        self._repeated = repeated_measurements
 
     def close(self):
         pass
@@ -147,7 +111,9 @@ class TextPhenotypes(PhenotypesContainer):
 
         """
         if self._repeated:
-            return len(self._ori_sample_names._ori_sample_names_.unique())
+            # There are duplicated samples, so we count the number of unique
+            # samples
+            return self._phenotypes.index.unique().shape[0]
         else:
             return self._phenotypes.shape[0]
 

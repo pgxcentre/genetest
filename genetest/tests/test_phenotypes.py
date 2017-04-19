@@ -123,15 +123,15 @@ class TestText(unittest.TestCase):
             print("s3", "10", "57634", "3134.3", "c", file=f)
 
         expected_pheno = pd.DataFrame(
-            [("s1_0", 13, 1, 1.2, "a"),
-             ("s1_1", 125, 1, 1.2, "a"),
-             ("s1_2", 356, 1, 1.2, "a"),
-             ("s2_0", 12, 5463, 16.8, "b"),
-             ("s2_1", 34, 5463, 16.8, "b"),
-             ("s2_2", 67, 5463, 16.8, "b"),
-             ("s3_0", 1, 57634, 3134.3, "c"),
-             ("s3_1", 5, 57634, 3134.3, "c"),
-             ("s3_2", 10, 57634, 3134.3, "c")],
+            [("s1", 13, 1, 1.2, "a"),
+             ("s1", 125, 1, 1.2, "a"),
+             ("s1", 356, 1, 1.2, "a"),
+             ("s2", 12, 5463, 16.8, "b"),
+             ("s2", 34, 5463, 16.8, "b"),
+             ("s2", 67, 5463, 16.8, "b"),
+             ("s3", 1, 57634, 3134.3, "c"),
+             ("s3", 5, 57634, 3134.3, "c"),
+             ("s3", 10, 57634, 3134.3, "c")],
             columns=["sample", "Time", "V1", "V2", "V3"],
         ).set_index("sample")
 
@@ -145,25 +145,6 @@ class TestText(unittest.TestCase):
         self.assertTrue(expected_pheno.equals(observed_pheno.get_phenotypes()))
         self.assertEqual(3, observed_pheno.get_nb_samples())
         self.assertTrue(observed_pheno.is_repeated())
-
-        # Checking the original values
-        expected_ori_samples = pd.DataFrame(
-            [("s1_0", "s1"),
-             ("s1_1", "s1"),
-             ("s1_2", "s1"),
-             ("s2_0", "s2"),
-             ("s2_1", "s2"),
-             ("s2_2", "s2"),
-             ("s3_0", "s3"),
-             ("s3_1", "s3"),
-             ("s3_2", "s3")],
-            columns=["sample", "_ori_sample_names_"],
-        ).set_index("sample")
-        self.assertTrue(
-            expected_ori_samples.equals(
-                observed_pheno.get_original_sample_names(),
-            ),
-        )
 
     def test_one_other_missing_value(self):
         """Tests when there are other missing values."""
