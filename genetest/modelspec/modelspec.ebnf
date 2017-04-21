@@ -14,7 +14,7 @@
 
 @@grammar :: ModelSpec
 
-model = outcome:phenotype
+model = outcome:phenotype_or_variant
         [ "|" ~ conditions:condition_group ]
         "~" predictors:predictors $;
 
@@ -30,8 +30,6 @@ pow = "pow(" ~ phen:phenotype ", " ~ power:integer ")" ["as" as:name];
 ln = "ln(" ~ phen:phenotype ")" ["as" as:name];
 
 log10 = "log10(" ~ phen:phenotype ")" ["as" as:name];
-
-outcome = phenotype;
 
 predictors = "+".{ expression }+;
 
