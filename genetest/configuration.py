@@ -133,8 +133,8 @@ class AnalysisConfiguration(object):
         # Checking if the format is valid
         if pheno_format not in pheno_formats:
             raise ValueError(
-                "Invalid 'format' for the 'phenotypes' section of the "
-                "configuration file."
+                "Invalid 'format' ({}) for the 'phenotypes' section of the "
+                "configuration file.".format(pheno_format)
             )
 
         # Getting the object to gather required and optional values
