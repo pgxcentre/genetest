@@ -92,6 +92,11 @@ def setup_package():
         license="CC BY-NC 4.0",
         test_suite="genetest.tests.test_suite",
         zip_safe=False,
+        entry_points={
+            "console_scripts": [
+                "genetest=genetest.scripts.cli:main",
+            ],
+        },
         install_requires=["numpy >= 1.12.0", "pandas >= 0.19.0",
                           "setuptools >= 26.1.0", "statsmodels >= 0.8.0",
                           "grako >= 3.10.0", "scipy >= 0.19.0",
