@@ -49,7 +49,7 @@ class StatsMixedLM(StatsModels):
                 "missing column in y: coxph requires 'outcome' and 'groups'"
             )
         if len(y.columns) > 2:
-            extra = set(y.columns) - {"outome", "groups"}
+            extra = set(y.columns) - {"outcome", "groups"}
             logger.warning("{}: unknown column in y, will be ignored".format(
                 ",".join(extra),
             ))
