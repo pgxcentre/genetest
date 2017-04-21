@@ -141,7 +141,7 @@ def _gwas_worker(q, results_q, failed, abort, fit, y, X, samples):
         except Exception as e:
             logger.debug("Exception raised during fitting:", e)
             if snp.variant.name:
-                failed.put(snp.variant.name)
+                failed.put((snp.variant.name, str(e)))
             continue
 
         # Update the results for the SNP with metadata.
@@ -246,7 +246,7 @@ def execute(phenotypes, genotypes, modelspec, subscribers=None,
     if messages["failed"]:
         with open(prefix + "failed_snps.txt", "w") as f:
             for failed_snp in messages["failed"]:
-                f.write("{}\n".format(failed_snp))
+                f.write("{}\t{}\n".format(*failed_snp))
 
     if messages["skipped"]:
         with open(prefix + "not_analyzed_snps.txt", "w") as f:
