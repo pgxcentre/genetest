@@ -88,7 +88,7 @@ def setup_package():
                          "format. The 'statistics' sub-module will interface "
                          "with them to analyze the data using different "
                          "statistical models.",
-        url="https://github.com/legaultmarc/genetest",
+        url="https://github.com/pgxcentre/genetest",
         license="CC BY-NC 4.0",
         test_suite="genetest.tests.test_suite",
         zip_safe=False,
