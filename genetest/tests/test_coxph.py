@@ -87,7 +87,7 @@ class TestStatsCoxPH(unittest.TestCase):
         ]
 
     def test_coxph_gwas(self):
-        """Tests coxph regression with the first SNP (full)."""
+        """Tests coxph regression for GWAS."""
         # The variables which are factors
         gender = spec.factor(spec.phenotypes.gender)
 

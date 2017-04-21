@@ -87,7 +87,7 @@ class TestStatsLogistic(unittest.TestCase):
         ]
 
     def test_logistic_gwas(self):
-        """Tests logistic regression with the first SNP (full)."""
+        """Tests logistic regression for GWAS."""
         # The variables which are factors
         gender = spec.factor(spec.phenotypes.gender)
 

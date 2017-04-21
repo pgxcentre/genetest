@@ -83,6 +83,80 @@ class TestStatsMixedLM(unittest.TestCase):
             np.random.permutation(self.phenotypes.data.shape[1])
         ]
 
+    def test_mixedlm_gwas(self):
+        """Tests mixedlm regression for GWAS."""
+        # The variables which are factors
+        gender = spec.factor(spec.phenotypes.gender)
+
+        # Creating the model specification
+        modelspec = spec.ModelSpec(
+            outcome=spec.phenotypes.pheno2,
+            predictors=[spec.SNPs, spec.phenotypes.age,
+                        spec.phenotypes.var1, gender],
+            test="logistic",
+        )
+
+        # Performing the analysis and retrieving the results
+        subscriber = subscribers.ResultsMemory()
+        analysis.execute(
+            self.phenotypes, self.genotypes, modelspec,
+            subscribers=[subscriber],
+        )
+        gwas_results = subscriber._get_gwas_results()
+
+        # Checking the number of results (should be 2)
+        self.assertEqual(2, len(gwas_results.keys()))
+
+        # Checking the first marker (snp1)
+        results = gwas_results["snp1"]
+        self.assertEqual("snp1", results["SNPs"]["name"])
+        self.assertEqual("3", results["SNPs"]["chrom"])
+        self.assertEqual(1234, results["SNPs"]["pos"])
+        self.assertEqual("T", results["SNPs"]["minor"])
+        self.assertEqual("C", results["SNPs"]["major"])
+        self.assertAlmostEqual(0.3749333333333334, results["SNPs"]["maf"])
+
+        # Checking the marker statistics (according to SAS)
+        self.assertAlmostEqual(-2.24198635855498, results["SNPs"]["coef"],
+                               places=5)
+        self.assertAlmostEqual(0.59759558908668, results["SNPs"]["std_err"],
+                               places=6)
+        self.assertAlmostEqual(-3.41325219048488, results["SNPs"]["lower_ci"],
+                               places=5)
+        self.assertAlmostEqual(-1.07072052662507, results["SNPs"]["upper_ci"],
+                               places=5)
+        self.assertAlmostEqual(14.0750894991982, results["SNPs"]["t_value"]**2,
+                               places=4)
+        self.assertAlmostEqual(-np.log10(0.0001756548178104),
+                               -np.log10(results["SNPs"]["p_value"]),
+                               places=5)
+
+        # Checking the second marker (snp2)
+        results = gwas_results["snp2"]
+        self.assertEqual("snp2", results["SNPs"]["name"])
+        self.assertEqual("3", results["SNPs"]["chrom"])
+        self.assertEqual(9618, results["SNPs"]["pos"])
+        self.assertEqual("C", results["SNPs"]["minor"])
+        self.assertEqual("A", results["SNPs"]["major"])
+        self.assertAlmostEqual(0.41590833333333332, results["SNPs"]["maf"])
+
+        # Checking the marker statistics (according to SAS)
+        self.assertAlmostEqual(1.12532308347075, results["SNPs"]["coef"],
+                               places=5)
+        self.assertAlmostEqual(0.45211815097241, results["SNPs"]["std_err"],
+                               places=6)
+        self.assertAlmostEqual(0.23918779080797, results["SNPs"]["lower_ci"],
+                               places=5)
+        self.assertAlmostEqual(2.01145837613353, results["SNPs"]["upper_ci"],
+                               places=5)
+        self.assertAlmostEqual(6.19513207316499, results["SNPs"]["t_value"]**2,
+                               places=4)
+        self.assertAlmostEqual(-np.log10(0.0128102164253392),
+                               -np.log10(results["SNPs"]["p_value"]),
+                               places=4)
+
+
+
     def test_mixedlm_snp1_reml(self):
         """Tests mixedlm regression with the first SNP (using REML)."""
         # The variables which are factors
