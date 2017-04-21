@@ -6,7 +6,6 @@ Subpackages
 
 .. toctree::
 
-    genetest.genotypes
     genetest.phenotypes
     genetest.statistics
     genetest.tests
