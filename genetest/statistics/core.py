@@ -47,6 +47,9 @@ class StatsModels(object):
         """
         raise NotImplementedError()
 
+    def __repr__(self):
+        return self.__class__.__name__
+
 
 class StatsError(Exception):
     """An Exception raised if there is any statistical problem."""
