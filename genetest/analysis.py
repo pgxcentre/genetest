@@ -89,7 +89,7 @@ def _generate_sample_order(x_samples, geno_samples):
     return geno_order, x_order
 
 
-def _gwas_worker(q, results_q, failed, abort, fit, y, X, samples):
+def _gwas_worker(q, results_q, failed, abort, fit, y, X, samples, maf_t=None):
     # The sample order (to add genotypes to the X data frame
     geno_index = None
     sample_order = None
@@ -132,6 +132,13 @@ def _gwas_worker(q, results_q, failed, abort, fit, y, X, samples):
             minor=snp.coded,
             major=snp.reference,
         )
+
+        # Is the MAF below the threshold?
+        if maf_t is not None and maf < maf_t:
+            failed.put((snp.variant.name, "MAF: {} < {}".format(maf, maf_t)))
+            continue
+
+        # Flipping if required
         if flip:
             X.loc[:, "SNPs"] = 2 - X.loc[:, "SNPs"]
 
@@ -156,7 +163,7 @@ def _gwas_worker(q, results_q, failed, abort, fit, y, X, samples):
 
 def execute_formula(phenotypes, genotypes, formula, test, test_kwargs=None,
                     subscribers=None, variant_predicates=None,
-                    output_prefix=None):
+                    output_prefix=None, maf_t=None, cpus=None):
 
     model = parse_formula(formula)
 
@@ -180,11 +187,26 @@ def execute_formula(phenotypes, genotypes, formula, test, test_kwargs=None,
     modelspec = ModelSpec(**model)
 
     return execute(phenotypes, genotypes, modelspec, subscribers,
-                   variant_predicates, output_prefix, subgroups)
+                   variant_predicates, output_prefix, subgroups, maf_t, cpus)
 
 
 def execute(phenotypes, genotypes, modelspec, subscribers=None,
-            variant_predicates=None, output_prefix=None, subgroups=None):
+            variant_predicates=None, output_prefix=None, subgroups=None,
+            maf_t=None, cpus=None):
+    """Execute an analysis.
+
+    Args:
+        phenotypes (): The phenotypes container.
+        genotypes (): The genotypes container.
+        modelspec (): The model specification.
+        subscribers (): A list of subscribers.
+        variant_predicates (): A list of variant predicates.
+        output_prefix (str): The output prefix.
+        subgroups (): The subgroup analysis.
+        maf_t (float): The MAF threshold.
+        cpus (int): The number of CPUs to perform the analysis.
+
+    """
     if subscribers is None:
         subscribers = [subscribers_module.Print()]
 
@@ -199,7 +221,8 @@ def execute(phenotypes, genotypes, modelspec, subscribers=None,
     # preparation steps are pretty different.
     if isinstance(modelspec.outcome, PheWAS):
         return _execute_phewas(phenotypes, genotypes, modelspec, subscribers,
-                               variant_predicates, output_prefix, subgroups)
+                               variant_predicates, output_prefix, subgroups,
+                               cpus)
 
     data = modelspec.create_data_matrix(phenotypes, genotypes)
 
@@ -231,10 +254,11 @@ def execute(phenotypes, genotypes, modelspec, subscribers=None,
 
     if modelspec.stratify_by is not None:
         _execute_stratified(genotypes, modelspec, subscribers, y, X,
-                            variant_predicates, subgroups, messages)
+                            variant_predicates, subgroups, messages, maf_t,
+                            cpus)
     elif SNPs in modelspec.predictors:
         _execute_gwas(genotypes, modelspec, subscribers, y, X,
-                      variant_predicates, messages)
+                      variant_predicates, messages, maf_t, cpus)
     else:
         _execute_simple(modelspec, subscribers, y, X, variant_predicates,
                         messages)
@@ -255,7 +279,7 @@ def execute(phenotypes, genotypes, modelspec, subscribers=None,
 
 
 def _execute_phewas(phenotypes, genotypes, modelspec, subscribers,
-                    variant_predicates, output_prefix, subgroups):
+                    variant_predicates, output_prefix, subgroups, cpus=None):
     # Check that invalid options were not set.
     if subgroups:
         raise NotImplementedError(
@@ -276,8 +300,11 @@ def _execute_phewas(phenotypes, genotypes, modelspec, subscribers,
     phen_queue = multiprocessing.Queue()
     abort = multiprocessing.Event()
 
+    # The number if CPUs
+    if cpus is None:
+        cpus = multiprocessing.cpu_count() - 1
+
     # Create workers.
-    cpus = 2
     predictors = modelspec.predictors
     workers = []
     fit = modelspec.test().fit
@@ -360,7 +387,8 @@ def _phewas_worker(data, predictors, abort, fit, phen_queue, results_queue):
 
 
 def _execute_stratified(genotypes, modelspec, subscribers, y, X,
-                        variant_predicates, subgroups, messages):
+                        variant_predicates, subgroups, messages, maf_t=None,
+                        cpus=None):
     # Levels.
     assert len(modelspec.stratify_by) == len(subgroups)
 
@@ -430,12 +458,12 @@ def _execute_stratified(genotypes, modelspec, subscribers, y, X,
         if gwas_mode:
             _execute_gwas(
                 genotypes, modelspec, subscribers, y.loc[idx, :], this_x,
-                variant_predicates, messages
+                variant_predicates, messages, maf_t, cpus,
             )
         else:
             _execute_simple(
                 modelspec, subscribers, y.loc[idx, :], this_x,
-                variant_predicates, messages
+                variant_predicates, messages,
             )
 
 
@@ -487,8 +515,9 @@ def _execute_simple(modelspec, subscribers, y, X, variant_predicates,
 
 
 def _execute_gwas(genotypes, modelspec, subscribers, y, X, variant_predicates,
-                  messages):
-        cpus = multiprocessing.cpu_count() - 1
+                  messages, maf_t=None, cpus=None):
+        if cpus is None:
+            cpus = multiprocessing.cpu_count() - 1
 
         # Create queues for failing SNPs and the consumer queue.
         failed = multiprocessing.Queue()
@@ -506,7 +535,8 @@ def _execute_gwas(genotypes, modelspec, subscribers, y, X, variant_predicates,
 
             worker = multiprocessing.Process(
                 target=_gwas_worker,
-                args=(q, results, failed, abort, fit, this_y, this_X, samples)
+                args=(q, results, failed, abort, fit, this_y, this_X, samples,
+                      maf_t)
             )
 
             workers.append(worker)
