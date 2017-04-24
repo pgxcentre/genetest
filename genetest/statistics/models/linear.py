@@ -10,6 +10,7 @@
 # Commons, PO Box 1866, Mountain View, CA 94042, USA.
 
 
+import numpy as np
 import statsmodels.api as sm
 
 from ..core import StatsModels, StatsError
@@ -66,6 +67,10 @@ class StatsLinear(StatsModels):
         # Results about individual model parameters.
         parameters = fitted.params.index
         for param in parameters:
+            # If GWAS, check that inference could be done on the SNP.
+            if param == "SNPs" and np.isnan(fitted.pvalues[param]):
+                raise StatsError("Inference did not converge.")
+
             out[param] = {
                 "coef": fitted.params[param],
                 "std_err": fitted.bse[param],
