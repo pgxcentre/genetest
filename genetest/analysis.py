@@ -578,8 +578,8 @@ def _execute_gwas(genotypes, modelspec, subscribers, y, X, variant_predicates,
         for snp in genotypes.iter_genotypes():
             # Pass through the list of variant filtering predicates.
             try:
-                if not all([f(snp.genotypes) for f in variant_predicates]):
-                    not_analyzed.append(snp.marker)
+                if not all([f(snp) for f in variant_predicates]):
+                    not_analyzed.append(snp.variant.name)
                     continue
 
             except StopIteration:
