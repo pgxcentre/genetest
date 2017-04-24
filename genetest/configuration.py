@@ -1,7 +1,6 @@
 """
 """
 
-
 # This file is part of genetest.
 #
 # This work is licensed under the Creative Commons Attribution-NonCommercial
@@ -10,7 +9,7 @@
 # Commons, PO Box 1866, Mountain View, CA 94042, USA.
 
 
-from configparser import ConfigParser
+import yaml
 
 from geneparse import parsers as geno_map
 
@@ -30,9 +29,6 @@ __all__ = ["AnalysisConfiguration"]
 
 class AnalysisConfiguration(object):
 
-    # The possible types
-    _available_types = {"int": int, "str": str, "float": float, "bool": bool}
-
     def __init__(self, filename):
         """Creates an instance of the class.
 
@@ -41,13 +37,12 @@ class AnalysisConfiguration(object):
 
         """
         # Reading the configuration file
-        self._configuration = ConfigParser()
         with open(filename, "r") as f:
-            self._configuration.read_file(f)
+            self._configuration = yaml.load(f)
 
         # Getting the required and available sections
         required_sections = {"genotypes", "phenotypes", "model"}
-        available_sections = set(self._configuration.sections())
+        available_sections = self._configuration.keys()
 
         # Checking if there are missing required sections
         missing_sections = required_sections - available_sections
@@ -79,7 +74,7 @@ class AnalysisConfiguration(object):
     def configure_genotypes(self):
         """Configures the genotypes component."""
         # Getting the genotype section of the configuration file
-        section = self._configuration["genotypes"]
+        section = self._configuration["genotypes"].copy()
 
         # Getting the format of the genotypes
         if "format" not in section:
@@ -119,7 +114,7 @@ class AnalysisConfiguration(object):
     def configure_phenotypes(self):
         """Configures the phenotypes component."""
         # Getting the phenotype section of the configuration file
-        section = self._configuration["phenotypes"]
+        section = self._configuration["phenotypes"].copy()
 
         # Getting the format of the phenotypes
         if "format" not in section:
@@ -159,7 +154,7 @@ class AnalysisConfiguration(object):
     def configure_model(self):
         """Configures the statistics component."""
         # Getting the model section of the configuration file
-        section = self._configuration["model"]
+        section = self._configuration["model"].copy()
 
         # Getting the required test
         if "test" not in section:
@@ -241,55 +236,9 @@ class AnalysisConfiguration(object):
         options = {}
 
         if "options" in config:
-            for option in config.pop("options").split(","):
-                key, type_value = option.split("=")
-                options[key] = AnalysisConfiguration.set_type_to_value(
-                    *type_value.split(":"),
-                )
+            for k, v in config.pop("options").items():
+                if v == r"\t":
+                    v = "\t"
+                options[k] = v
 
         return options
-
-    @staticmethod
-    def set_type_to_value(value_type, value):
-        """Sets the type to the argument.
-
-        Args:
-            value_type (str): The type of the value.
-            value (str): The value.
-
-        Returns:
-            type: The value casted to the required type.
-
-        """
-        # Finding the cast function
-        if value_type not in AnalysisConfiguration._available_types:
-            raise ValueError(
-                "Invalid type in configuration: {}".format(value_type)
-            )
-        cast = AnalysisConfiguration._available_types[value_type]
-
-        if cast is bool:
-            # Possible False values
-            if value.upper() in {"F", "FALSE", "NO", "N"}:
-                return False
-
-            # Possible True values
-            elif value.upper() in {"T", "TRUE", "YES", "Y"}:
-                return True
-
-            else:
-                raise ValueError(
-                    "'{}' is not a valid boolean (True/False)".format(value)
-                )
-
-        elif cast is str:
-            # We want to catch the None
-            if value.upper() == "NONE":
-                return None
-
-            # We want to catch the \t
-            if value == r"\t":
-                return "\t"
-
-        # Casting whatever is left
-        return cast(value)
