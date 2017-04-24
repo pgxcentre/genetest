@@ -15,7 +15,9 @@ import shlex
 import logging
 import argparse
 
+from ..analysis import execute_formula
 from .. import __version__, _LOG_FORMAT
+from ..modelspec.predicates import NameFilter
 from ..configuration import AnalysisConfiguration
 
 
@@ -36,9 +38,11 @@ def main():
     # The logging file handler
     logging_fh = None
 
+    # Parsing the options
+    args = parse_args(parser)
+
     try:
-        # Parsing the options
-        args = parse_args(parser)
+        # Checking the options
         check_args(args)
 
         if not _TESTING_MODE:
@@ -62,7 +66,66 @@ def main():
         ))
 
         # Getting the analysis configuration
+        logger.info("Parsing configuration file")
         conf = AnalysisConfiguration(args.configuration)
+
+        # Getting the phenotypes
+        logger.info("Creating phenotypes container")
+        phenotypes = conf.get_phenotypes()
+        logger.info("  - {:,d} samples, {:,d} variables".format(
+            phenotypes.get_nb_samples(),
+            phenotypes.get_nb_variables(),
+        ))
+        if args.keep:
+            phenotypes.keep_samples(set(args.keep.read().splitlines()))
+            args.keep.close()
+            logger.info(
+                "  - {:,d} samples kept".format(phenotypes.get_nb_samples()),
+            )
+
+        # Getting the genotypes
+        logger.info("Creating genotypes container")
+        genotypes = conf.get_genotypes()
+        logger.info("  - {:,d} samples, {:,d} markers".format(
+            genotypes.get_number_samples(),
+            genotypes.get_number_variants(),
+        ))
+
+        # Creating a list of variant predicates
+        variant_predicates = []
+
+        # The markers to extract
+        if args.extract:
+            to_extract = set(args.extract.read().splitlines())
+            args.extract.close()
+
+            logger.info("{:,d} variants will be extracted".format(
+                len(to_extract),
+            ))
+            variant_predicates.append(NameFilter(extract=to_extract))
+
+        # Checking the test information
+        test = conf.get_model_test()
+        formula = conf.get_model_formula()
+        test_kwargs = conf.get_model_args()
+        logger.info("Analysis: {}".format(test))
+        logger.info("  - {}".format(formula))
+        for k, v in test_kwargs.items():
+            logger.info("  - {}: {}".format(k, v))
+
+        # Starting the analysis
+        execute_formula(
+            phenotypes=phenotypes,
+            genotypes=genotypes,
+            formula=formula,
+            test=test,
+            test_kwargs=test_kwargs,
+            subscribers=None,
+            variant_predicates=variant_predicates,
+            output_prefix=args.output,
+            maf_t=args.maf,
+            cpus=args.nb_cpus,
+        )
 
     # Catching the Ctrl^C
     except KeyboardInterrupt:
@@ -75,8 +138,17 @@ def main():
         parser.error(e.message)
 
     finally:
+        # Closing the logging file
         if logging_fh:
             logging_fh.close()
+
+        # Closing the "keep" file
+        if args.keep and not args.keep.closed:
+            args.keep.close()
+
+        # Closing the "extract" file
+        if args.extract and not args.extract.closed:
+            args.extract.close()
 
 
 def check_args(args):
@@ -84,6 +156,14 @@ def check_args(args):
     # Checking that configuration file exists
     if not os.path.isfile(args.configuration):
         raise CliError("{}: no such file.".format(args.configuration))
+
+    # Checking the number of CPUs
+    if args.nb_cpus < 1:
+        raise CliError("{}: invalid number of CPUs".format(args.nb_cpus))
+
+    # Checking the MAF
+    if args.maf < 0 or args.maf > 0.5:
+        raise CliError("{}: invalid MAF".format(args.maf))
 
 
 def parse_args(parser):
@@ -93,20 +173,14 @@ def parse_args(parser):
     parser.add_argument("--test", action=TestAction, nargs=0,
                         help="Execute the test suite and exit.")
     parser.add_argument(
-        "--nb-process",
-        type=int,
-        metavar="NB",
-        default=1,
+        "--nb-cpus", type=int, metavar="NB", default=1,
         help="The number of processes to use for the analysis. [%(default)d]",
     )
 
     # The input options
     group = parser.add_argument_group("Input Options")
     group.add_argument(
-        "--configuration",
-        type=str,
-        metavar="INI",
-        required=True,
+        "--configuration", type=str, metavar="INI", required=True,
         help="The configuration file that describe the phenotypes, genotypes, "
              "and model.",
     )
@@ -114,35 +188,25 @@ def parse_args(parser):
     # The output options
     group = parser.add_argument_group("Output Options")
     group.add_argument(
-        "--output",
-        type=str,
-        metavar="FILE",
-        default="results.txt",
-        help="The output file that will contain the results from the "
-             "statistical analysis. [%(default)s]",
+        "--output", type=str, metavar="FILE", default="genetest_results",
+        help="The output file prefix that will contain the results and other "
+             "information. [%(default)s]",
     )
 
     # Some other options
     group = parser.add_argument_group("Other Options")
     group.add_argument(
-        "--extract",
-        type=argparse.FileType("r"),
-        metavar="FILE",
+        "--extract", type=argparse.FileType("r"), metavar="FILE",
         help="A file containing a list of marker to extract prior to the "
-             "statistical analysis. One marker per line.",
+             "statistical analysis (one marker per line).",
     )
     group.add_argument(
-        "--keep",
-        type=argparse.FileType("r"),
-        metavar="FILE",
+        "--keep", type=argparse.FileType("r"), metavar="FILE",
         help="A file containing a list of samples to keep prior to the "
-             "statistical analysis. One sample per line.",
+             "statistical analysis (one sample per line).",
     )
     group.add_argument(
-        "--maf",
-        type=float,
-        default=0.01,
-        metavar="MAF",
+        "--maf", type=float, default=0.01, metavar="MAF",
         help="The MAF threshold to include a marker in the analysis. "
              "[%(default).2f]",
     )
