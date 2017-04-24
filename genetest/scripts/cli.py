@@ -15,6 +15,7 @@ import shlex
 import logging
 import argparse
 
+from ..subscribers import GWASWriter
 from ..analysis import execute_formula
 from .. import __version__, _LOG_FORMAT
 from ..modelspec.predicates import NameFilter
@@ -113,6 +114,9 @@ def main():
         for k, v in test_kwargs.items():
             logger.info("  - {}: {}".format(k, v))
 
+        # Creating a simple row subscriber
+        subscribers = [GWASWriter(filename=args.output + ".txt", test=test)]
+
         # Starting the analysis
         execute_formula(
             phenotypes=phenotypes,
@@ -120,7 +124,7 @@ def main():
             formula=formula,
             test=test,
             test_kwargs=test_kwargs,
-            subscribers=None,
+            subscribers=subscribers,
             variant_predicates=variant_predicates,
             output_prefix=args.output,
             maf_t=args.maf,
