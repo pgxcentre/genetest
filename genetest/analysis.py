@@ -186,8 +186,9 @@ def execute_formula(phenotypes, genotypes, formula, test, test_kwargs=None,
 
     modelspec = ModelSpec(**model)
 
-    return execute(phenotypes, genotypes, modelspec, subscribers,
-                   variant_predicates, output_prefix, subgroups, maf_t, cpus)
+    # Executing
+    execute(phenotypes, genotypes, modelspec, subscribers, variant_predicates,
+            output_prefix, subgroups, maf_t, cpus)
 
 
 def execute(phenotypes, genotypes, modelspec, subscribers=None,
@@ -198,11 +199,11 @@ def execute(phenotypes, genotypes, modelspec, subscribers=None,
     Args:
         phenotypes (): The phenotypes container.
         genotypes (): The genotypes container.
-        modelspec (): The model specification.
-        subscribers (): A list of subscribers.
-        variant_predicates (): A list of variant predicates.
+        modelspec (genetest.modelspec.ModelSpec): The model specification.
+        subscribers (list): A list of subscribers.
+        variant_predicates (list): A list of variant predicates.
         output_prefix (str): The output prefix.
-        subgroups (): The subgroup analysis.
+        subgroups (list): The subgroup analysis.
         maf_t (float): The MAF threshold.
         cpus (int): The number of CPUs to perform the analysis.
 
