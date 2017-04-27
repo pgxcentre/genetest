@@ -21,6 +21,7 @@ from itertools import chain
 import numpy as np
 import pandas as pd
 
+from .statistics.core import StatsError
 from .statistics.descriptive import get_maf
 from . import subscribers as subscribers_module
 from .modelspec import SNPs, PheWAS, modelspec_from_formula
@@ -118,7 +119,7 @@ def _gwas_worker(q, results_q, failed, abort, fit, y, X, samples, maf_t=None):
         try:
             results = fit(y[not_missing], X[not_missing])
 
-        except Exception as e:
+        except StatsError as e:
             logger.debug(
                 "{}: exception raised during fitting:".format(
                     snp.variant.name,
