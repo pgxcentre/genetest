@@ -15,6 +15,7 @@ import time
 import queue
 import itertools
 import multiprocessing
+import traceback
 import logging
 from itertools import chain
 
@@ -70,7 +71,12 @@ def _gwas_worker(q, results_q, failed, abort, fit, y, X, samples, maf_t=None):
     # Get a SNP.
     while not abort.is_set():
         # Get a SNP from the Queue.
-        snp = q.get()
+        try:
+            snp = q.get(timeout=1)
+        except queue.Empty:
+            # We waited for 1 seconds, just in case abort was set and no more
+            # SNP is getting pushed in the Queue
+            continue
 
         # This is a check for a sentinel.
         if snp is None:
@@ -86,10 +92,10 @@ def _gwas_worker(q, results_q, failed, abort, fit, y, X, samples, maf_t=None):
 
             # Do we have an intersect
             if geno_index.shape[0] == 0:
+                logger.critical("Genotype and phenotype data have "
+                                "non-overlapping indices.")
                 abort.set()
-                raise ValueError(
-                    "Genotype and phenotype data have non-overlapping indices."
-                )
+                continue
 
         # Set all to missing genotypes
         X.loc[:, "SNPs"] = np.nan
@@ -127,6 +133,13 @@ def _gwas_worker(q, results_q, failed, abort, fit, y, X, samples, maf_t=None):
             )
             if snp.variant.name:
                 failed.put((snp.variant.name, str(e)))
+            continue
+
+        except Exception as e:
+            logger.critical("{} was raised in worker\n{}".format(
+                type(e).__name__, traceback.format_exc(),
+            ))
+            abort.set()
             continue
 
         # Update the results for the SNP with metadata.
@@ -554,7 +567,10 @@ def _execute_gwas(genotypes, modelspec, subscribers, y, X, variant_predicates,
 
             # Handle results at the same time to avoid occupying too much
             # memory as the results queue gets filled.
+            if abort.is_set():
+                raise RuntimeError("Exception raised in worker processes")
             val = _handle_result()
+
             assert val == 0
 
         # Signal that there are no more SNPs to add.
