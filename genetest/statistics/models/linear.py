@@ -24,7 +24,7 @@ __all__ = ["StatsLinear"]
 
 
 class StatsLinear(StatsModels):
-    def __init__(self, condition_value_t=1000):
+    def __init__(self, condition_value_t=1000, eigenvals_t=1e-10):
         """Initializes a 'StatsLinear' instance.
 
         Args:
@@ -34,6 +34,7 @@ class StatsLinear(StatsModels):
         """
         # Saving the condition value threshold
         self._condition_value_t = condition_value_t
+        self._eigenvals_t = eigenvals_t
 
     def _results_handler(self, fitted):
         # Checking the condition number (according to StatsModels, condition
@@ -47,7 +48,7 @@ class StatsLinear(StatsModels):
         # Checking the smallest eigenvalue (according to StatsModels, values
         # lower than 1e-10 might indicate that there are strong
         # multicollinearity problems or that the design matrix is singular)
-        if fitted.eigenvals.min() < 1e-10:
+        if fitted.eigenvals.min() < self._eigenvals_t:
             raise StatsError("smallest eigenvalue is small, {}".format(
                 fitted.eigenvals.min(),
             ))
