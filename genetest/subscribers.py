@@ -26,15 +26,13 @@ logger = logging.getLogger(__name__)
 
 class Subscriber(object):
     """Abstract class for subscribers."""
-    def __init__(self):
-        self._reset_subset()
-
     def init(self, modelspec):
         """Method that gets called by analysis to initialize or reinitialize
         the Subscriber with a modelspec.
 
         """
         self.modelspec = modelspec
+        self._reset_subset()
 
     def close(self):
         pass
@@ -48,6 +46,9 @@ class Subscriber(object):
 
         """
         self.subset_info = info
+        self.subset_info_str = ";".join(
+            "{}:{}".format(*_) for _ in sorted(info.items())
+        )
 
     def _reset_subset(self):
         self.subset_info = None
@@ -115,11 +116,14 @@ class RowWriter(Subscriber):
             self._f = None
 
         if self.header:
-            header = self.sep.join([i[0] for i in self.columns])
-            if filename is not None:
-                self._f.write(header + "\n")
-            else:
-                print(header)
+            self.print_header()
+
+    def print_header(self):
+        header = self.sep.join([i[0] for i in self.columns])
+        if self.filename is not None:
+            self._f.write(header + "\n")
+        else:
+            print(header)
 
     def close(self):
         if self._f:
@@ -211,6 +215,29 @@ class GWASWriter(RowWriter):
         # Calling super __init__
         super().__init__(filename=filename, columns=columns, header=True,
                          append=False, sep=sep)
+
+    def _update_current_subset(self, info):
+        """Updates information on which part of the dataset is analyzed."""
+        # First, check if the subset_info is None (meaning its the first time
+        # this function is called
+        if self.subset_info is None:
+            # We add the column
+            self.columns.append(("subgroup", analysis_results["SUBGROUP"]))
+
+            # We re-write the header
+            self._f.seek(0)
+            self.print_header()
+
+        # Calling super
+        super()._update_current_subset(info=info)
+
+    def handle(self, results):
+        # Adding the subgroup, if any
+        if self.subset_info is not None:
+            results["SUBGROUP"] = self.subset_info_str
+
+        # Calling super
+        super().handle(results=results)
 
 
 def subscriber_error(message, abort=None):
