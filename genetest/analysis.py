@@ -18,43 +18,15 @@ import multiprocessing
 import logging
 from itertools import chain
 
-from .modelspec import SNPs, ModelSpec, PheWAS
-from .modelspec.grammar import parse_formula
-from .statistics import model_map
-from .statistics.descriptive import get_maf
-from . import subscribers as subscribers_module
-
 import numpy as np
 import pandas as pd
 
+from .statistics.descriptive import get_maf
+from . import subscribers as subscribers_module
+from .modelspec import SNPs, PheWAS, modelspec_from_formula
+
 
 logger = logging.getLogger(__name__)
-_SUBSCRIBER_DEPRECATED = ("DeprecationWarning: Subscribers are now in the "
-                          "'genetest.subscribers' module.")
-
-
-class Subscriber(subscribers_module.Subscriber):
-    def __init__(self, *args, **kwargs):
-        logger.warning(_SUBSCRIBER_DEPRECATED)
-        super().__init__(*args, **kwargs)
-
-
-class ResultsMemory(subscribers_module.ResultsMemory):
-    def __init__(self, *args, **kwargs):
-        logger.warning(_SUBSCRIBER_DEPRECATED)
-        super().__init__(*args, **kwargs)
-
-
-class Print(subscribers_module.Print):
-    def __init__(self, *args, **kwargs):
-        logger.warning(_SUBSCRIBER_DEPRECATED)
-        super().__init__(*args, **kwargs)
-
-
-class RowWriter(subscribers_module.RowWriter):
-    def __init__(self, *args, **kwargs):
-        logger.warning(_SUBSCRIBER_DEPRECATED)
-        super().__init__(*args, **kwargs)
 
 
 def _missing(y, X):
@@ -145,8 +117,13 @@ def _gwas_worker(q, results_q, failed, abort, fit, y, X, samples, maf_t=None):
         # Computing
         try:
             results = fit(y[not_missing], X[not_missing])
+
         except Exception as e:
-            logger.debug("Exception raised during fitting:", e)
+            logger.debug(
+                "{}: exception raised during fitting:".format(
+                    snp.variant.name,
+                ), e,
+            )
             if snp.variant.name:
                 failed.put((snp.variant.name, str(e)))
             continue
@@ -165,26 +142,8 @@ def execute_formula(phenotypes, genotypes, formula, test, test_kwargs=None,
                     subscribers=None, variant_predicates=None,
                     output_prefix=None, maf_t=None, cpus=None):
 
-    model = parse_formula(formula)
-
-    # Handle the statistical test.
-    if test_kwargs is None:
-        test_kwargs = {}
-
-    if hasattr(test, "__call__"):
-        model["test"] = lambda: test(**test_kwargs)
-    else:
-        model["test"] = lambda: model_map[test](**test_kwargs)
-
-    # Handle the conditions and stratification.
-    conditions = model.pop("conditions")
-    if conditions is not None:
-        model["stratify_by"] = [i["name"] for i in conditions]
-        subgroups = [i["level"] for i in conditions]
-    else:
-        subgroups = None
-
-    modelspec = ModelSpec(**model)
+    # Getting the model specification and the subgroups (if any)
+    modelspec, subgroups = modelspec_from_formula(formula, test, test_kwargs)
 
     # Executing
     execute(phenotypes, genotypes, modelspec, subscribers, variant_predicates,
@@ -436,6 +395,10 @@ def _execute_stratified(genotypes, modelspec, subscribers, y, X,
         # Also drop the columns from the stratification variables.
         this_x = this_x.drop([i.id for i in modelspec.stratify_by], axis=1)
 
+        logger.info("Analysing subgroup {}".format(
+            ";".join("{}:{}".format(*_) for _ in sorted(subset_info.items()))
+        ))
+
         # Make sure everything went ok.
         if this_x.shape[0] == 0:
             raise ValueError(
@@ -626,4 +589,4 @@ def _execute_gwas(genotypes, modelspec, subscribers, y, X, variant_predicates,
         for worker in workers:
             worker.join()
 
-        logger.info("Analysis complete.")
+        logger.info("Analysis completed")
