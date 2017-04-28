@@ -84,10 +84,7 @@ def _gwas_worker(q, results_q, failed, abort, fit, y, X, samples, maf_t=None):
 
         # This is a check for a sentinel.
         if snp is None:
-            q.put(None)
-            results_q.put(None)
-            logger.debug("Worker Done")
-            return
+            break
 
         # Compute union between indices if not already done
         if sample_order is None or geno_index is None:
@@ -137,6 +134,7 @@ def _gwas_worker(q, results_q, failed, abort, fit, y, X, samples, maf_t=None):
 
         except RuntimeWarning as w:
             logger.warning("{}: {}".format(snp.variant.name, w))
+            continue
 
         except Exception as e:
             logger.critical("{} was raised in worker\n{}".format(
@@ -153,6 +151,13 @@ def _gwas_worker(q, results_q, failed, abort, fit, y, X, samples, maf_t=None):
         results["SNPs"]["maf"] = maf
 
         results_q.put(results)
+
+    # The main loop was exited either because of an abort or because the
+    # sentinel was encountered.
+    # We put None to the queues to signal the worker is done and exit.
+    q.put(None)
+    results_q.put(None)
+    logger.debug("Worker Done")
 
 
 def execute_formula(phenotypes, genotypes, formula, test, test_kwargs=None,
