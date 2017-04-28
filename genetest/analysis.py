@@ -64,6 +64,10 @@ def _generate_sample_order(x_samples, geno_samples):
 
 
 def _gwas_worker(q, results_q, failed, abort, fit, y, X, samples, maf_t=None):
+    # Changing RuntimeWarning to errors
+    import warnings
+    warnings.filterwarnings('error')
+
     # The sample order (to add genotypes to the X data frame
     geno_index = None
     sample_order = None
@@ -126,14 +130,13 @@ def _gwas_worker(q, results_q, failed, abort, fit, y, X, samples, maf_t=None):
             results = fit(y[not_missing], X[not_missing])
 
         except StatsError as e:
-            logger.debug(
-                "{}: exception raised during fitting:".format(
-                    snp.variant.name,
-                ), e,
-            )
+            logger.warning("{}: {}".format(snp.variant.name, e))
             if snp.variant.name:
                 failed.put((snp.variant.name, str(e)))
             continue
+
+        except RuntimeWarning as w:
+            logger.warning("{}: {}".format(snp.variant.name, w))
 
         except Exception as e:
             logger.critical("{} was raised in worker\n{}".format(
