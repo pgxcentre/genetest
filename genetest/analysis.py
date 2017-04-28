@@ -18,6 +18,7 @@ import multiprocessing
 import traceback
 import logging
 from itertools import chain
+import warnings
 
 import numpy as np
 import pandas as pd
@@ -65,7 +66,6 @@ def _generate_sample_order(x_samples, geno_samples):
 
 def _gwas_worker(q, results_q, failed, abort, fit, y, X, samples, maf_t=None):
     # Changing RuntimeWarning to errors
-    import warnings
     warnings.filterwarnings('error')
 
     # The sample order (to add genotypes to the X data frame
@@ -123,18 +123,16 @@ def _gwas_worker(q, results_q, failed, abort, fit, y, X, samples, maf_t=None):
             X.loc[:, "SNPs"] = 2 - X.loc[:, "SNPs"]
 
         # Computing
+        results = None
         try:
             results = fit(y[not_missing], X[not_missing])
 
-        except StatsError as e:
+        except (StatsError, RuntimeWarning) as e:
             logger.warning("{}: {}".format(snp.variant.name, e))
             if snp.variant.name:
                 failed.put((snp.variant.name, str(e)))
-            continue
-
-        except RuntimeWarning as w:
-            logger.warning("{}: {}".format(snp.variant.name, w))
-            continue
+            if results is None:
+                continue
 
         except Exception as e:
             logger.critical("{} was raised in worker\n{}".format(
