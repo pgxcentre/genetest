@@ -155,6 +155,7 @@ def _gwas_worker(q, results_q, failed, abort, fit, y, X, samples, maf_t=None):
     # We put None to the queues to signal the worker is done and exit.
     q.put(None)
     results_q.put(None)
+    failed.put(None)
     logger.debug("Worker Done")
 
 
@@ -587,12 +588,15 @@ def _execute_gwas(genotypes, modelspec, subscribers, y, X, variant_predicates,
         while done_workers != len(workers):
             done_workers += _handle_result()
 
-        # Dump the failed SNPs to disk.
+        # We had an extra 'None' to the failed queue for the last empty check
         failed.put(None)
 
-        while not failed.empty():
+        nb_failed_done = 0
+        while nb_failed_done < cpus:
             snp = failed.get()
-            if snp:
+            if snp is None:
+                nb_failed_done += 1
+            else:
                 messages["failed"].append(snp)
 
         # Dump the not analyzed SNPs to disk.
