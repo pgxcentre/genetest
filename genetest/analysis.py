@@ -156,7 +156,7 @@ def _gwas_worker(q, results_q, failed, abort, fit, y, X, samples, maf_t=None):
     q.put(None)
     results_q.put(None)
     failed.put(None)
-    logger.info("Worker Done")
+    logger.debug("Worker Done")
 
 
 def _log_warnings(identifier, warning_list):
