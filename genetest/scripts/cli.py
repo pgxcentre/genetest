@@ -14,12 +14,19 @@ import sys
 import shlex
 import logging
 import argparse
+from os import path
 
-from ..subscribers import GWASWriter
-from ..analysis import execute_formula
+import pandas as pd
+
+from .. import modelspec as spec
 from .. import __version__, _LOG_FORMAT
 from ..modelspec.predicates import NameFilter
+from ..modelspec import modelspec_from_formula
+from ..analysis import execute, execute_formula
 from ..configuration import AnalysisConfiguration
+from ..modelspec import result as analysis_results
+from ..phenotypes.dataframe import DataFrameContainer
+from ..subscribers import GWASWriter, ResultsMemory, RowWriter
 
 
 _TESTING_MODE = False
@@ -114,22 +121,28 @@ def main():
         for k, v in test_kwargs.items():
             logger.info("  - {}: {}".format(k, v))
 
-        # Creating a simple row subscriber
-        subscribers = [GWASWriter(filename=args.output + ".txt", test=test)]
+        # Checking for special test kwargs
+        mixedlm_optimization = test_kwargs.get("optimize", True)
+        mixedlm_p_threshold = test_kwargs.get("p_threshold", 1e-4)
+        for to_del in ("optimize", "p_threshold"):
+            if to_del in test_kwargs:
+                del test_kwargs[to_del]
 
-        # Starting the analysis
-        execute_formula(
-            phenotypes=phenotypes,
-            genotypes=genotypes,
-            formula=formula,
-            test=test,
-            test_kwargs=test_kwargs,
-            subscribers=subscribers,
-            variant_predicates=variant_predicates,
-            output_prefix=args.output,
-            maf_t=args.maf,
-            cpus=args.nb_cpus,
-        )
+        if test == "mixedlm" and mixedlm_optimization:
+            # Performing an "optimized" mixed linear model
+            performed_optimized_mixedlm(
+                args=args, test=test, phenotypes=phenotypes,
+                genotypes=genotypes, formula=formula, test_kwargs=test_kwargs,
+                variant_predicates=variant_predicates, p_t=mixedlm_p_threshold,
+            )
+
+        else:
+            # Performing a "normal" analysis
+            perform_normal_analysis(
+                args=args, test=test, phenotypes=phenotypes,
+                genotypes=genotypes, formula=formula, test_kwargs=test_kwargs,
+                variant_predicates=variant_predicates,
+            )
 
     # Catching the Ctrl^C
     except KeyboardInterrupt:
@@ -153,6 +166,148 @@ def main():
         # Closing the "extract" file
         if args.extract and not args.extract.closed:
             args.extract.close()
+
+
+def performed_optimized_mixedlm(args, test, phenotypes, genotypes, formula,
+                                test_kwargs, variant_predicates, p_t):
+    """Performs an "optimized" mixed linear model."""
+    logger.info("Optimizing MixedLM analysis")
+
+    # Getting the model specification and the subgroups (if any)
+    modelspec, subgroups = modelspec_from_formula(formula, test, test_kwargs)
+
+    # TODO: Find out if this is possible
+    if subgroups is not None:
+        raise CliError("Subgroups are not available for MixedLM optimization")
+
+    # Removing the SNPs from the predictors
+    if "SNPs" in modelspec.predictors:
+        del modelspec.predictors[modelspec.predictors.index("SNPs")]
+
+    # Executing the normal MixedLM analysis and executing the analysis
+    logger.info("Computing the random effects")
+    memory_subscriber = ResultsMemory()
+    execute(
+        phenotypes=phenotypes, genotypes=genotypes, modelspec=modelspec,
+        subscribers=[memory_subscriber], output_prefix=args.output,
+        subgroups=subgroups, maf_t=args.maf, cpus=args.nb_cpus,
+    )
+
+    # Getting the RE values
+    random_effects = memory_subscriber.results.pop()["MODEL"]["random_effects"]
+
+    # Getting the column for the groupings
+    group_col = modelspec.get_translations()[modelspec.outcome["groups"].id]
+
+    # Checking we don't have the random effects column in the original pheno
+    assert "_random_effects" not in phenotypes.get_phenotypes().columns
+
+    # We want to keep only the unique samples of the old phenotypes
+    old_phenotypes = phenotypes.get_phenotypes()
+    duplicated = old_phenotypes.index.duplicated(keep="first")
+
+    # Merging the random effects to the phenotypes
+    new_phenotypes = pd.merge(
+        left=old_phenotypes.loc[~duplicated, :].copy(),
+        right=pd.DataFrame(random_effects, columns=["_random_effects"]),
+        left_on=group_col,
+        right_index=True,
+    )
+
+    # Resetting the model spec
+    spec._reset()
+
+    # Creating the new phenotypes container
+    new_phenotypes = DataFrameContainer(dataframe=new_phenotypes)
+    assert not new_phenotypes.is_repeated()
+
+    # Creating a new model spec
+    optimized_modelspec = spec.ModelSpec(
+        outcome=spec.phenotypes._random_effects,
+        predictors=[spec.SNPs],
+        test="linear",
+    )
+
+    # Creating a row subscriber
+    approximation_fn = args.output + ".mixedlm_approximation.txt"
+    subscribers = [RowWriter(
+        filename=approximation_fn,
+        columns=[
+            ("snp", analysis_results["SNPs"]["name"]),
+            ("chr", analysis_results["SNPs"]["chrom"]),
+            ("pos", analysis_results["SNPs"]["pos"]),
+            ("major", analysis_results["SNPs"]["major"]),
+            ("minor", analysis_results["SNPs"]["minor"]),
+            ("maf", analysis_results["SNPs"]["maf"]),
+            ("n", analysis_results["MODEL"]["nobs"]),
+            ("p", analysis_results["SNPs"]["p_value"]),
+            ("ll", analysis_results["MODEL"]["log_likelihood"]),
+            ("adj_r2", analysis_results["MODEL"]["r_squared_adj"]),
+            ("approximation", "Yes")
+        ],
+        header=True,
+        append=False,
+    )]
+
+    # Executing the optimized analysis
+    logger.info("Executing the optimized MixedLM")
+    execute(
+        phenotypes=new_phenotypes, genotypes=genotypes,
+        modelspec=optimized_modelspec, subscribers=subscribers,
+        output_prefix=args.output + ".mixedlm_approximation",
+        maf_t=args.maf, cpus=args.nb_cpus,
+        variant_predicates=variant_predicates,
+    )
+
+    # Making sure the output file exists
+    if not path.isfile(approximation_fn):
+        raise CliError("{}: no such file".format(approximation_fn))
+
+    # Reading the approximation
+    approximation = pd.read_csv(approximation_fn, sep="\t")
+
+    # Keeping only small p values (according to threshold)
+    markers = set(approximation.loc[approximation.p < p_t, "snp"].values)
+
+    if len(markers) == 0:
+        logger.info("No marker had a p value < than {}".format(p_t))
+        return
+
+    # Adding the SNPs into the original ModelSpec
+    modelspec.predictors.append("SNPs")
+
+    # Creating the new variant predicates
+    variant_predicates = [NameFilter(extract=markers)]
+
+    # Creating the GWAS subscriber
+    subscribers = [GWASWriter(filename=args.output + ".txt", test="mixedlm")]
+
+    # Resetting the model spec
+    spec._reset()
+
+    # Executing the real MixdLM
+    logger.info("Executing MixedLM on {:,d} markers".format(len(markers)))
+    execute_formula(
+        phenotypes=phenotypes, genotypes=genotypes, formula=formula,
+        test="mixedlm", test_kwargs=test_kwargs, subscribers=subscribers,
+        variant_predicates=variant_predicates, output_prefix=args.output,
+        maf_t=args.maf, cpus=args.nb_cpus,
+    )
+
+
+def perform_normal_analysis(args, test, phenotypes, genotypes, formula,
+                            test_kwargs, variant_predicates):
+    """Performs a "normal" analysis."""
+    # Creating a GWAS subscriber
+    subscribers = [GWASWriter(filename=args.output + ".txt", test=test)]
+
+    # Starting the analysis
+    execute_formula(
+        phenotypes=phenotypes, genotypes=genotypes, formula=formula, test=test,
+        test_kwargs=test_kwargs, subscribers=subscribers,
+        variant_predicates=variant_predicates, output_prefix=args.output,
+        maf_t=args.maf, cpus=args.nb_cpus,
+    )
 
 
 def check_args(args):
