@@ -12,7 +12,7 @@ Subscribers used to format the output of analyses.
 
 
 import sys
-import pprint
+import json
 import logging
 
 from .modelspec import result as analysis_results
@@ -91,14 +91,17 @@ class Print(Subscriber):
         self.raw = raw
 
     def handle(self, results):
+        if self.subset_info:
+            results["MODEL"]["subset_info"] = self.subset_info
+
         if self.raw:
             pprint.pprint(results)
             return
 
-        pprint.pprint(Subscriber._apply_translation(
+        print(json.dumps(Subscriber._apply_translation(
             self.modelspec.get_translations(),
             results
-        ))
+        ), indent=2))
 
 
 class RowWriter(Subscriber):
@@ -222,7 +225,9 @@ class GWASWriter(RowWriter):
         # this function is called
         if self.subset_info is None:
             # We add the column
-            self.columns.append(("subgroup", analysis_results["SUBGROUP"]))
+            self.columns.append(
+                ("subgroup", analysis_results["MODEL"]["subset_info"])
+            )
 
             # We re-write the header
             self._f.seek(0)
@@ -234,7 +239,7 @@ class GWASWriter(RowWriter):
     def handle(self, results):
         # Adding the subgroup, if any
         if self.subset_info is not None:
-            results["SUBGROUP"] = self.subset_info_str
+            results["MODEL"]["subset_info"] = self.subset_info_str
 
         # Calling super
         super().handle(results=results)
