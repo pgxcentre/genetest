@@ -95,7 +95,7 @@ class Print(Subscriber):
             results["MODEL"]["subset_info"] = self.subset_info
 
         if self.raw:
-            pprint.pprint(results)
+            print(json.dumps(results, indent=2))
             return
 
         print(json.dumps(Subscriber._apply_translation(
