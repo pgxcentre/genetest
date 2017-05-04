@@ -18,6 +18,7 @@ import multiprocessing
 import traceback
 import logging
 from itertools import chain
+import warnings
 
 import numpy as np
 import pandas as pd
@@ -64,10 +65,6 @@ def _generate_sample_order(x_samples, geno_samples):
 
 
 def _gwas_worker(q, results_q, failed, abort, fit, y, X, samples, maf_t=None):
-    # Changing RuntimeWarning to errors
-    import warnings
-    warnings.filterwarnings('error')
-
     # The sample order (to add genotypes to the X data frame
     geno_index = None
     sample_order = None
@@ -123,17 +120,18 @@ def _gwas_worker(q, results_q, failed, abort, fit, y, X, samples, maf_t=None):
             X.loc[:, "SNPs"] = 2 - X.loc[:, "SNPs"]
 
         # Computing
+        results = None
         try:
-            results = fit(y[not_missing], X[not_missing])
+            with warnings.catch_warnings(record=True) as warning_list:
+                results = fit(y[not_missing], X[not_missing])
+
+                # Logging warnings
+                _log_warnings(snp.variant.name, warning_list)
 
         except StatsError as e:
             logger.warning("{}: {}".format(snp.variant.name, e))
             if snp.variant.name:
                 failed.put((snp.variant.name, str(e)))
-            continue
-
-        except RuntimeWarning as w:
-            logger.warning("{}: {}".format(snp.variant.name, w))
             continue
 
         except Exception as e:
@@ -157,7 +155,17 @@ def _gwas_worker(q, results_q, failed, abort, fit, y, X, samples, maf_t=None):
     # We put None to the queues to signal the worker is done and exit.
     q.put(None)
     results_q.put(None)
+    failed.put(None)
     logger.debug("Worker Done")
+
+
+def _log_warnings(identifier, warning_list):
+    """Logs the warnings."""
+    done = set()
+    for w in [str(_.message) for _ in warning_list]:
+        if w not in done:
+            logger.warning("{}: {}".format(identifier, w))
+            done.add(w)
 
 
 def execute_formula(phenotypes, genotypes, formula, test, test_kwargs=None,
@@ -589,13 +597,15 @@ def _execute_gwas(genotypes, modelspec, subscribers, y, X, variant_predicates,
         while done_workers != len(workers):
             done_workers += _handle_result()
 
-        # Dump the failed SNPs to disk.
-        failed.put(None)
-
-        while not failed.empty():
+        # Emptying the failed queue
+        nb_failed_done = 0
+        while nb_failed_done < cpus:
             snp = failed.get()
-            if snp:
+            if snp is None:
+                nb_failed_done += 1
+            else:
                 messages["failed"].append(snp)
+        failed.put(None)
 
         # Dump the not analyzed SNPs to disk.
         for snp in not_analyzed:
