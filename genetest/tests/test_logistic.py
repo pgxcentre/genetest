@@ -8,7 +8,9 @@
 # Commons, PO Box 1866, Mountain View, CA 94042, USA.
 
 
+import os
 import unittest
+from tempfile import TemporaryDirectory
 
 import numpy as np
 import pandas as pd
@@ -76,6 +78,9 @@ class TestStatsLogistic(unittest.TestCase):
             map_info=map_info,
         )
 
+        # Creating a temporary directory
+        cls.tmp_dir = TemporaryDirectory(prefix="genetest_test_logistic_")
+
     def setUp(self):
         # Resetting the model specification
         spec._reset()
@@ -85,6 +90,11 @@ class TestStatsLogistic(unittest.TestCase):
             np.random.permutation(self.phenotypes.data.shape[0]),
             np.random.permutation(self.phenotypes.data.shape[1])
         ]
+
+    @classmethod
+    def tearDownClass(cls):
+        # Cleaning the temporary directory
+        cls.tmp_dir.cleanup()
 
     def test_logistic_gwas(self):
         """Tests logistic regression for GWAS."""
@@ -99,11 +109,14 @@ class TestStatsLogistic(unittest.TestCase):
             test="logistic",
         )
 
+        # The output prefix
+        out_prefix = os.path.join(self.tmp_dir.name, "results")
+
         # Performing the analysis and retrieving the results
         subscriber = subscribers.ResultsMemory()
         analysis.execute(
             self.phenotypes, self.genotypes, modelspec,
-            subscribers=[subscriber],
+            subscribers=[subscriber], output_prefix=out_prefix,
         )
         gwas_results = subscriber._get_gwas_results()
 
@@ -157,6 +170,15 @@ class TestStatsLogistic(unittest.TestCase):
         self.assertAlmostEqual(-np.log10(0.0128102164253392),
                                -np.log10(results["SNPs"]["p_value"]),
                                places=4)
+
+        # There should be a file for the failed snp3
+        self.assertTrue(os.path.isfile(out_prefix + "_failed_snps.txt"))
+        with open(out_prefix + "_failed_snps.txt") as f:
+            self.assertEqual(
+                [["snp3", "Perfect separation detected, results not "
+                          "available"]],
+                [line.split("\t") for line in f.read().splitlines()],
+            )
 
     def test_logistic_snp1(self):
         """Tests logistic regression with the first SNP."""
@@ -408,11 +430,13 @@ class TestStatsLogistic(unittest.TestCase):
         )
 
         # Performing the analysis and retrieving the results
-        with self.assertRaises(StatsError):
+        with self.assertRaises(StatsError) as cm:
             analysis.execute(
                 self.phenotypes, self.genotypes, modelspec,
                 subscribers=[subscribers.ResultsMemory()],
             )
+        self.assertEqual("Perfect separation detected, results not available",
+                         str(cm.exception))
 
     def test_logistic_snp3_inter(self):
         """Tests logistic regression third SNP (raises StatsError, inter)."""
@@ -431,8 +455,10 @@ class TestStatsLogistic(unittest.TestCase):
         )
 
         # Performing the analysis and retrieving the results
-        with self.assertRaises(StatsError):
+        with self.assertRaises(StatsError) as cm:
             analysis.execute(
                 self.phenotypes, self.genotypes, modelspec,
                 subscribers=[subscribers.ResultsMemory()],
             )
+        self.assertEqual("Perfect separation detected, results not available",
+                         str(cm.exception))

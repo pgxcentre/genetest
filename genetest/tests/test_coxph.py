@@ -8,7 +8,9 @@
 # Commons, PO Box 1866, Mountain View, CA 94042, USA.
 
 
+import os
 import unittest
+from tempfile import TemporaryDirectory
 
 import numpy as np
 import pandas as pd
@@ -76,6 +78,9 @@ class TestStatsCoxPH(unittest.TestCase):
             map_info=map_info,
         )
 
+        # Creating a temporary directory for the analysis
+        cls.tmp_dir = TemporaryDirectory(prefix="genetest_test_coxph_")
+
     def setUp(self):
         # Resetting the model specification
         spec._reset()
@@ -85,6 +90,11 @@ class TestStatsCoxPH(unittest.TestCase):
             np.random.permutation(self.phenotypes.data.shape[0]),
             np.random.permutation(self.phenotypes.data.shape[1])
         ]
+
+    @classmethod
+    def tearDownClass(cls):
+        # Cleaning the temporary directory
+        cls.tmp_dir.cleanup()
 
     def test_coxph_gwas(self):
         """Tests coxph regression for GWAS."""
@@ -99,11 +109,14 @@ class TestStatsCoxPH(unittest.TestCase):
             test="coxph",
         )
 
+        # The output prefix
+        out_prefix = os.path.join(self.tmp_dir.name, "results")
+
         # Performing the analysis and retrieving the results
         subscriber = subscribers.ResultsMemory()
         analysis.execute(
             self.phenotypes, self.genotypes, modelspec,
-            subscribers=[subscriber],
+            subscribers=[subscriber], output_prefix=out_prefix,
         )
         gwas_results = subscriber._get_gwas_results()
 
@@ -172,6 +185,14 @@ class TestStatsCoxPH(unittest.TestCase):
         self.assertAlmostEqual(-0.01743867824160966,
                                results["SNPs"]["z_value"])
         self.assertAlmostEqual(0.9860866530659741, results["SNPs"]["p_value"])
+
+        # There should be a file for the failed snp4
+        self.assertTrue(os.path.isfile(out_prefix + "_failed_snps.txt"))
+        with open(out_prefix + "_failed_snps.txt") as f:
+            self.assertEqual(
+                [["snp4", "Singular matrix"]],
+                [line.split("\t") for line in f.read().splitlines()],
+            )
 
     def test_coxph_snp1(self):
         """Tests coxph regression with the first SNP."""
@@ -509,11 +530,12 @@ class TestStatsCoxPH(unittest.TestCase):
         )
 
         # Performing the analysis and retrieving the results
-        with self.assertRaises(StatsError):
+        with self.assertRaises(StatsError) as cm:
             analysis.execute(
                 self.phenotypes, self.genotypes, modelspec,
                 subscribers=[subscribers.ResultsMemory()],
             )
+        self.assertEqual("Singular matrix", str(cm.exception))
 
     def test_coxph_snp4_inter(self):
         """Tests coxph regression with the third SNP (interaction)."""
@@ -532,8 +554,9 @@ class TestStatsCoxPH(unittest.TestCase):
         )
 
         # Performing the analysis and retrieving the results
-        with self.assertRaises(StatsError):
+        with self.assertRaises(StatsError) as cm:
             analysis.execute(
                 self.phenotypes, self.genotypes, modelspec,
                 subscribers=[subscribers.ResultsMemory()],
             )
+        self.assertEqual("Singular matrix", str(cm.exception))
