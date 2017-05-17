@@ -27,6 +27,9 @@ class ModelSpecSemantics(object):
     def SNPs(self, ast):
         return SNPs
 
+    def labelled_outcome_group(self, ast):
+        return {tree["key"]: tree["name"] for tree in ast["tags"]}
+
     def interaction(self, ast):
         return interaction(*ast["interaction"], name=ast["as_"])
 

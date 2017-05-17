@@ -1,7 +1,6 @@
 """
 """
 
-
 # This file is part of genetest.
 #
 # This work is licensed under the Creative Commons Attribution-NonCommercial
@@ -10,21 +9,26 @@
 # Commons, PO Box 1866, Mountain View, CA 94042, USA.
 
 
-from configparser import ConfigParser
+import yaml
 
-from .phenotypes import available_formats as pheno_formats, \
-                        format_map as pheno_map
-from .statistics import available_models as stats_models, model_map
+from geneparse import parsers as geno_map
+
+from .statistics import available_models as available_tests
+from .phenotypes import (
+    available_formats as pheno_formats,
+    format_map as pheno_map
+)
 
 
 __copyright__ = "Copyright 2016, Beaulieu-Saucier Pharmacogenomics Centre"
 __license__ = "CC BY-NC 4.0"
 
 
-__all__ = ["AnalysisConfiguration", "create_skeleton"]
+__all__ = ["AnalysisConfiguration"]
 
 
 class AnalysisConfiguration(object):
+
     def __init__(self, filename):
         """Creates an instance of the class.
 
@@ -33,13 +37,12 @@ class AnalysisConfiguration(object):
 
         """
         # Reading the configuration file
-        self._configuration = ConfigParser()
         with open(filename, "r") as f:
-            self._configuration.read_file(f)
+            self._configuration = yaml.load(f)
 
         # Getting the required and available sections
-        required_sections = {"Genotypes", "Phenotypes", "Statistics"}
-        available_sections = set(self._configuration.sections())
+        required_sections = {"genotypes", "phenotypes", "model"}
+        available_sections = self._configuration.keys()
 
         # Checking if there are missing required sections
         missing_sections = required_sections - available_sections
@@ -65,55 +68,38 @@ class AnalysisConfiguration(object):
         # Configuring the Phenotypes component
         self.configure_phenotypes()
 
-        # Configuring the Statistics component
-        self.configure_statistics()
+        # Configuring the model
+        self.configure_model()
 
     def configure_genotypes(self):
         """Configures the genotypes component."""
         # Getting the genotype section of the configuration file
-        section = self._configuration["Genotypes"]
+        section = self._configuration["genotypes"].copy()
 
         # Getting the format of the genotypes
         if "format" not in section:
-            raise ValueError("In the configuration file, the 'Genotypes' "
-                             "section should contain the 'format' option "
-                             "specifying the format of the genotypes "
-                             "container.")
+            raise ValueError(
+                "In the configuration file, the 'genotypes' section should "
+                "contain the 'format' option specifying the format of the "
+                "genotypes container."
+            )
         geno_format = section.pop("format")
 
         # Checking if the format is valid
-        if geno_format not in geno_formats:
-            raise ValueError("Invalid 'format' for the 'Genotypes' section of "
-                             "the configuration file.")
+        if geno_format not in geno_map:
+            raise ValueError(
+                "Invalid 'format' ({}) for the 'genotypes' section of the "
+                "configuration file.".format(geno_format)
+            )
 
         # Getting the object to gather required and optional values
         self._geno_container = geno_map[geno_format]
 
-        # Creating the dictionary that will contain all the arguments
-        self._geno_arguments = {}
+        # We want to get the arguments for the genotype container
         self._geno_format = geno_format
+        self._geno_arguments = self.retrieve_arguments(section)
 
-        # Gathering all the required arguments
-        self.retrieve_required_arguments(
-            names=self._geno_container.get_required_arguments(),
-            args=self._geno_arguments,
-            args_type=self._geno_container.get_arguments_type(),
-            config=section,
-            section="Genotypes",
-        )
-
-        # Getting the optional arguments
-        self.retrieve_optional_arguments(
-            optional_args=self._geno_container.get_optional_arguments(),
-            args_type=self._geno_container.get_arguments_type(),
-            current_args=self._geno_arguments,
-            config=section,
-        )
-
-        # Checking for the invalid sections
-        self.check_invalid_options(config=section, section="Genotypes")
-
-    def get_genotypes_arguments(self):
+    def get_genotypes_args(self):
         """Returns the genotypes arguments."""
         return self._geno_arguments
 
@@ -121,56 +107,39 @@ class AnalysisConfiguration(object):
         """Returns the genotypes format."""
         return self._geno_format
 
-    def get_genotypes_container(self):
+    def get_genotypes(self):
         """Returns the genotypes container."""
-        return self._geno_container
+        return self._geno_container(**self._geno_arguments)
 
     def configure_phenotypes(self):
         """Configures the phenotypes component."""
         # Getting the phenotype section of the configuration file
-        section = self._configuration["Phenotypes"]
+        section = self._configuration["phenotypes"].copy()
 
         # Getting the format of the phenotypes
         if "format" not in section:
-            raise ValueError("In the configuration file, the 'Phenotypes' "
-                             "section should contain the 'format' option "
-                             "specifying the format of the phenotypes "
-                             "container.")
+            raise ValueError(
+                "In the configuration file, the 'phenotypes' section should "
+                "contain the 'format' option specifying the format of the "
+                "phenotypes container."
+            )
         pheno_format = section.pop("format")
 
         # Checking if the format is valid
         if pheno_format not in pheno_formats:
-            raise ValueError("Invalid 'format' for the 'Phenotypes' section "
-                             "of the configuration file.")
+            raise ValueError(
+                "Invalid 'format' ({}) for the 'phenotypes' section of the "
+                "configuration file.".format(pheno_format)
+            )
 
         # Getting the object to gather required and optional values
         self._pheno_container = pheno_map[pheno_format]
 
-        # Creating the dictionary that will contain all the arguments
-        self._pheno_arguments = {}
+        # We want to get the arguments for the genotype container
         self._pheno_format = pheno_format
+        self._pheno_arguments = self.retrieve_arguments(section)
 
-        # Gathering all the required arguments
-        self.retrieve_required_arguments(
-            names=self._pheno_container.get_required_arguments(),
-            args=self._pheno_arguments,
-            args_type=self._pheno_container.get_arguments_type(),
-            config=section,
-            section="Phenotypes",
-        )
-
-        # Getting the optional arguments
-        self.retrieve_optional_arguments(
-            optional_args=self._pheno_container.get_optional_arguments(),
-            args_type=self._pheno_container.get_arguments_type(),
-            current_args=self._pheno_arguments,
-            config=section,
-        )
-
-        # Checking for the invalid sections
-        self.check_invalid_options(config=section, section="Phenotypes")
-
-    def get_phenotypes_arguments(self):
+    def get_phenotypes_args(self):
         """Returns the phenotypes arguments."""
         return self._pheno_arguments
 
@@ -178,233 +147,98 @@ class AnalysisConfiguration(object):
         """Returns the phenotypes format."""
         return self._pheno_format
 
-    def get_phenotypes_container(self):
+    def get_phenotypes(self):
         """Returns the phenotypes container."""
-        return self._pheno_container
+        return self._pheno_container(**self._pheno_arguments)
 
-    def configure_statistics(self):
+    def configure_model(self):
         """Configures the statistics component."""
-        # Getting the statistics section of the configuration file
-        section = self._configuration["Statistics"]
+        # Getting the model section of the configuration file
+        section = self._configuration["model"].copy()
 
-        # Getting the statistical model
-        if "model" not in section:
-            raise ValueError("In the configuration file, the 'Statistics' "
-                             "section should contain the 'model' option "
-                             "specifying the statistical model required in "
-                             "the analysis.")
-        statistical_model = section.pop("model")
+        # Getting the required test
+        if "test" not in section:
+            raise ValueError(
+                "In the configuration file, the 'model' section should "
+                "contain the 'test' option specifying the statistical test "
+                "to perform."
+            )
+        self._model_test = section.pop("test")
 
-        # Checking if the format is valid
-        if statistical_model not in stats_models:
-            raise ValueError("Invalid 'model' for the 'Statistics' section "
-                             "of the configuration file.")
-
-        # Getting the object to gather required and optional values
-        self._stats_container = model_map[statistical_model]
-
-        # Creating the dictionary that will contain all the arguments
-        self._stats_arguments = {}
-        self._stats_model = statistical_model
-
-        # Gathering all the required arguments
-        self.retrieve_required_arguments(
-            names=self._stats_container.get_required_arguments(),
-            args=self._stats_arguments,
-            args_type=self._stats_container.get_arguments_type(),
-            config=section,
-            section="Statistics",
-        )
-
-        # Getting the optional arguments
-        self.retrieve_optional_arguments(
-            optional_args=self._stats_container.get_optional_arguments(),
-            args_type=self._stats_container.get_arguments_type(),
-            current_args=self._stats_arguments,
-            config=section,
-        )
-
-        # Checking for the invalid sections
-        self.check_invalid_options(config=section, section="Statistics")
-
-    def get_statistics_arguments(self):
-        """Returns the statistics arguments."""
-        return self._stats_arguments
-
-    def get_statistics_model(self):
-        """Returns the statistics model."""
-        return self._stats_model
-
-    def get_statistics_container(self):
-        """Returns the statistics container."""
-        return self._stats_container
-
-    @staticmethod
-    def retrieve_required_arguments(names, args, args_type, config, section):
-        """Retrieves required arguments from a configuration section.
-
-        Args:
-            names (tuple): An tuple containing the names of the required
-                           arguments to fetch.
-            args (dict): The current arguments.
-            args_type (dict): A dictionary containing the type of each
-                              arguments.
-            config (dict): The configuration section in which to retrieve the
-                           required arguments.
-            section (str): The name of the configuration section.
-
-        """
-        for name in names:
-            if name not in config:
-                raise ValueError(
-                    "The {} component requires the '{}' parameter in the "
-                    "configuration file.".format(section, name)
-                )
-
-            # Saving the argument
-            args[name] = AnalysisConfiguration.set_type_to_argument(
-                arg=config.pop(name),
-                arg_type=args_type[name],
+        # Checking the test is valid
+        if self._model_test not in available_tests:
+            raise ValueError(
+                "Invalid 'test' for the 'model' section of the configuration "
+                "file."
             )
 
+        # Getting the formula
+        if "formula" not in section:
+            raise ValueError(
+                "In the configuration file, the 'model' section should "
+                "contain the 'formula' option specifying the statistical "
+                "model to perform."
+            )
+        self._model_formula = section.pop("formula")
+
+        # Getting the options
+        self._model_arguments = self.retrieve_options(section)
+
+    def get_model_args(self):
+        """Returns the statistics arguments."""
+        return self._model_arguments
+
+    def get_model_test(self):
+        """Returns the statistics model."""
+        return self._model_test
+
+    def get_model_formula(self):
+        """Returns the model formula."""
+        return self._model_formula
+
     @staticmethod
-    def retrieve_optional_arguments(optional_args, args_type, current_args,
-                                    config):
-        """Retrieves the optional arguments (with default valule).
+    def retrieve_arguments(config):
+        """Retrieves arguments from the configuration.
 
         Args:
-            optional_args (dict): The available optional arguments with their
-                                  default value(s).
-            args_type (dict): A dictionary containing the type of each
-                              arguments.
-            current_args (dict): The current arguments.
-            config (dict): The configuration in which the values are to be
-                           gathered (if present).
-
-        """
-        for arg_name, arg_value in optional_args.items():
-            if arg_name in config:
-                arg = AnalysisConfiguration.set_type_to_argument(
-                    arg=config.pop(arg_name),
-                    arg_type=args_type[arg_name],
-                )
-                current_args[arg_name] = arg
-            else:
-                current_args[arg_name] = arg_value
-
-    @staticmethod
-    def set_type_to_argument(arg, arg_type):
-        """Sets the type to the argument.
-
-        Args:
-            arg (str): The argument.
-            arg_type (type): The type of the argument.
+            config (configparser.SectionProxy): The section's configuration.
 
         Returns:
-            type: The argument casted to the required type.
-
-        Note
-        ----
-            If the argument type is a list, the first (an only) element of that
-            list is the type. The argument is split by coma and then each
-            element is casted to the required type.
+            dict: The arguments extracted from this section's configuration.
 
         """
-        if isinstance(arg_type, list):
-            return [arg_type[0](v) for v in arg.split(",")]
+        # The final arguments
+        arguments = AnalysisConfiguration.retrieve_options(config)
 
-        elif arg_type is bool:
-            if arg.upper() in {"F", "FALSE", "NO", "N"}:
-                return False
-            elif arg.upper() in {"T", "TRUE", "YES", "Y"}:
-                return True
-            else:
-                raise ValueError(
-                    "'{}' is not a valid boolean (True/False)".format(arg)
-                )
+        # Then, we gather the rest of the keys
+        for key in config:
+            arguments[key] = config[key]
 
-        elif arg_type is str:
-            # We want to catch the None
-            if arg.upper() == "NONE":
-                return None
-
-            # We want to catch the \t
-            if arg == r"\t":
-                return "\t"
-
-        return arg_type(arg)
+        return arguments
 
     @staticmethod
-    def check_invalid_options(config, section):
-        """Checks if there are invalid options left in a configuration section.
+    def retrieve_options(config):
+        """Retrieves options from the configuration.
+
+        Args:
+            config (configparser.SectionProxy): The section's configuration.
+
+        Returns:
+            dict: The optional arguments.
 
         Note
-        ----
-            An invalid option is an option that is left after all options were
-            parsed (both required and optional).
+        ====
+            Only the restricted 'options' key is parsed, and has the following
+            format: ``keyword=type:value`` (*e.g.* ``sep=str:,``). If there are
+            multiple keyword/values, they are separated by a single coma.
 
         """
-        if len(config) > 0:
-            raise ValueError(
-                "Invalid options found in the '{}' section of the "
-                "configuration file: {}.".format(
-                    section,
-                    ", ".join(sorted(config.keys())),
-                )
-            )
+        options = {}
 
+        if "options" in config:
+            for k, v in config.pop("options").items():
+                if v == r"\t":
+                    v = "\t"
+                options[k] = v
 
-def create_skeleton():
-    """Creates the skeleton of a configuration file INI."""
-    # The phenotypes
-    _pretty_print_section(
-        section_name="Phenotypes",
-        container_map=pheno_map,
-        container_type="format",
-    )
-
-    # The genotypes
-    _pretty_print_section(
-        section_name="Genotypes",
-        container_map=geno_map,
-        container_type="format",
-    )
-
-    # The statistical model
-    _pretty_print_section(
-        section_name="Statistics",
-        container_map=model_map,
-        container_type="model",
-    )
-
-
-def _pretty_print_section(section_name, container_map, container_type):
-    """Pretty prints a section of the configuration file.
-
-    Args:
-        section_name (str): The name of the section.
-        container_map (dict): A dictionary containing all containers for this
-                              configuration section.
-        container_type (str): The type of container (either 'format' for
-                              genotypes and phenotypes, or 'model' for
-                              statistics).
-
-    """
-    print("[{}]".format(section_name))
-    for pheno in sorted(container_map.keys()):
-        print()
-        print("#" * (11 + len(pheno) + len(container_type)))
-        print("# The '{}' {} #".format(pheno, container_type))
-        print("#" * (11 + len(pheno) + len(container_type)))
-        print("{}='{}'".format(container_type, pheno))
-        container = container_map[pheno]
-
-        # Printing the required arguments
-        for arg in container.get_required_arguments():
-            print("{}=".format(arg))
-
-        # Printing the option arguments
-        optional = container.get_optional_arguments()
-        for arg in sorted(optional.keys()):
-            print("# {}={}".format(arg, repr(optional[arg])))
-    print("\n")
+        return options

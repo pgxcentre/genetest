@@ -89,9 +89,6 @@ class TestText(unittest.TestCase):
         self.assertEqual(9, observed_pheno.get_nb_samples())
         self.assertFalse(observed_pheno.is_repeated())
 
-        with self.assertRaises(ValueError):
-            observed_pheno.get_original_sample_names()
-
     def test_subset_phenotypes(self):
         """Tests asking for a subset of phenotypes."""
         container = TextPhenotypes(**self.parameters)

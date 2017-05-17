@@ -15,46 +15,21 @@ import time
 import queue
 import itertools
 import multiprocessing
+import traceback
 import logging
 from itertools import chain
-
-from .modelspec import SNPs, ModelSpec, PheWAS
-from .modelspec.grammar import parse_formula
-from .statistics import model_map
-from .statistics.descriptive import get_maf
-from . import subscribers as subscribers_module
+import warnings
 
 import numpy as np
 import pandas as pd
 
+from .statistics.core import StatsError
+from .statistics.descriptive import get_maf
+from . import subscribers as subscribers_module
+from .modelspec import SNPs, PheWAS, modelspec_from_formula
+
 
 logger = logging.getLogger(__name__)
-_SUBSCRIBER_DEPRECATED = ("DeprecationWarning: Subscribers are now in the "
-                          "'genetest.subscribers' module.")
-
-
-class Subscriber(subscribers_module.Subscriber):
-    def __init__(self, *args, **kwargs):
-        logger.warning(_SUBSCRIBER_DEPRECATED)
-        super().__init__(*args, **kwargs)
-
-
-class ResultsMemory(subscribers_module.ResultsMemory):
-    def __init__(self, *args, **kwargs):
-        logger.warning(_SUBSCRIBER_DEPRECATED)
-        super().__init__(*args, **kwargs)
-
-
-class Print(subscribers_module.Print):
-    def __init__(self, *args, **kwargs):
-        logger.warning(_SUBSCRIBER_DEPRECATED)
-        super().__init__(*args, **kwargs)
-
-
-class RowWriter(subscribers_module.RowWriter):
-    def __init__(self, *args, **kwargs):
-        logger.warning(_SUBSCRIBER_DEPRECATED)
-        super().__init__(*args, **kwargs)
 
 
 def _missing(y, X):
@@ -89,7 +64,7 @@ def _generate_sample_order(x_samples, geno_samples):
     return geno_order, x_order
 
 
-def _gwas_worker(q, results_q, failed, abort, fit, y, X, samples):
+def _gwas_worker(q, results_q, failed, abort, fit, y, X, samples, maf_t=None):
     # The sample order (to add genotypes to the X data frame
     geno_index = None
     sample_order = None
@@ -97,14 +72,16 @@ def _gwas_worker(q, results_q, failed, abort, fit, y, X, samples):
     # Get a SNP.
     while not abort.is_set():
         # Get a SNP from the Queue.
-        snp = q.get()
+        try:
+            snp = q.get(timeout=1)
+        except queue.Empty:
+            # We waited for 1 seconds, just in case abort was set and no more
+            # SNP is getting pushed in the Queue
+            continue
 
         # This is a check for a sentinel.
         if snp is None:
-            q.put(None)
-            results_q.put(None)
-            logger.debug("Worker Done")
-            return
+            break
 
         # Compute union between indices if not already done
         if sample_order is None or geno_index is None:
@@ -113,10 +90,10 @@ def _gwas_worker(q, results_q, failed, abort, fit, y, X, samples):
 
             # Do we have an intersect
             if geno_index.shape[0] == 0:
+                logger.critical("Genotype and phenotype data have "
+                                "non-overlapping indices.")
                 abort.set()
-                raise ValueError(
-                    "Genotype and phenotype data have non-overlapping indices."
-                )
+                continue
 
         # Set all to missing genotypes
         X.loc[:, "SNPs"] = np.nan
@@ -132,16 +109,36 @@ def _gwas_worker(q, results_q, failed, abort, fit, y, X, samples):
             minor=snp.coded,
             major=snp.reference,
         )
+
+        # Is the MAF below the threshold?
+        if maf_t is not None and maf < maf_t:
+            failed.put((snp.variant.name, "MAF: {} < {}".format(maf, maf_t)))
+            continue
+
+        # Flipping if required
         if flip:
             X.loc[:, "SNPs"] = 2 - X.loc[:, "SNPs"]
 
         # Computing
+        results = None
         try:
-            results = fit(y[not_missing], X[not_missing])
-        except Exception as e:
-            logger.debug("Exception raised during fitting:", e)
+            with warnings.catch_warnings(record=True) as warning_list:
+                results = fit(y[not_missing], X[not_missing])
+
+                # Logging warnings
+                _log_warnings(snp.variant.name, warning_list)
+
+        except StatsError as e:
+            logger.warning("{}: {}".format(snp.variant.name, e))
             if snp.variant.name:
-                failed.put(snp.variant.name)
+                failed.put((snp.variant.name, str(e)))
+            continue
+
+        except Exception as e:
+            logger.critical("{} was raised in worker\n{}".format(
+                type(e).__name__, traceback.format_exc(),
+            ))
+            abort.set()
             continue
 
         # Update the results for the SNP with metadata.
@@ -153,38 +150,53 @@ def _gwas_worker(q, results_q, failed, abort, fit, y, X, samples):
 
         results_q.put(results)
 
+    # The main loop was exited either because of an abort or because the
+    # sentinel was encountered.
+    # We put None to the queues to signal the worker is done and exit.
+    q.put(None)
+    results_q.put(None)
+    failed.put(None)
+    logger.debug("Worker Done")
+
+
+def _log_warnings(identifier, warning_list):
+    """Logs the warnings."""
+    done = set()
+    for w in [str(_.message) for _ in warning_list]:
+        if w not in done:
+            logger.warning("{}: {}".format(identifier, w))
+            done.add(w)
+
 
 def execute_formula(phenotypes, genotypes, formula, test, test_kwargs=None,
                     subscribers=None, variant_predicates=None,
-                    output_prefix=None):
+                    output_prefix=None, maf_t=None, cpus=None):
 
-    model = parse_formula(formula)
+    # Getting the model specification and the subgroups (if any)
+    modelspec, subgroups = modelspec_from_formula(formula, test, test_kwargs)
 
-    # Handle the statistical test.
-    if test_kwargs is None:
-        test_kwargs = {}
-
-    if hasattr(test, "__call__"):
-        model["test"] = lambda: test(**test_kwargs)
-    else:
-        model["test"] = lambda: model_map[test](**test_kwargs)
-
-    # Handle the conditions and stratification.
-    conditions = model.pop("conditions")
-    if conditions is not None:
-        model["stratify_by"] = [i["name"] for i in conditions]
-        subgroups = [i["level"] for i in conditions]
-    else:
-        subgroups = None
-
-    modelspec = ModelSpec(**model)
-
-    return execute(phenotypes, genotypes, modelspec, subscribers,
-                   variant_predicates, output_prefix, subgroups)
+    # Executing
+    execute(phenotypes, genotypes, modelspec, subscribers, variant_predicates,
+            output_prefix, subgroups, maf_t, cpus)
 
 
 def execute(phenotypes, genotypes, modelspec, subscribers=None,
-            variant_predicates=None, output_prefix=None, subgroups=None):
+            variant_predicates=None, output_prefix=None, subgroups=None,
+            maf_t=None, cpus=None):
+    """Execute an analysis.
+
+    Args:
+        phenotypes (): The phenotypes container.
+        genotypes (): The genotypes container.
+        modelspec (genetest.modelspec.ModelSpec): The model specification.
+        subscribers (list): A list of subscribers.
+        variant_predicates (list): A list of variant predicates.
+        output_prefix (str): The output prefix.
+        subgroups (list): The subgroup analysis.
+        maf_t (float): The MAF threshold.
+        cpus (int): The number of CPUs to perform the analysis.
+
+    """
     if subscribers is None:
         subscribers = [subscribers_module.Print()]
 
@@ -199,7 +211,8 @@ def execute(phenotypes, genotypes, modelspec, subscribers=None,
     # preparation steps are pretty different.
     if isinstance(modelspec.outcome, PheWAS):
         return _execute_phewas(phenotypes, genotypes, modelspec, subscribers,
-                               variant_predicates, output_prefix, subgroups)
+                               variant_predicates, output_prefix, subgroups,
+                               cpus)
 
     data = modelspec.create_data_matrix(phenotypes, genotypes)
 
@@ -231,10 +244,11 @@ def execute(phenotypes, genotypes, modelspec, subscribers=None,
 
     if modelspec.stratify_by is not None:
         _execute_stratified(genotypes, modelspec, subscribers, y, X,
-                            variant_predicates, subgroups, messages)
+                            variant_predicates, subgroups, messages, maf_t,
+                            cpus)
     elif SNPs in modelspec.predictors:
         _execute_gwas(genotypes, modelspec, subscribers, y, X,
-                      variant_predicates, messages)
+                      variant_predicates, messages, maf_t, cpus)
     else:
         _execute_simple(modelspec, subscribers, y, X, variant_predicates,
                         messages)
@@ -246,7 +260,7 @@ def execute(phenotypes, genotypes, modelspec, subscribers=None,
     if messages["failed"]:
         with open(prefix + "failed_snps.txt", "w") as f:
             for failed_snp in messages["failed"]:
-                f.write("{}\n".format(failed_snp))
+                f.write("{}\t{}\n".format(*failed_snp))
 
     if messages["skipped"]:
         with open(prefix + "not_analyzed_snps.txt", "w") as f:
@@ -255,7 +269,7 @@ def execute(phenotypes, genotypes, modelspec, subscribers=None,
 
 
 def _execute_phewas(phenotypes, genotypes, modelspec, subscribers,
-                    variant_predicates, output_prefix, subgroups):
+                    variant_predicates, output_prefix, subgroups, cpus=None):
     # Check that invalid options were not set.
     if subgroups:
         raise NotImplementedError(
@@ -276,8 +290,11 @@ def _execute_phewas(phenotypes, genotypes, modelspec, subscribers,
     phen_queue = multiprocessing.Queue()
     abort = multiprocessing.Event()
 
+    # The number if CPUs
+    if cpus is None:
+        cpus = multiprocessing.cpu_count() - 1
+
     # Create workers.
-    cpus = 2
     predictors = modelspec.predictors
     workers = []
     fit = modelspec.test().fit
@@ -360,7 +377,8 @@ def _phewas_worker(data, predictors, abort, fit, phen_queue, results_queue):
 
 
 def _execute_stratified(genotypes, modelspec, subscribers, y, X,
-                        variant_predicates, subgroups, messages):
+                        variant_predicates, subgroups, messages, maf_t=None,
+                        cpus=None):
     # Levels.
     assert len(modelspec.stratify_by) == len(subgroups)
 
@@ -407,6 +425,10 @@ def _execute_stratified(genotypes, modelspec, subscribers, y, X,
         # Also drop the columns from the stratification variables.
         this_x = this_x.drop([i.id for i in modelspec.stratify_by], axis=1)
 
+        logger.info("Analysing subgroup {}".format(
+            ";".join("{}:{}".format(*_) for _ in sorted(subset_info.items()))
+        ))
+
         # Make sure everything went ok.
         if this_x.shape[0] == 0:
             raise ValueError(
@@ -430,12 +452,12 @@ def _execute_stratified(genotypes, modelspec, subscribers, y, X,
         if gwas_mode:
             _execute_gwas(
                 genotypes, modelspec, subscribers, y.loc[idx, :], this_x,
-                variant_predicates, messages
+                variant_predicates, messages, maf_t, cpus,
             )
         else:
             _execute_simple(
                 modelspec, subscribers, y.loc[idx, :], this_x,
-                variant_predicates, messages
+                variant_predicates, messages,
             )
 
 
@@ -487,8 +509,9 @@ def _execute_simple(modelspec, subscribers, y, X, variant_predicates,
 
 
 def _execute_gwas(genotypes, modelspec, subscribers, y, X, variant_predicates,
-                  messages):
-        cpus = multiprocessing.cpu_count() - 1
+                  messages, maf_t=None, cpus=None):
+        if cpus is None:
+            cpus = multiprocessing.cpu_count() - 1
 
         # Create queues for failing SNPs and the consumer queue.
         failed = multiprocessing.Queue()
@@ -506,7 +529,8 @@ def _execute_gwas(genotypes, modelspec, subscribers, y, X, variant_predicates,
 
             worker = multiprocessing.Process(
                 target=_gwas_worker,
-                args=(q, results, failed, abort, fit, this_y, this_X, samples)
+                args=(q, results, failed, abort, fit, this_y, this_X, samples,
+                      maf_t)
             )
 
             workers.append(worker)
@@ -548,8 +572,8 @@ def _execute_gwas(genotypes, modelspec, subscribers, y, X, variant_predicates,
         for snp in genotypes.iter_genotypes():
             # Pass through the list of variant filtering predicates.
             try:
-                if not all([f(snp.genotypes) for f in variant_predicates]):
-                    not_analyzed.append(snp.marker)
+                if not all([f(snp) for f in variant_predicates]):
+                    not_analyzed.append(snp.variant.name)
                     continue
 
             except StopIteration:
@@ -559,7 +583,10 @@ def _execute_gwas(genotypes, modelspec, subscribers, y, X, variant_predicates,
 
             # Handle results at the same time to avoid occupying too much
             # memory as the results queue gets filled.
+            if abort.is_set():
+                raise RuntimeError("Exception raised in worker processes")
             val = _handle_result()
+
             assert val == 0
 
         # Signal that there are no more SNPs to add.
@@ -570,13 +597,15 @@ def _execute_gwas(genotypes, modelspec, subscribers, y, X, variant_predicates,
         while done_workers != len(workers):
             done_workers += _handle_result()
 
-        # Dump the failed SNPs to disk.
-        failed.put(None)
-
-        while not failed.empty():
+        # Emptying the failed queue
+        nb_failed_done = 0
+        while nb_failed_done < cpus:
             snp = failed.get()
-            if snp:
+            if snp is None:
+                nb_failed_done += 1
+            else:
                 messages["failed"].append(snp)
+        failed.put(None)
 
         # Dump the not analyzed SNPs to disk.
         for snp in not_analyzed:
@@ -595,4 +624,4 @@ def _execute_gwas(genotypes, modelspec, subscribers, y, X, variant_predicates,
         for worker in workers:
             worker.join()
 
-        logger.info("Analysis complete.")
+        logger.info("Analysis completed")

@@ -8,8 +8,8 @@
 # Commons, PO Box 1866, Mountain View, CA 94042, USA.
 
 
+import os
 import unittest
-from os import path
 from tempfile import TemporaryDirectory
 
 import numpy as np
@@ -57,10 +57,10 @@ class TestStatsLinear(unittest.TestCase):
         )
 
         # Creating a temporary directory
-        cls.tmp_dir = TemporaryDirectory(prefix="genetest_")
+        cls.tmp_dir = TemporaryDirectory(prefix="genetest_test_linear_")
 
         # The plink file prefix
-        cls.plink_prefix = path.join(cls.tmp_dir.name, "input")
+        cls.plink_prefix = os.path.join(cls.tmp_dir.name, "input")
 
         # Permuting the sample to add a bit of randomness
         new_sample_order = np.random.permutation(cls.data.index)
@@ -114,11 +114,14 @@ class TestStatsLinear(unittest.TestCase):
             test="linear",
         )
 
+        # The output prefix
+        out_prefix = os.path.join(self.tmp_dir.name, "results")
+
         # Performing the analysis and retrieving the results
         subscriber = subscribers.ResultsMemory()
         analysis.execute(
             self.phenotypes, self.genotypes, modelspec,
-            subscribers=[subscriber],
+            subscribers=[subscriber], output_prefix=out_prefix,
         )
         gwas_results = subscriber._get_gwas_results()
 
@@ -222,6 +225,14 @@ class TestStatsLinear(unittest.TestCase):
             1 - (n - 1) * (1 - 0.1205341542723)/((n - 1) - p),
             results["MODEL"]["r_squared_adj"],
         )
+
+        # There should be a file for the failed snp5
+        self.assertTrue(os.path.isfile(out_prefix + "_failed_snps.txt"))
+        with open(out_prefix + "_failed_snps.txt") as f:
+            self.assertEqual(
+                [["snp5", "condition number is large, inf"]],
+                [line.split("\t") for line in f.read().splitlines()],
+            )
 
     def test_linear_snp1(self):
         """Tests linear regression with the first SNP."""

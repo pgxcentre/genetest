@@ -2,6 +2,13 @@
 Utilities to build statistical models.
 """
 
+# This file is part of genetest.
+#
+# This work is licensed under the Creative Commons Attribution-NonCommercial
+# 4.0 International License. To view a copy of this license, visit
+# http://creativecommons.org/licenses/by-nc/4.0/ or send a letter to Creative
+# Commons, PO Box 1866, Mountain View, CA 94042, USA.
+
 
 import re
 import uuid
@@ -499,34 +506,6 @@ class ModelSpec(object):
                 keep_cols.append(col.id)
 
         return keep_cols
-
-
-class VariantPredicate(object):
-    def __init__(self):
-        """Initialize a callable that will serve as a variant filtering
-        function.
-
-        The predicate should return True if the variant is to be analyzed and
-        False otherwise.
-
-        Variant predicates can also raise StopIteration to stop pushing SNPs.
-
-        """
-        pass
-
-
-class MAFFilter(VariantPredicate):
-    def __init__(self, maf):
-        """Filters variants with a MAF under the specified threshold."""
-        self.maf = maf
-
-    def __call__(self, snp):
-        # Compute the MAF.
-        g = snp.genotypes.values
-        f = np.sum(g) / (2 * g.shape[0])
-        maf = min(f, 1 - f)
-
-        return maf >= self.maf
 
 
 @transformation_handler("LOG10")

@@ -91,18 +91,6 @@ class TextPhenotypes(PhenotypesContainer):
 
         return self._phenotypes.loc[:, list(li)]
 
-    def get_original_sample_names(self):
-        """Returns the original samples (different if repeated measurements).
-
-        Returns:
-            pandas.DataFrame: The original sample names.
-
-        """
-        if self._repeated:
-            return self._ori_sample_names
-        raise ValueError("The phenotypes doesn't contain repeated "
-                         "measurements")
-
     def get_nb_samples(self):
         """Returns the number of samples.
 

@@ -28,14 +28,6 @@ genetest.tests.test_descriptive_stats module
     :undoc-members:
     :show-inheritance:
 
-genetest.tests.test_genotypes module
--------------------------------------
-
-.. automodule:: genetest.tests.test_genotypes
-    :members:
-    :undoc-members:
-    :show-inheritance:
-
 genetest.tests.test_linear module
 ----------------------------------
 
