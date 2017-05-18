@@ -2,6 +2,7 @@
 Semantics for the grako parser.
 """
 
+import os
 import logging
 import warnings
 
@@ -16,7 +17,6 @@ try:
     from .parser import ModelSpecParser
     PARSER_AVAIL = True
 except ImportError as e:
-    logger.warning("No parser available: " + str(e))
     PARSER_AVAIL = False
 
 
@@ -67,7 +67,29 @@ def parse_modelspec(s):
 def parse_formula(f):
     """Use the modelspec grammar to parse a formula for the modelspec."""
     if not PARSER_AVAIL:
-        return
+        raise RuntimeError("Impossible to parse the grammar. Is the 'grako' "
+                           "module installed?")
 
     parser = ModelSpecParser(parseinfo=False)
-    return parser.parse(f, rule_name="model", semantics=ModelSpecSemantics())
+
+    try:
+        return parser.parse(
+            f, rule_name="model", semantics=ModelSpecSemantics(),
+        )
+
+    except:
+        msg = ("Something went wrong while parsing the grammar. This might be "
+               "because you are using a different 'grako' version than the "
+               "one used to compile the grammar. Please perform the following "
+               "command:\n\n{command}")
+
+        # Getting the path of the files
+        basedir = os.path.abspath(os.path.dirname(__file__))
+
+        # The command to build the parser
+        command = [
+            "python", "-m", "grako", os.path.join(basedir, "modelspec.ebnf"),
+            "-o", os.path.join(basedir, "parser.py"),
+        ]
+
+        raise RuntimeError(msg.format(command=" ".join(command)))
