@@ -16,7 +16,7 @@ from setuptools import setup, find_packages
 
 MAJOR = 0
 MINOR = 2
-MICRO = 1
+MICRO = 2
 VERSION = "{0}.{1}.{2}".format(MAJOR, MINOR, MICRO)
 
 
@@ -103,7 +103,8 @@ def setup_package():
                           "geneparse >= 0.1.0", "pyyaml >= 3.12"],
         packages=find_packages(),
         package_data={"genetest.tests": ["data/genotypes/*",
-                                         "data/statistics/*"]},
+                                         "data/statistics/*"],
+                      "genetest.modelspec": ["modelspec.ebnf"]},
         classifiers=["Development Status :: 4 - Beta",
                      "Intended Audience :: Science/Research",
                      "License :: Free for non-commercial use",
