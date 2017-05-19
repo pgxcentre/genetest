@@ -275,6 +275,9 @@ class ModelSpec(object):
         # Hence, it is more efficient to cache it than to request it.
         self.variant_metadata = {}
 
+        # Is there GWAS interaction involved?
+        self.has_gwas_interaction = False
+
     def _clean_test(self, test):
         """Returns a factory function to create instances of a statistical
         model.
@@ -458,9 +461,26 @@ class ModelSpec(object):
             f = transformation_handler.handlers[action]
             res = f(df, source, *params)
 
+            # We have a special GWAS interaction transformation, that doesn't
+            # modify the data, but creates a list of "columns" to multiply with
+            # the SNPs column
+            if action == "GWAS_INTERACTION":
+                # Setting the flag for GWAS interaction
+                self.has_gwas_interaction = True
+
+                # Creating a final dictionary where the keys are the output
+                # column names (after the multiplication) and the values are
+                # the columns to multiply
+                self.gwas_interaction = {}
+                for key, cols in res.items():
+                    new_key = "{}{}".format(
+                        target.id, key if key == "" else ":" + key,
+                    )
+                    self.gwas_interaction[new_key] = cols
+
             # Some transformations return multiple columns. We create all the
             # relevant columns in the dataframe.
-            if isinstance(res, dict):
+            elif isinstance(res, dict):
                 for key, col in res.items():
                     df["{}:{}".format(target.id, key)] = col
 
@@ -582,6 +602,33 @@ def _interaction(data, *entities):
     return out
 
 
+@transformation_handler("GWAS_INTERACTION")
+def _gwas_interaction(data, *entities):
+    # Finding all the columns for all the targets
+    column_names = tuple(
+        tuple(name for name in data.columns if name.startswith(entity.id))
+        for entity in entities
+    )
+
+    # Finding the level column names if there are factors
+    factor_levels = tuple(
+        tuple(name[len(entity.id)+1:] for name in names)
+        for names, entity in zip(column_names, entities)
+    )
+
+    # Only creating the column name
+    out = {}
+    for cols, level_names in zip(itertools.product(*column_names),
+                                 itertools.product(*factor_levels)):
+        # Getting the key (for factors, if present)
+        key = re.sub(":{2,}", "", ":".join(level_names).strip(":"))
+
+        # Saving the columns to multiply with SNPs
+        out[key] = cols
+
+    return out
+
+
 def _reset():
     TransformationManager.transformations = []
     DependencyManager.dependencies = {}
@@ -597,3 +644,4 @@ log10 = TransformationManager("LOG10")
 ln = TransformationManager("LN")
 pow = TransformationManager("POW")
 interaction = TransformationManager("INTERACTION")
+gwas_interaction = TransformationManager("GWAS_INTERACTION")

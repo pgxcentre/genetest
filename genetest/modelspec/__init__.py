@@ -36,6 +36,7 @@ log10 = core.log10
 ln = core.ln
 pow = core.pow
 interaction = core.interaction
+gwas_interaction = core.gwas_interaction
 
 SNPs = core.SNPs
 

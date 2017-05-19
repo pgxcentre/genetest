@@ -200,6 +200,127 @@ class TestStatsMixedLM(unittest.TestCase):
         self.assertAlmostEqual(-np.log10(8.520377946017625e-01),
                                -np.log10(results["SNPs"]["p_value"]), places=5)
 
+    def test_mixedlm_gwas_inter(self):
+        """Tests mixedlm regression for GWAS with interaction."""
+        # The variables which are factors
+        gender = spec.factor(spec.phenotypes.gender)
+        visit = spec.factor(spec.phenotypes.visit)
+
+        # The interaction term
+        inter = spec.gwas_interaction(spec.phenotypes.var1)
+
+        # Creating the model specification
+        modelspec = spec.ModelSpec(
+            outcome={"outcome": spec.phenotypes.pheno3,
+                     "groups": spec.phenotypes.sampleid},
+            predictors=[spec.SNPs, spec.phenotypes.age, spec.phenotypes.var1,
+                        gender, visit, inter],
+            test="mixedlm",
+        )
+
+        # Performing the analysis and retrieving the results
+        subscriber = subscribers.ResultsMemory()
+        analysis.execute(
+            self.phenotypes, self.genotypes, modelspec,
+            subscribers=[subscriber],
+        )
+        gwas_results = subscriber._get_gwas_results()
+
+        # Checking the number of results (should be 4)
+        self.assertEqual(4, len(gwas_results.keys()))
+
+        # Checking the first marker (snp1)
+        results = gwas_results["snp1"]
+        self.assertEqual("snp1", results["SNPs"]["name"])
+        self.assertEqual("3", results["SNPs"]["chrom"])
+        self.assertEqual(1234, results["SNPs"]["pos"])
+        self.assertEqual("T", results["SNPs"]["minor"])
+        self.assertEqual("G", results["SNPs"]["major"])
+        self.assertAlmostEqual(0.17499166666666666, results["SNPs"]["maf"])
+
+        # Checking the marker statistics (according to R lme4)
+        self.assertAlmostEqual(1.357502192968099, results[inter.id]["coef"])
+        self.assertAlmostEqual(0.6710947924603057,
+                               results[inter.id]["std_err"], places=5)
+        self.assertAlmostEqual(0.04218056953351801,
+                               results[inter.id]["lower_ci"], places=5)
+        self.assertAlmostEqual(2.6728238164026799,
+                               results[inter.id]["upper_ci"], places=5)
+        self.assertAlmostEqual(2.0228173548946042,
+                               results[inter.id]["z_value"], places=5)
+        self.assertAlmostEqual(-np.log10(4.309198170818540e-02),
+                               -np.log10(results[inter.id]["p_value"]),
+                               places=5)
+
+        # Checking the second marker (snp2)
+        results = gwas_results["snp2"]
+        self.assertEqual("snp2", results["SNPs"]["name"])
+        self.assertEqual("3", results["SNPs"]["chrom"])
+        self.assertEqual(2345, results["SNPs"]["pos"])
+        self.assertEqual("C", results["SNPs"]["minor"])
+        self.assertEqual("A", results["SNPs"]["major"])
+        self.assertAlmostEqual(0.36666666666666664, results["SNPs"]["maf"])
+
+        # Checking the marker statistics (according to R lme4)
+        self.assertAlmostEqual(0.8952450482655012, results[inter.id]["coef"])
+        self.assertAlmostEqual(0.5976670951727925,
+                               results[inter.id]["std_err"], places=5)
+        self.assertAlmostEqual(-0.2761609330178445,
+                               results[inter.id]["lower_ci"], places=5)
+        self.assertAlmostEqual(2.0666510295488472,
+                               results[inter.id]["upper_ci"], places=5)
+        self.assertAlmostEqual(1.497899174132508504,
+                               results[inter.id]["z_value"], places=5)
+        self.assertAlmostEqual(-np.log10(1.341594483012889e-01),
+                               -np.log10(results[inter.id]["p_value"]),
+                               places=5)
+
+        # Checking the third marker (snp3)
+        results = gwas_results["snp3"]
+        self.assertEqual("snp3", results["SNPs"]["name"])
+        self.assertEqual("2", results["SNPs"]["chrom"])
+        self.assertEqual(3456, results["SNPs"]["pos"])
+        self.assertEqual("G", results["SNPs"]["minor"])
+        self.assertEqual("T", results["SNPs"]["major"])
+        self.assertAlmostEqual(0.40833333333333333, results["SNPs"]["maf"])
+
+        # Checking the marker statistics (according to R lme4)
+        self.assertAlmostEqual(0.9199422369515684, results[inter.id]["coef"])
+        self.assertAlmostEqual(0.4498593164720226,
+                               results[inter.id]["std_err"], places=5)
+        self.assertAlmostEqual(0.03823417855659805,
+                               results[inter.id]["lower_ci"], places=5)
+        self.assertAlmostEqual(1.8016502953465388,
+                               results[inter.id]["upper_ci"], places=5)
+        self.assertAlmostEqual(2.0449553966473895,
+                               results[inter.id]["z_value"], places=5)
+        self.assertAlmostEqual(-np.log10(4.085925566922222e-02),
+                               -np.log10(results[inter.id]["p_value"]),
+                               places=4)
+
+        # Checking the fourth marker (snp4)
+        results = gwas_results["snp4"]
+        self.assertEqual("snp4", results["SNPs"]["name"])
+        self.assertEqual("22", results["SNPs"]["chrom"])
+        self.assertEqual(4567, results["SNPs"]["pos"])
+        self.assertEqual("A", results["SNPs"]["minor"])
+        self.assertEqual("C", results["SNPs"]["major"])
+        self.assertAlmostEqual(0.44166666666666665, results["SNPs"]["maf"])
+
+        # Checking the marker statistics (according to R lme4)
+        self.assertAlmostEqual(0.05832811192587545, results[inter.id]["coef"])
+        self.assertAlmostEqual(0.7381058671562147,
+                               results[inter.id]["std_err"], places=4)
+        self.assertAlmostEqual(-1.388332804478011,
+                               results[inter.id]["lower_ci"], places=4)
+        self.assertAlmostEqual(1.504989028329762,
+                               results[inter.id]["upper_ci"], places=4)
+        self.assertAlmostEqual(0.07902404590089884,
+                               results[inter.id]["z_value"], places=5)
+        self.assertAlmostEqual(-np.log10(9.370134970059800e-01),
+                               -np.log10(results[inter.id]["p_value"]),
+                               places=6)
+
     def test_mixedlm_snp1_reml(self):
         """Tests mixedlm regression with the first SNP (using REML)."""
         # The variables which are factors

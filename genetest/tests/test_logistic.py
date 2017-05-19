@@ -180,6 +180,90 @@ class TestStatsLogistic(unittest.TestCase):
                 [line.split("\t") for line in f.read().splitlines()],
             )
 
+    def test_logistic_gwas_inter(self):
+        """Tests logistic regression for GWAS with interaction."""
+        # The variables which are factors
+        gender = spec.factor(spec.phenotypes.gender)
+
+        # The interaction term
+        inter = spec.gwas_interaction(spec.phenotypes.var1)
+
+        # Creating the model specification
+        modelspec = spec.ModelSpec(
+            outcome=spec.phenotypes.pheno2,
+            predictors=[spec.SNPs, spec.phenotypes.age,
+                        spec.phenotypes.var1, gender, inter],
+            test="logistic",
+        )
+
+        # The output prefix
+        out_prefix = os.path.join(self.tmp_dir.name, "results")
+
+        # Performing the analysis and retrieving the results
+        subscriber = subscribers.ResultsMemory()
+        analysis.execute(
+            self.phenotypes, self.genotypes, modelspec,
+            subscribers=[subscriber], output_prefix=out_prefix,
+        )
+        gwas_results = subscriber._get_gwas_results()
+
+        # Checking the number of results (should be 2)
+        self.assertEqual(2, len(gwas_results.keys()))
+
+        # Checking the first marker (snp1)
+        results = gwas_results["snp1"]
+        self.assertEqual("snp1", results["SNPs"]["name"])
+        self.assertEqual("3", results["SNPs"]["chrom"])
+        self.assertEqual(1234, results["SNPs"]["pos"])
+        self.assertEqual("T", results["SNPs"]["minor"])
+        self.assertEqual("C", results["SNPs"]["major"])
+        self.assertAlmostEqual(0.3749333333333334, results["SNPs"]["maf"])
+
+        # Checking the marker statistics (according to SAS)
+        self.assertAlmostEqual(0.0015311482968189, results[inter.id]["coef"],
+                               places=6)
+        self.assertAlmostEqual(0.0423504567007674,
+                               results[inter.id]["std_err"])
+        self.assertAlmostEqual(-0.0814742215655, results[inter.id]["lower_ci"],
+                               places=6)
+        self.assertAlmostEqual(0.08453651815914, results[inter.id]["upper_ci"])
+        self.assertAlmostEqual(0.0013071285938733,
+                               results[inter.id]["t_value"]**2, places=6)
+        self.assertAlmostEqual(0.9711593785536400,
+                               results[inter.id]["p_value"], places=5)
+
+        # Checking the second marker (snp2)
+        results = gwas_results["snp2"]
+        self.assertEqual("snp2", results["SNPs"]["name"])
+        self.assertEqual("3", results["SNPs"]["chrom"])
+        self.assertEqual(9618, results["SNPs"]["pos"])
+        self.assertEqual("C", results["SNPs"]["minor"])
+        self.assertEqual("A", results["SNPs"]["major"])
+        self.assertAlmostEqual(0.41590833333333332, results["SNPs"]["maf"])
+
+        # Checking the marker statistics (according to SAS)
+        self.assertAlmostEqual(0.0239292800721822, results[inter.id]["coef"],
+                               places=5)
+        self.assertAlmostEqual(0.0342619407842591,
+                               results[inter.id]["std_err"], places=6)
+        self.assertAlmostEqual(-0.0432228899054096,
+                               results[inter.id]["lower_ci"], places=5)
+        self.assertAlmostEqual(0.09108145004977, results[inter.id]["upper_ci"],
+                               places=5)
+        self.assertAlmostEqual(0.48779275460699,
+                               results[inter.id]["t_value"]**2, places=3)
+        self.assertAlmostEqual(0.48491356159603, results[inter.id]["p_value"],
+                               places=4)
+
+        # There should be a file for the failed snp3
+        self.assertTrue(os.path.isfile(out_prefix + "_failed_snps.txt"))
+        with open(out_prefix + "_failed_snps.txt") as f:
+            self.assertEqual(
+                [["snp3", "Perfect separation detected, results not "
+                          "available"]],
+                [line.split("\t") for line in f.read().splitlines()],
+            )
+
     def test_logistic_snp1(self):
         """Tests logistic regression with the first SNP."""
         # The variables which are factors

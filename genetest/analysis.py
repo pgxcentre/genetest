@@ -14,6 +14,7 @@ Run a full statistical analysis.
 import time
 import queue
 import itertools
+import functools
 import multiprocessing
 import traceback
 import logging
@@ -64,7 +65,8 @@ def _generate_sample_order(x_samples, geno_samples):
     return geno_order, x_order
 
 
-def _gwas_worker(q, results_q, failed, abort, fit, y, X, samples, maf_t=None):
+def _gwas_worker(q, results_q, failed, abort, fit, y, X, samples, maf_t=None,
+                 interaction=None):
     # The sample order (to add genotypes to the X data frame
     geno_index = None
     sample_order = None
@@ -100,6 +102,15 @@ def _gwas_worker(q, results_q, failed, abort, fit, y, X, samples, maf_t=None):
 
         # Set the genotypes
         X.loc[sample_order, "SNPs"] = snp.genotypes[geno_index]
+
+        if interaction:
+            # We have an interaction with SNPs, so we also need to compute it
+            # by multiplying SNPs with every columns
+            for key, cols in interaction.items():
+                X.loc[:, key] = functools.reduce(
+                    np.multiply,
+                    (X[col] for col in itertools.chain(["SNPs"], cols)),
+                )
 
         not_missing = _missing(y, X)
 
@@ -519,6 +530,11 @@ def _execute_gwas(genotypes, modelspec, subscribers, y, X, variant_predicates,
         results = multiprocessing.Queue()
         abort = multiprocessing.Event()
 
+        # Do we have GWAS interaction?
+        gwas_interaction = None
+        if modelspec.has_gwas_interaction:
+            gwas_interaction = modelspec.gwas_interaction
+
         # Spawn the worker processes.
         workers = []
         for worker in range(cpus):
@@ -530,7 +546,7 @@ def _execute_gwas(genotypes, modelspec, subscribers, y, X, variant_predicates,
             worker = multiprocessing.Process(
                 target=_gwas_worker,
                 args=(q, results, failed, abort, fit, this_y, this_X, samples,
-                      maf_t)
+                      maf_t, gwas_interaction)
             )
 
             workers.append(worker)
