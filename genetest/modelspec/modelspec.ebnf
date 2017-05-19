@@ -39,8 +39,8 @@ predictors = "+".{ expression }+;
 
 # Not using phenotype_or_variant to avoid the semantic methods from getting
 # called in the lookahead.
-interaction = &((genotype | "factor(" name ")" | name ) "*")
-              interaction:"*".{ factor | phenotype_or_variant }
+interaction = &(( SNPs | genotype | "factor(" name ")" | name ) "*")
+              interaction:"*".{ SNPs | factor | phenotype_or_variant }
               ["as" as:name];
 
 SNPs = "SNPs";
@@ -55,8 +55,8 @@ phenotype_or_variant = genotype | phenotype;
 integer = int:/[0-9]+/;
 
 expression =
-    | SNPs
     | interaction
+    | SNPs
     | genotype
     | factor
     | ln
