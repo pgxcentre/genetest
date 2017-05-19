@@ -35,7 +35,7 @@ class ModelSpecSemantics(object):
             # This is a GWAS interaction
             return gwas_interaction(
                 *tuple(term for term in ast["interaction"] if term != SNPs),
-                name=ast["as_"] if ast["as_"] else "GWAS_INTER",
+                name=ast["as_"] if ast["as_"] else "GWAS_INTER"
             )
 
         else:
