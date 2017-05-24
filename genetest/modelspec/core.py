@@ -439,8 +439,9 @@ class ModelSpec(object):
 
                 # And save the variant metadata.
                 self.variant_metadata[entity.id] = {
-                    "name": marker, "chrom": g.variant.chrom, "pos":
-                    g.variant.pos, "minor": minor, "major": major, "maf": maf
+                    "name": marker, "chrom": str(g.variant.chrom),
+                    "pos": g.variant.pos, "minor": minor, "major": major,
+                    "maf": maf
                 }
 
         # Apply transformations.
