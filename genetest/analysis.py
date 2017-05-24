@@ -114,6 +114,11 @@ def _gwas_worker(q, results_q, failed, abort, fit, y, X, samples, maf_t=None,
 
         not_missing = _missing(y, X)
 
+        if np.sum(not_missing) == 0:
+            # All genotypes were missing
+            failed.put((snp.variant.name, "All genotypes are missing"))
+            continue
+
         # Computing MAF
         maf, minor, major, flip = get_maf(
             genotypes=X.loc[not_missing, "SNPs"],
