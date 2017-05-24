@@ -159,8 +159,8 @@ def _gwas_worker(q, results_q, failed, abort, fit, y, X, samples, maf_t=None,
 
         # Update the results for the SNP with metadata.
         results["SNPs"].update({
-            "chrom": snp.variant.chrom, "pos": snp.variant.pos, "major": major,
-            "minor": minor, "name": snp.variant.name,
+            "chrom": str(snp.variant.chrom), "pos": snp.variant.pos,
+            "major": major, "minor": minor, "name": snp.variant.name,
         })
         results["SNPs"]["maf"] = maf
 
