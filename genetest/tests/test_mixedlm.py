@@ -14,7 +14,7 @@ import numpy as np
 import pandas as pd
 from pkg_resources import resource_filename
 
-from geneparse.dataframe import DataFrameReader
+from geneparse import parsers
 
 from ..statistics.models.mixedlm import StatsMixedLM
 
@@ -71,7 +71,7 @@ class TestStatsMixedLM(unittest.TestCase):
         )
 
         # Creating the genotype parser
-        cls.genotypes = DataFrameReader(
+        cls.genotypes = parsers["dataframe"](
             dataframe=genotypes,
             map_info=map_info,
         )

@@ -100,7 +100,7 @@ def setup_package():
         install_requires=["numpy >= 1.12.0", "pandas >= 0.19.0",
                           "setuptools >= 26.1.0", "statsmodels >= 0.8.0",
                           "grako >= 3.10.0", "scipy >= 0.19.0",
-                          "geneparse >= 0.1.0", "pyyaml >= 3.12"],
+                          "geneparse >= 0.4.1", "pyyaml >= 3.12"],
         packages=find_packages(),
         package_data={"genetest.tests": ["data/genotypes/*",
                                          "data/statistics/*"],

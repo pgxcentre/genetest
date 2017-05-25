@@ -17,7 +17,7 @@ import pandas as pd
 from pkg_resources import resource_filename
 
 from pyplink import PyPlink
-from geneparse.plink import PlinkReader
+from geneparse import parsers
 
 from ..statistics.core import StatsError
 from ..statistics.models.linear import StatsLinear
@@ -84,7 +84,7 @@ class TestStatsLinear(unittest.TestCase):
                 print(sample, sample, 0, 0, 0, -9, file=fam)
 
         # Creating the genotype parser
-        cls.genotypes = PlinkReader(cls.plink_prefix)
+        cls.genotypes = parsers["plink"](cls.plink_prefix)
 
     @classmethod
     def tearDownClass(cls):

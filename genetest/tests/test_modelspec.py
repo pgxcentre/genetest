@@ -17,7 +17,7 @@ import pandas as pd
 from scipy.stats import binom
 
 from pyplink import PyPlink
-from geneparse.plink import PlinkReader
+from geneparse import parsers
 
 from .. import modelspec as spec
 from ..phenotypes.dummy import _DummyPhenotypes
@@ -76,7 +76,7 @@ class TestModelSpec(unittest.TestCase):
                 print(sample, sample, 0, 0, 0, -9, file=fam)
 
         # Creating the genotype parser
-        cls.genotypes = PlinkReader(cls.plink_prefix)
+        cls.genotypes = parsers["plink"](cls.plink_prefix)
 
     @classmethod
     def tearDownClass(cls):
@@ -200,7 +200,7 @@ class TestModelSpec(unittest.TestCase):
         )
 
         # Gathering the observed matrix
-        with PlinkReader(plink_prefix) as genotypes:
+        with parsers["plink"](plink_prefix) as genotypes:
             matrix = modelspec.create_data_matrix(phenotypes, genotypes)
 
         # Subset of the new data
