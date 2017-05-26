@@ -637,3 +637,151 @@ class TestModelSpec(unittest.TestCase):
                             )
                         ),
                     )
+
+    def test_gwas_interaction(self):
+        """Test a simple GWAS interaction."""
+        # Creating the model specification
+        inter = spec.gwas_interaction(spec.phenotypes.var1)
+        modelspec = spec.ModelSpec(
+            outcome=spec.phenotypes.pheno,
+            predictors=[spec.SNPs, spec.phenotypes.var1, inter],
+            test="linear",
+        )
+
+        # Gathering the observed matrix
+        matrix = modelspec.create_data_matrix(self.phenotypes, self.genotypes)
+
+        # Checking we caught the GWAS interaction
+        self.assertTrue(modelspec.has_gwas_interaction,
+                        "The modelspec did not catch the GWAS interaction")
+
+        # Checking the shape of the matrix
+        self.assertEqual((self.data.shape[0], 3), matrix.shape,
+                         "The observed matrix is not of the right shape")
+
+        # Checking the intercept
+        self.assertEqual([1], matrix.intercept.unique().tolist(),
+                         "The intercept is not as expected")
+
+        # Checking the outcome
+        outcome_col = spec.phenotypes.pheno.id
+        outcomes = matrix.loc[self.data.index, outcome_col]
+        self.assertTrue(outcomes.equals(self.data.pheno),
+                        "The outcomes are not as expected")
+
+        # Checking the predictor
+        np.testing.assert_array_equal(
+            matrix.loc[self.data.index, spec.phenotypes.var1.id].values,
+            self.data.var1.values,
+            err_msg="The predictor 'var1' is not as expected.",
+        )
+
+        # Checking the resulting column for the GWAS interaction
+        multiplication_dict = modelspec.gwas_interaction
+        self.assertEqual(1, len(multiplication_dict),
+                         "Wrong number of interaction multiplication")
+        self.assertTrue(inter.id in multiplication_dict,
+                        "Wrong result column for the GWAS interaction")
+
+        # Checking the columns to multiply for the GWAS interaction
+        multiplication_cols = multiplication_dict[inter.id]
+        self.assertEqual(1, len(multiplication_cols),
+                         "Wrong number of columns to multiply for the GWAS "
+                         "interaction")
+        self.assertEqual(spec.phenotypes.var1.id, multiplication_cols[0],
+                         "Wrong column to multiply for the GWAS interaction")
+
+    def test_gwas_interaction_complex_category(self):
+        """Test a simple GWAS interaction with a categorical value."""
+        # Creating the model specification
+        var3 = spec.factor(spec.phenotypes.var3)
+        var5 = spec.factor(spec.phenotypes.var5)
+        inter = spec.gwas_interaction(spec.phenotypes.var1, var3, var5)
+        modelspec = spec.ModelSpec(
+            outcome=spec.phenotypes.pheno,
+            predictors=[spec.SNPs, spec.phenotypes.var1, var3, var5, inter],
+            test="linear",
+        )
+
+        # Gathering the observed matrix
+        matrix = modelspec.create_data_matrix(self.phenotypes, self.genotypes)
+
+        # Checking we caught the GWAS interaction
+        self.assertTrue(modelspec.has_gwas_interaction,
+                        "The modelspec did not catch the GWAS interaction")
+
+        # Checking the shape of the matrix
+        self.assertEqual((self.data.shape[0], 8), matrix.shape,
+                         "The observed matrix is not of the right shape")
+
+        # Checking the intercept
+        self.assertEqual([1], matrix.intercept.unique().tolist(),
+                         "The intercept is not as expected")
+
+        # Checking the outcome
+        outcome_col = spec.phenotypes.pheno.id
+        outcomes = matrix.loc[self.data.index, outcome_col]
+        self.assertTrue(outcomes.equals(self.data.pheno),
+                        "The outcomes are not as expected")
+
+        # Checking the predictor (var1)
+        np.testing.assert_array_equal(
+            matrix.loc[self.data.index, spec.phenotypes.var1.id].values,
+            self.data.var1.values,
+            err_msg="The predictor 'var1' is not as expected.",
+        )
+
+        # Checking the predictor (var3, all level)
+        for level in ("x1", "x2"):
+            matrix_col = "{}:level.{}".format(var3.id, level)
+            np.testing.assert_array_equal(
+                matrix.loc[self.data.index, matrix_col].values,
+                (self.data.var3 == level).astype(float).values,
+                err_msg="The predictor 'var3' (level '{}') is not as "
+                        "expected".format(level),
+            )
+
+        # Checking the predictor (var5, all level)
+        for level in (1, 2, 3):
+            matrix_col = "{}:level.{}".format(var5.id, level)
+            np.testing.assert_array_equal(
+                matrix.loc[self.data.index, matrix_col].values,
+                (self.data.var5 == level).astype(float).values,
+                err_msg="The predictor 'var5' (level '{}') is not as "
+                        "expected".format(level),
+            )
+
+        # Checking the resulting column for the GWAS interaction
+        multiplication_dict = modelspec.gwas_interaction
+        self.assertEqual(6, len(multiplication_dict),
+                         "Wrong number of interaction multiplication")
+
+        # Checking the columns to multiply
+        for var3_l in ("x1", "x2"):
+            for var5_l in (1, 2, 3):
+                result_col = "{}:level.{}:level.{}".format(
+                    inter.id, var3_l, var5_l,
+                )
+                self.assertTrue(
+                    result_col in multiplication_dict,
+                    "Wrong result column for the GWAS interaction with "
+                    "var3 level '{}' and var5 level "
+                    "'{}'".format(var3_l, var5_l),
+                )
+
+                multiplication_cols = multiplication_dict[result_col]
+                self.assertEqual(
+                    3, len(multiplication_cols),
+                    "Wrong number of columns to multiply for the GWAS "
+                    "interaction with level var3 level '{}' and var5 level "
+                    "'{}'".format(var3_l, var5_l),
+                )
+                self.assertEqual(
+                    {spec.phenotypes.var1.id,
+                     "{}:level.{}".format(var3.id, var3_l),
+                     "{}:level.{}".format(var5.id, var5_l)},
+                    set(multiplication_cols),
+                    "Wrong column to multiply for the GWAS interaction with "
+                    "var3 level '{}' and var5 level "
+                    "'{}'".format(var3_l, var5_l),
+                )
