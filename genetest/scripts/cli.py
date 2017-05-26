@@ -51,6 +51,10 @@ def main():
     # Parsing the options
     args = parse_args(parser)
 
+    # The containers
+    phenotypes = None
+    genotypes = None
+
     try:
         # Checking the options
         check_args(args)
@@ -166,6 +170,14 @@ def main():
         # Closing the "extract" file
         if args.extract and not args.extract.closed:
             args.extract.close()
+
+        # Closing the phenotypes
+        if phenotypes:
+            phenotypes.close()
+
+        # Closing the genotypes
+        if genotypes:
+            genotypes.close()
 
 
 def performed_optimized_mixedlm(args, test, phenotypes, genotypes, formula,
