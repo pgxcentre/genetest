@@ -18,6 +18,8 @@ from os import path
 
 import pandas as pd
 
+from geneparse import Extractor
+
 from .. import modelspec as spec
 from .. import __version__, _LOG_FORMAT
 from ..modelspec.predicates import NameFilter
@@ -99,9 +101,6 @@ def main():
             genotypes.get_number_variants(),
         ))
 
-        # Creating a list of variant predicates
-        variant_predicates = []
-
         # The markers to extract
         if args.extract:
             to_extract = set(args.extract.read().splitlines())
@@ -110,7 +109,9 @@ def main():
             logger.info("{:,d} variants will be extracted".format(
                 len(to_extract),
             ))
-            variant_predicates.append(NameFilter(extract=to_extract))
+
+            # Using the Extractor object
+            genotypes = Extractor(parser=genotypes, names=to_extract)
 
         # Checking the test information
         test = conf.get_model_test()
@@ -133,7 +134,7 @@ def main():
             performed_optimized_mixedlm(
                 args=args, test=test, phenotypes=phenotypes,
                 genotypes=genotypes, formula=formula, test_kwargs=test_kwargs,
-                variant_predicates=variant_predicates, p_t=mixedlm_p_threshold,
+                p_t=mixedlm_p_threshold,
             )
 
         else:
@@ -141,7 +142,6 @@ def main():
             perform_normal_analysis(
                 args=args, test=test, phenotypes=phenotypes,
                 genotypes=genotypes, formula=formula, test_kwargs=test_kwargs,
-                variant_predicates=variant_predicates,
             )
 
     # Catching the Ctrl^C
@@ -169,7 +169,7 @@ def main():
 
 
 def performed_optimized_mixedlm(args, test, phenotypes, genotypes, formula,
-                                test_kwargs, variant_predicates, p_t):
+                                test_kwargs, p_t, variant_predicates=None):
     """Performs an "optimized" mixed linear model."""
     logger.info("Optimizing MixedLM analysis")
 
@@ -296,7 +296,7 @@ def performed_optimized_mixedlm(args, test, phenotypes, genotypes, formula,
 
 
 def perform_normal_analysis(args, test, phenotypes, genotypes, formula,
-                            test_kwargs, variant_predicates):
+                            test_kwargs, variant_predicates=None):
     """Performs a "normal" analysis."""
     # Creating a GWAS subscriber
     subscribers = [GWASWriter(filename=args.output + ".txt", test=test)]
@@ -339,7 +339,7 @@ def parse_args(parser):
     # The input options
     group = parser.add_argument_group("Input Options")
     group.add_argument(
-        "--configuration", type=str, metavar="INI", required=True,
+        "--configuration", type=str, metavar="YAML", required=True,
         help="The configuration file that describe the phenotypes, genotypes, "
              "and model.",
     )
