@@ -35,32 +35,32 @@ class TestStatsLogistic(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
         # Loading the data
-        cls.data = pd.read_csv(
+        data = pd.read_csv(
             resource_filename(__name__, "data/statistics/logistic.txt.bz2"),
             sep="\t",
             compression="bz2",
         )
 
         # Creating the index
-        cls.data["sample"] = [
-            "s{}".format(i+1) for i in range(cls.data.shape[0])
+        data["sample"] = [
+            "s{}".format(i+1) for i in range(data.shape[0])
         ]
-        cls.data = cls.data.set_index("sample")
+        data = data.set_index("sample")
 
         # Creating the dummy phenotype container
         cls.phenotypes = _DummyPhenotypes()
-        cls.phenotypes.data = cls.data.drop(
+        cls.phenotypes.data = data.drop(
             ["snp{}".format(i+1) for i in range(3)],
             axis=1,
         )
 
         # Permuting the sample to add a bit of randomness
-        new_sample_order = np.random.permutation(cls.data.index)
+        new_sample_order = np.random.permutation(data.index)
 
         # Creating the genotypes data frame
-        genotypes = cls.data.loc[
+        genotypes = data.loc[
             new_sample_order,
-            [_ for _ in cls.data.columns if _.startswith("snp")],
+            [_ for _ in data.columns if _.startswith("snp")],
         ].copy()
 
         # Creating the mapping information

@@ -37,21 +37,21 @@ class TestStatsLinear(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
         # Loading the data
-        cls.data = pd.read_csv(
+        data = pd.read_csv(
             resource_filename(__name__, "data/statistics/linear.txt.bz2"),
             sep="\t",
             compression="bz2",
         )
 
         # Creating the index
-        cls.data["sample"] = [
-            "s{}".format(i+1) for i in range(cls.data.shape[0])
+        data["sample"] = [
+            "s{}".format(i+1) for i in range(data.shape[0])
         ]
-        cls.data = cls.data.set_index("sample")
+        data = data.set_index("sample")
 
         # Creating the dummy phenotype container
         cls.phenotypes = _DummyPhenotypes()
-        cls.phenotypes.data = cls.data.drop(
+        cls.phenotypes.data = data.drop(
             ["snp{}".format(i+1) for i in range(5)],
             axis=1,
         )
@@ -63,12 +63,12 @@ class TestStatsLinear(unittest.TestCase):
         cls.plink_prefix = os.path.join(cls.tmp_dir.name, "input")
 
         # Permuting the sample to add a bit of randomness
-        new_sample_order = np.random.permutation(cls.data.index)
+        new_sample_order = np.random.permutation(data.index)
 
         # Creating the BED file
         with PyPlink(cls.plink_prefix, "w") as bed:
-            for snp in [s for s in cls.data.columns if s.startswith("snp")]:
-                bed.write_genotypes(cls.data.loc[new_sample_order, snp])
+            for snp in [s for s in data.columns if s.startswith("snp")]:
+                bed.write_genotypes(data.loc[new_sample_order, snp])
 
         # Creating the BIM file
         with open(cls.plink_prefix + ".bim", "w") as bim:

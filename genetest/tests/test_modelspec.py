@@ -32,7 +32,7 @@ class TestModelSpec(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
         # Creating random data
-        cls.data = pd.DataFrame(
+        data = pd.DataFrame(
             dict(
                 pheno=np.random.randint(1, 100, 100),
                 var1=np.random.randint(1, 100, 100),
@@ -46,12 +46,12 @@ class TestModelSpec(unittest.TestCase):
         )
 
         # Changing one factor to categorical data
-        cls.data.loc[:, "var5"] = cls.data.var5.astype("category")
+        data.loc[:, "var5"] = data.var5.astype("category")
 
         # Creating the dummy phenotype container
         phenotypes = ["pheno"] + ["var{}".format(i+1) for i in range(5)]
         cls.phenotypes = _DummyPhenotypes()
-        cls.phenotypes.data = cls.data[phenotypes].copy()
+        cls.phenotypes.data = data[phenotypes].copy()
 
         # Creating a temporary directory
         cls.tmp_dir = TemporaryDirectory(prefix="genetest_")
@@ -60,11 +60,11 @@ class TestModelSpec(unittest.TestCase):
         cls.plink_prefix = path.join(cls.tmp_dir.name, "input")
 
         # Permuting the sample to add a bit of randomness
-        new_sample_order = np.random.permutation(cls.data.index)
+        new_sample_order = np.random.permutation(data.index)
 
         # Creating the BED file
         with PyPlink(cls.plink_prefix, "w") as bed:
-            bed.write_genotypes(cls.data.loc[new_sample_order, "snp"])
+            bed.write_genotypes(data.loc[new_sample_order, "snp"])
 
         # Creating the BIM file
         with open(cls.plink_prefix + ".bim", "w") as bim:

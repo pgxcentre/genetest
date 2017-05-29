@@ -35,29 +35,29 @@ class TestStatsMixedLM(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
         # Loading the data
-        cls.data = pd.read_csv(
+        data = pd.read_csv(
             resource_filename(__name__, "data/statistics/mixedlm.txt.bz2"),
             sep="\t",
             compression="bz2",
         )
 
         # Creating the index
-        cls.data = cls.data.set_index("sampleid", drop=False)
+        data = data.set_index("sampleid", drop=False)
 
         # Creating the dummy phenotype container
         cls.phenotypes = _DummyPhenotypes()
-        cls.phenotypes.data = cls.data.drop(
-            [col for col in cls.data.columns if col.startswith("snp")],
+        cls.phenotypes.data = data.drop(
+            [col for col in data.columns if col.startswith("snp")],
             axis=1,
         )
 
         # Permuting the sample to add a bit of randomness
-        new_sample_order = np.random.permutation(cls.data.index)
+        new_sample_order = np.random.permutation(data.index)
 
         # Creating the genotypes data frame
-        genotypes = cls.data.loc[
+        genotypes = data.loc[
             new_sample_order,
-            [col for col in cls.data.columns if col.startswith("snp")],
+            [col for col in data.columns if col.startswith("snp")],
         ].copy()
 
         # Keeping only one copy of each data
