@@ -542,7 +542,9 @@ def _execute_gwas(genotypes, modelspec, subscribers, y, X, variant_predicates,
 
             # We need to update the subscribers
             for subscriber in subscribers:
-                subscriber._update_gwas_interaction(gwas_interaction.keys())
+                subscriber._update_gwas_interaction(
+                    list(sorted(gwas_interaction.keys()))
+                )
 
         # Spawn the worker processes.
         workers = []
