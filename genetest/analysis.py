@@ -540,6 +540,10 @@ def _execute_gwas(genotypes, modelspec, subscribers, y, X, variant_predicates,
         if modelspec.has_gwas_interaction:
             gwas_interaction = modelspec.gwas_interaction
 
+            # We need to update the subscribers
+            for subscriber in subscribers:
+                subscriber._update_gwas_interaction(gwas_interaction.keys())
+
         # Spawn the worker processes.
         workers = []
         for worker in range(cpus):

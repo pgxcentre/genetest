@@ -53,6 +53,15 @@ class Subscriber(object):
     def _reset_subset(self):
         self.subset_info = None
 
+    def _update_gwas_interaction(self, columns):
+        """Updates information (whether there is a gwas interaction or not).
+
+        Args:
+            columns: The columns for the interaction.
+
+        """
+        pass
+
     def handle(self, results):
         """Handle results from a statistical test."""
         raise NotImplementedError()
@@ -109,9 +118,10 @@ class RowWriter(Subscriber):
                  append=False):
         # columns needs to be a list of 2-tuples ('col', result object or str).
         self.header = header
-        self.columns = columns
         self.sep = sep
         self.filename = filename
+
+        self._set_columns(columns)
 
         if filename:
             self._f = open(filename, "a" if append else "w")
@@ -120,6 +130,9 @@ class RowWriter(Subscriber):
 
         if self.header:
             self.print_header()
+
+    def _set_columns(self, columns):
+        self.columns = columns
 
     def print_header(self):
         header = self.sep.join([i[0] for i in self.columns])
@@ -150,8 +163,15 @@ class RowWriter(Subscriber):
 
 class GWASWriter(RowWriter):
     def __init__(self, filename, test, sep="\t"):
-        # The columns that are always present
-        columns = [
+        # The predictors from which to retrieve the statistical results
+        # (usually 'SNPs', but can change if there is interaction
+        self._results_from = "SNPs"
+
+        # Setting the final columns to None
+        self._final_columns = None
+
+        # The columns that are in common for each model
+        self._common_cols = [
             ("snp", analysis_results["SNPs"]["name"]),
             ("chr", analysis_results["SNPs"]["chrom"]),
             ("pos", analysis_results["SNPs"]["pos"]),
@@ -159,65 +179,89 @@ class GWASWriter(RowWriter):
             ("minor", analysis_results["SNPs"]["minor"]),
             ("maf", analysis_results["SNPs"]["maf"]),
             ("n", analysis_results["MODEL"]["nobs"]),
+            ("ll", analysis_results["MODEL"]["log_likelihood"]),
         ]
 
-        # The columns required by the 'linear' test
+        # The columns that are specific for each model and analysis
+        self._specific_cols = []
+        self._specific_model_cols = []
+
+        # Linear
         if test == "linear":
-            columns.extend([
-                ("coef", analysis_results["SNPs"]["coef"]),
-                ("se", analysis_results["SNPs"]["std_err"]),
-                ("lower", analysis_results["SNPs"]["lower_ci"]),
-                ("upper", analysis_results["SNPs"]["upper_ci"]),
-                ("t", analysis_results["SNPs"]["t_value"]),
-                ("p", analysis_results["SNPs"]["p_value"]),
-                ("ll", analysis_results["MODEL"]["log_likelihood"]),
+            self._specific_cols = [
+                ("coef", "coef"), ("se", "std_err"), ("lower", "lower_ci"),
+                ("upper", "upper_ci"), ("t", "t_value"), ("p", "p_value"),
+            ]
+            self._specific_model_cols.append(
                 ("adj_r2", analysis_results["MODEL"]["r_squared_adj"]),
-            ])
+            )
 
-        # The columns required by the 'logistic' test
+        # Logistic
         elif test == "logistic":
-            columns.extend([
-                ("coef", analysis_results["SNPs"]["coef"]),
-                ("se", analysis_results["SNPs"]["std_err"]),
-                ("lower", analysis_results["SNPs"]["lower_ci"]),
-                ("upper", analysis_results["SNPs"]["upper_ci"]),
-                ("t", analysis_results["SNPs"]["t_value"]),
-                ("p", analysis_results["SNPs"]["p_value"]),
-                ("ll", analysis_results["MODEL"]["log_likelihood"]),
-            ])
+            self._specific_cols = [
+                ("coef", "coef"), ("se", "std_err"), ("lower", "lower_ci"),
+                ("upper", "upper_ci"), ("t", "t_value"), ("p", "p_value"),
+            ]
 
-        # The columns required by the 'coxph' test
+        # CoxPH
         elif test == "coxph":
-            columns.extend([
-                ("coef", analysis_results["SNPs"]["coef"]),
-                ("se", analysis_results["SNPs"]["std_err"]),
-                ("hr", analysis_results["SNPs"]["hr"]),
-                ("hr_lower", analysis_results["SNPs"]["hr_lower_ci"]),
-                ("hr_upper", analysis_results["SNPs"]["hr_upper_ci"]),
-                ("z", analysis_results["SNPs"]["z_value"]),
-                ("p", analysis_results["SNPs"]["p_value"]),
-                ("ll", analysis_results["MODEL"]["log_likelihood"]),
-            ])
+            self._specific_cols = [
+                ("coef", "coef"), ("se", "std_err"), ("hr", "hr"),
+                ("hr_lower", "hr_lower_ci"), ("hr_upper", "hr_upper_ci"),
+                ("z", "z_value"), ("p", "p_value"),
+            ]
 
-        # The columns required by the 'coxph' test
+        # MixedLM
         elif test == "mixedlm":
-            columns.extend([
-                ("coef", analysis_results["SNPs"]["coef"]),
-                ("se", analysis_results["SNPs"]["std_err"]),
-                ("lower", analysis_results["SNPs"]["lower_ci"]),
-                ("upper", analysis_results["SNPs"]["upper_ci"]),
-                ("z", analysis_results["SNPs"]["z_value"]),
-                ("p", analysis_results["SNPs"]["p_value"]),
-                ("ll", analysis_results["MODEL"]["log_likelihood"]),
-            ])
+            self._specific_cols = [
+                ("coef", "coef"), ("se", "std_err"), ("lower", "lower_ci"),
+                ("upper", "upper_ci"), ("z", "z_value"), ("p", "p_value"),
+            ]
 
         else:
             logger.warning("{}: invalid test: only common columns will be "
                            "written to file.")
 
         # Calling super __init__
-        super().__init__(filename=filename, columns=columns, header=True,
+        super().__init__(filename=filename, columns=None, header=True,
                          append=False, sep=sep)
+
+    @property
+    def columns(self):
+        # Generating the columns from the common ones, the ones specific to the
+        # model, and the ones for the GWAS results
+        if self._final_columns is None:
+            specific_cols = []
+            if self._results_from == "SNPs":
+                specific_cols = [
+                    (col_info[0], analysis_results["SNPs"][col_info[1]])
+                    for col_info in self._specific_cols
+                ]
+
+            else:
+                specific_cols = [
+                    (col_info[0], analysis_results[predictor][col_info[1]])
+                    for col_info in self._specific_cols
+                    for predictor in self._results_from
+                ]
+
+            self._final_columns = (
+                self._common_cols + self._specific_model_cols + specific_cols
+            )
+
+        return self._final_columns
+
+    def _set_columns(self, columns):
+        pass
+
+    def _reset_columns(self):
+        """Resets the columns."""
+        # We reset the final columns
+        self._final_columns = None
+
+        # We re-write the header
+        self._f.seek(0)
+        self.print_header()
 
     def _update_current_subset(self, info):
         """Updates information on which part of the dataset is analyzed."""
@@ -225,16 +269,33 @@ class GWASWriter(RowWriter):
         # this function is called
         if self.subset_info is None:
             # We add the column
-            self.columns.append(
+            self._common_cols.append(
                 ("subgroup", analysis_results["MODEL"]["subset_info"])
             )
 
-            # We re-write the header
-            self._f.seek(0)
-            self.print_header()
+            # Resetting the columns
+            self._reset_columns()
 
         # Calling super
         super()._update_current_subset(info=info)
+
+    def _update_gwas_interaction(self, columns):
+        # First, check if the results from is the default 'SNPs' (meaning it's
+        # the first time this function is called). Otherwise, we're in a
+        # subgroup analysis
+        if self._results_from == "SNPs":
+            self._results_from = list(columns)
+
+            self._specific_cols = [
+                ("{}:{}".format(inter_col, col_info[0]), col_info[1])
+                for col_info in self._specific_cols for inter_col in columns
+            ]
+
+            # Resetting the columns
+            self._reset_columns()
+
+        # Calling super
+        super()._update_gwas_interaction(columns=columns)
 
     def handle(self, results):
         # Adding the subgroup, if any
