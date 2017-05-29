@@ -356,6 +356,9 @@ def _execute_phewas(phenotypes, genotypes, modelspec, subscribers,
     for worker in workers:
         worker.join()
 
+    for subscriber in subscribers:
+        subscriber.close()
+
     logger.info("PheWAS complete.")
 
 

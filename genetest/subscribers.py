@@ -14,6 +14,14 @@ Subscribers used to format the output of analyses.
 import sys
 import json
 import logging
+import datetime
+
+try:
+    from twilio.rest import Client
+    TWILIO = True
+except ImportError:
+    TWILIO = False
+
 
 from .modelspec import result as analysis_results
 
@@ -75,6 +83,42 @@ class Subscriber(object):
             else:
                 out[k] = results[k]
         return out
+
+
+class TwilioSubscriber(Subscriber):
+    def __init__(self, account_sid, auth_token, to, from_):
+        if not TWILIO:
+            raise ImportError("Install twilio to use this subscriber.")
+
+        self.client = Client(account_sid, auth_token)
+        self.from_ = from_
+        self.to = to
+
+        self.results = []
+
+    def handle(self, result):
+        self.results.append(Subscriber._apply_translation(
+            self.modelspec.get_translations(),
+            result
+        ))
+
+    def close(self):
+        logger.info("Sending text message to {}.".format(self.to))
+
+        message = datetime.datetime.now().strftime(
+            "Analysis finished on %B %d at %H:%M.\n"
+        )
+        message += (
+            "Received results from {} statistical tests.".format(
+                len(self.results)
+            )
+        )
+
+        self.client.messages.create(
+            to=self.to,
+            from_=self.from_,
+            body=message
+        )
 
 
 class ResultsMemory(Subscriber):
