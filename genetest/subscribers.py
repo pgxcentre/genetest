@@ -163,9 +163,8 @@ class RowWriter(Subscriber):
 
 class GWASWriter(RowWriter):
     def __init__(self, filename, test, sep="\t"):
-        # The predictors from which to retrieve the statistical results
-        # (usually 'SNPs', but can change if there is interaction
-        self._results_from = "SNPs"
+        # A flag for updated values because of GWAS interaction
+        self._inter_already_updated = False
 
         # Setting the final columns to None
         self._final_columns = None
@@ -189,8 +188,12 @@ class GWASWriter(RowWriter):
         # Linear
         if test == "linear":
             self._specific_cols = [
-                ("coef", "coef"), ("se", "std_err"), ("lower", "lower_ci"),
-                ("upper", "upper_ci"), ("t", "t_value"), ("p", "p_value"),
+                ("coef", ("SNPs", "coef")),
+                ("se", ("SNPs", "std_err")),
+                ("lower", ("SNPs", "lower_ci")),
+                ("upper", ("SNPs", "upper_ci")),
+                ("t", ("SNPs", "t_value")),
+                ("p", ("SNPs", "p_value")),
             ]
             self._specific_model_cols.append(
                 ("adj_r2", analysis_results["MODEL"]["r_squared_adj"]),
@@ -199,23 +202,35 @@ class GWASWriter(RowWriter):
         # Logistic
         elif test == "logistic":
             self._specific_cols = [
-                ("coef", "coef"), ("se", "std_err"), ("lower", "lower_ci"),
-                ("upper", "upper_ci"), ("t", "t_value"), ("p", "p_value"),
+                ("coef", ("SNPs", "coef")),
+                ("se", ("SNPs", "std_err")),
+                ("lower", ("SNPs", "lower_ci")),
+                ("upper", ("SNPs", "upper_ci")),
+                ("t", ("SNPs", "t_value")),
+                ("p", ("SNPs", "p_value")),
             ]
 
         # CoxPH
         elif test == "coxph":
             self._specific_cols = [
-                ("coef", "coef"), ("se", "std_err"), ("hr", "hr"),
-                ("hr_lower", "hr_lower_ci"), ("hr_upper", "hr_upper_ci"),
-                ("z", "z_value"), ("p", "p_value"),
+                ("coef", ("SNPs", "coef")),
+                ("se", ("SNPs", "std_err")),
+                ("hr", ("SNPs", "hr")),
+                ("hr_lower", ("SNPs", "hr_lower_ci")),
+                ("hr_upper", ("SNPs", "hr_upper_ci")),
+                ("z", ("SNPs", "z_value")),
+                ("p", ("SNPs", "p_value")),
             ]
 
         # MixedLM
         elif test == "mixedlm":
             self._specific_cols = [
-                ("coef", "coef"), ("se", "std_err"), ("lower", "lower_ci"),
-                ("upper", "upper_ci"), ("z", "z_value"), ("p", "p_value"),
+                ("coef", ("SNPs", "coef")),
+                ("se", ("SNPs", "std_err")),
+                ("lower", ("SNPs", "lower_ci")),
+                ("upper", ("SNPs", "upper_ci")),
+                ("z", ("SNPs", "z_value")),
+                ("p", ("SNPs", "p_value")),
             ]
 
         else:
@@ -231,19 +246,10 @@ class GWASWriter(RowWriter):
         # Generating the columns from the common ones, the ones specific to the
         # model, and the ones for the GWAS results
         if self._final_columns is None:
-            specific_cols = []
-            if self._results_from == "SNPs":
-                specific_cols = [
-                    (col_info[0], analysis_results["SNPs"][col_info[1]])
-                    for col_info in self._specific_cols
-                ]
-
-            else:
-                specific_cols = [
-                    (col_info[0], analysis_results[predictor][col_info[1]])
-                    for col_info in self._specific_cols
-                    for predictor in self._results_from
-                ]
+            specific_cols = [
+                (output_name, analysis_results[col_name][param_name])
+                for output_name, (col_name, param_name) in self._specific_cols
+            ]
 
             self._final_columns = (
                 self._common_cols + self._specific_model_cols + specific_cols
@@ -254,9 +260,10 @@ class GWASWriter(RowWriter):
     def _set_columns(self, columns):
         pass
 
-    def _reset_columns(self):
+    def _reset_output_header(self):
         """Resets the columns."""
         # We reset the final columns
+        logger.debug("Re-writing the output header")
         self._final_columns = None
 
         # We re-write the header
@@ -268,13 +275,14 @@ class GWASWriter(RowWriter):
         # First, check if the subset_info is None (meaning its the first time
         # this function is called
         if self.subset_info is None:
+            logger.debug("Updating columns for subgroup analysis")
             # We add the column
             self._common_cols.append(
                 ("subgroup", analysis_results["MODEL"]["subset_info"])
             )
 
             # Resetting the columns
-            self._reset_columns()
+            self._reset_output_header()
 
         # Calling super
         super()._update_current_subset(info=info)
@@ -283,16 +291,20 @@ class GWASWriter(RowWriter):
         # First, check if the results from is the default 'SNPs' (meaning it's
         # the first time this function is called). Otherwise, we're in a
         # subgroup analysis
-        if self._results_from == "SNPs":
-            self._results_from = list(columns)
-
+        if not self._inter_already_updated:
+            logger.debug("Updating columns for GWAS interaction")
             self._specific_cols = [
-                ("{}:{}".format(inter_col, col_info[0]), col_info[1])
-                for col_info in self._specific_cols for inter_col in columns
+                ("{}:{}".format(inter_col, col_info[0]),
+                 (inter_col, col_info[1][1]))
+                for inter_col in columns for col_info in self._specific_cols
             ]
 
             # Resetting the columns
-            self._reset_columns()
+            self._reset_output_header()
+
+            # We don't need to change the header again, even for subgroup
+            # analysis
+            self._inter_already_updated = True
 
         # Calling super
         super()._update_gwas_interaction(columns=columns)
