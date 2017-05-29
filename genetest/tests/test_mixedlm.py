@@ -8,7 +8,9 @@
 # Commons, PO Box 1866, Mountain View, CA 94042, USA.
 
 
+import os
 import unittest
+from tempfile import TemporaryDirectory
 
 import numpy as np
 import pandas as pd
@@ -76,6 +78,9 @@ class TestStatsMixedLM(unittest.TestCase):
             map_info=map_info,
         )
 
+        # Creating a temporary directory
+        cls.tmp_dir = TemporaryDirectory(prefix="genetest_test_mixedlm_")
+
     def setUp(self):
         # Resetting the model specification
         spec._reset()
@@ -85,6 +90,11 @@ class TestStatsMixedLM(unittest.TestCase):
             np.random.permutation(self.phenotypes.data.shape[0]),
             np.random.permutation(self.phenotypes.data.shape[1])
         ]
+
+    @classmethod
+    def tearDownClass(cls):
+        # Cleaning the temporary directory
+        cls.tmp_dir.cleanup()
 
     def test_mixedlm_gwas(self):
         """Tests mixedlm regression for GWAS."""
@@ -101,11 +111,14 @@ class TestStatsMixedLM(unittest.TestCase):
             test="mixedlm",
         )
 
+        # The output prefix
+        out_prefix = os.path.join(self.tmp_dir.name, "results")
+
         # Performing the analysis and retrieving the results
         subscriber = subscribers.ResultsMemory()
         analysis.execute(
             self.phenotypes, self.genotypes, modelspec,
-            subscribers=[subscriber],
+            subscribers=[subscriber], output_prefix=out_prefix,
         )
         gwas_results = subscriber._get_gwas_results()
 
@@ -218,11 +231,14 @@ class TestStatsMixedLM(unittest.TestCase):
             test="mixedlm",
         )
 
+        # The output prefix
+        out_prefix = os.path.join(self.tmp_dir.name, "results")
+
         # Performing the analysis and retrieving the results
         subscriber = subscribers.ResultsMemory()
         analysis.execute(
             self.phenotypes, self.genotypes, modelspec,
-            subscribers=[subscriber],
+            subscribers=[subscriber], output_prefix=out_prefix,
         )
         gwas_results = subscriber._get_gwas_results()
 
@@ -336,11 +352,14 @@ class TestStatsMixedLM(unittest.TestCase):
             test="mixedlm",
         )
 
+        # The output prefix
+        out_prefix = os.path.join(self.tmp_dir.name, "results")
+
         # Performing the analysis and retrieving the results
         subscriber = subscribers.ResultsMemory()
         analysis.execute(
             self.phenotypes, self.genotypes, modelspec,
-            subscribers=[subscriber],
+            subscribers=[subscriber], output_prefix=out_prefix,
         )
         results = subscriber.results[0]
 
@@ -382,11 +401,14 @@ class TestStatsMixedLM(unittest.TestCase):
             test=lambda: StatsMixedLM(reml=False),
         )
 
+        # The output prefix
+        out_prefix = os.path.join(self.tmp_dir.name, "results")
+
         # Performing the analysis and retrieving the results
         subscriber = subscribers.ResultsMemory()
         analysis.execute(
             self.phenotypes, self.genotypes, modelspec,
-            subscribers=[subscriber],
+            subscribers=[subscriber], output_prefix=out_prefix,
         )
         results = subscriber.results[0]
 
@@ -431,11 +453,14 @@ class TestStatsMixedLM(unittest.TestCase):
             test="mixedlm",
         )
 
+        # The output prefix
+        out_prefix = os.path.join(self.tmp_dir.name, "results")
+
         # Performing the analysis and retrieving the results
         subscriber = subscribers.ResultsMemory()
         analysis.execute(
             self.phenotypes, self.genotypes, modelspec,
-            subscribers=[subscriber],
+            subscribers=[subscriber], output_prefix=out_prefix,
         )
         results = subscriber.results[0]
 
@@ -481,11 +506,14 @@ class TestStatsMixedLM(unittest.TestCase):
             test=lambda: StatsMixedLM(reml=False),
         )
 
+        # The output prefix
+        out_prefix = os.path.join(self.tmp_dir.name, "results")
+
         # Performing the analysis and retrieving the results
         subscriber = subscribers.ResultsMemory()
         analysis.execute(
             self.phenotypes, self.genotypes, modelspec,
-            subscribers=[subscriber],
+            subscribers=[subscriber], output_prefix=out_prefix,
         )
         results = subscriber.results[0]
 
@@ -528,11 +556,14 @@ class TestStatsMixedLM(unittest.TestCase):
             test="mixedlm",
         )
 
+        # The output prefix
+        out_prefix = os.path.join(self.tmp_dir.name, "results")
+
         # Performing the analysis and retrieving the results
         subscriber = subscribers.ResultsMemory()
         analysis.execute(
             self.phenotypes, self.genotypes, modelspec,
-            subscribers=[subscriber],
+            subscribers=[subscriber], output_prefix=out_prefix,
         )
         results = subscriber.results[0]
 
@@ -574,11 +605,14 @@ class TestStatsMixedLM(unittest.TestCase):
             test=lambda: StatsMixedLM(reml=False),
         )
 
+        # The output prefix
+        out_prefix = os.path.join(self.tmp_dir.name, "results")
+
         # Performing the analysis and retrieving the results
         subscriber = subscribers.ResultsMemory()
         analysis.execute(
             self.phenotypes, self.genotypes, modelspec,
-            subscribers=[subscriber],
+            subscribers=[subscriber], output_prefix=out_prefix,
         )
         results = subscriber.results[0]
 
@@ -615,11 +649,14 @@ class TestStatsMixedLM(unittest.TestCase):
             test="mixedlm",
         )
 
+        # The output prefix
+        out_prefix = os.path.join(self.tmp_dir.name, "results")
+
         # Performing the analysis and retrieving the results
         subscriber = subscribers.ResultsMemory()
         analysis.execute(
             self.phenotypes, self.genotypes, modelspec,
-            subscribers=[subscriber],
+            subscribers=[subscriber], output_prefix=out_prefix,
         )
         results = subscriber.results[0]
 
@@ -665,11 +702,14 @@ class TestStatsMixedLM(unittest.TestCase):
             test=lambda: StatsMixedLM(reml=False),
         )
 
+        # The output prefix
+        out_prefix = os.path.join(self.tmp_dir.name, "results")
+
         # Performing the analysis and retrieving the results
         subscriber = subscribers.ResultsMemory()
         analysis.execute(
             self.phenotypes, self.genotypes, modelspec,
-            subscribers=[subscriber],
+            subscribers=[subscriber], output_prefix=out_prefix,
         )
         results = subscriber.results[0]
 
@@ -712,11 +752,14 @@ class TestStatsMixedLM(unittest.TestCase):
             test="mixedlm",
         )
 
+        # The output prefix
+        out_prefix = os.path.join(self.tmp_dir.name, "results")
+
         # Performing the analysis and retrieving the results
         subscriber = subscribers.ResultsMemory()
         analysis.execute(
             self.phenotypes, self.genotypes, modelspec,
-            subscribers=[subscriber],
+            subscribers=[subscriber], output_prefix=out_prefix,
         )
         results = subscriber.results[0]
 
@@ -758,11 +801,14 @@ class TestStatsMixedLM(unittest.TestCase):
             test=lambda: StatsMixedLM(reml=False),
         )
 
+        # The output prefix
+        out_prefix = os.path.join(self.tmp_dir.name, "results")
+
         # Performing the analysis and retrieving the results
         subscriber = subscribers.ResultsMemory()
         analysis.execute(
             self.phenotypes, self.genotypes, modelspec,
-            subscribers=[subscriber],
+            subscribers=[subscriber], output_prefix=out_prefix,
         )
         results = subscriber.results[0]
 
@@ -807,11 +853,14 @@ class TestStatsMixedLM(unittest.TestCase):
             test="mixedlm",
         )
 
+        # The output prefix
+        out_prefix = os.path.join(self.tmp_dir.name, "results")
+
         # Performing the analysis and retrieving the results
         subscriber = subscribers.ResultsMemory()
         analysis.execute(
             self.phenotypes, self.genotypes, modelspec,
-            subscribers=[subscriber],
+            subscribers=[subscriber], output_prefix=out_prefix,
         )
         results = subscriber.results[0]
 
@@ -857,11 +906,14 @@ class TestStatsMixedLM(unittest.TestCase):
             test=lambda: StatsMixedLM(reml=False),
         )
 
+        # The output prefix
+        out_prefix = os.path.join(self.tmp_dir.name, "results")
+
         # Performing the analysis and retrieving the results
         subscriber = subscribers.ResultsMemory()
         analysis.execute(
             self.phenotypes, self.genotypes, modelspec,
-            subscribers=[subscriber],
+            subscribers=[subscriber], output_prefix=out_prefix,
         )
         results = subscriber.results[0]
 
@@ -904,11 +956,14 @@ class TestStatsMixedLM(unittest.TestCase):
             test="mixedlm",
         )
 
+        # The output prefix
+        out_prefix = os.path.join(self.tmp_dir.name, "results")
+
         # Performing the analysis and retrieving the results
         subscriber = subscribers.ResultsMemory()
         analysis.execute(
             self.phenotypes, self.genotypes, modelspec,
-            subscribers=[subscriber],
+            subscribers=[subscriber], output_prefix=out_prefix,
         )
         results = subscriber.results[0]
 
@@ -950,11 +1005,14 @@ class TestStatsMixedLM(unittest.TestCase):
             test=lambda: StatsMixedLM(reml=False),
         )
 
+        # The output prefix
+        out_prefix = os.path.join(self.tmp_dir.name, "results")
+
         # Performing the analysis and retrieving the results
         subscriber = subscribers.ResultsMemory()
         analysis.execute(
             self.phenotypes, self.genotypes, modelspec,
-            subscribers=[subscriber],
+            subscribers=[subscriber], output_prefix=out_prefix,
         )
         results = subscriber.results[0]
 
@@ -999,11 +1057,14 @@ class TestStatsMixedLM(unittest.TestCase):
             test="mixedlm",
         )
 
+        # The output prefix
+        out_prefix = os.path.join(self.tmp_dir.name, "results")
+
         # Performing the analysis and retrieving the results
         subscriber = subscribers.ResultsMemory()
         analysis.execute(
             self.phenotypes, self.genotypes, modelspec,
-            subscribers=[subscriber],
+            subscribers=[subscriber], output_prefix=out_prefix,
         )
         results = subscriber.results[0]
 
@@ -1049,11 +1110,14 @@ class TestStatsMixedLM(unittest.TestCase):
             test=lambda: StatsMixedLM(reml=False),
         )
 
+        # The output prefix
+        out_prefix = os.path.join(self.tmp_dir.name, "results")
+
         # Performing the analysis and retrieving the results
         subscriber = subscribers.ResultsMemory()
         analysis.execute(
             self.phenotypes, self.genotypes, modelspec,
-            subscribers=[subscriber],
+            subscribers=[subscriber], output_prefix=out_prefix,
         )
         results = subscriber.results[0]
 
