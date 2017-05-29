@@ -88,8 +88,8 @@ class TestStatsLinear(unittest.TestCase):
 
     @classmethod
     def tearDownClass(cls):
-        cls.tmp_dir.cleanup()
         cls.genotypes.close()
+        cls.tmp_dir.cleanup()
 
     def setUp(self):
         # Resetting the model specification
