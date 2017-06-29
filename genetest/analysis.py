@@ -71,7 +71,7 @@ def _gwas_worker(q, results_q, failed, abort, fit, y, X, samples, maf_t=None,
     geno_index = None
     sample_order = None
 
-    # Get a SNP.
+    # Get a SNP
     while not abort.is_set():
         # Get a SNP from the Queue.
         try:
@@ -304,13 +304,15 @@ def _execute_phewas(phenotypes, genotypes, modelspec, subscribers,
     data = modelspec.create_data_matrix(phenotypes, genotypes)
 
     # Prepare synchronized data structures.
-    results_queue = multiprocessing.Queue()
-    phen_queue = multiprocessing.Queue()
+    results_queue = multiprocessing.JoinableQueue()
+    phen_queue = multiprocessing.JoinableQueue()
     abort = multiprocessing.Event()
 
     # The number if CPUs
     if cpus is None:
         cpus = multiprocessing.cpu_count() - 1
+
+    cpus = max(1, cpus)
 
     # Create workers.
     predictors = modelspec.predictors
@@ -344,6 +346,8 @@ def _execute_phewas(phenotypes, genotypes, modelspec, subscribers,
             time.sleep(1)
             continue
 
+        results_queue.task_done()
+
         if res is None:
             n_workers_done += 1
             continue
@@ -354,6 +358,15 @@ def _execute_phewas(phenotypes, genotypes, modelspec, subscribers,
                 subscriber.handle(res)
             except KeyError as e:
                 subscribers_module.subscriber_error(e.args[0], abort)
+
+    # There should be remaining sentinels in the phen_queue.
+    while not phen_queue.empty():
+        val = phen_queue.get()
+        assert val is None, val
+        phen_queue.task_done()
+
+    for q in (phen_queue, results_queue):
+        q.join()
 
     for worker in workers:
         worker.join()
@@ -375,6 +388,7 @@ def _phewas_worker(data, predictors, abort, fit, phen_queue, results_queue):
     while not abort.is_set():
         # Get an outcome.
         y = phen_queue.get()
+        phen_queue.task_done()
 
         # Sentinel check.
         if y is None:
@@ -533,6 +547,8 @@ def _execute_gwas(genotypes, modelspec, subscribers, y, X, variant_predicates,
                   messages, maf_t=None, cpus=None):
         if cpus is None:
             cpus = multiprocessing.cpu_count() - 1
+
+        cpus = max(1, cpus)
 
         # Create queues for failing SNPs and the consumer queue.
         failed = multiprocessing.JoinableQueue()
