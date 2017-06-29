@@ -81,6 +81,8 @@ def _gwas_worker(q, results_q, failed, abort, fit, y, X, samples, maf_t=None,
             # SNP is getting pushed in the Queue
             continue
 
+        q.task_done()
+
         # This is a check for a sentinel.
         if snp is None:
             break
@@ -533,9 +535,9 @@ def _execute_gwas(genotypes, modelspec, subscribers, y, X, variant_predicates,
             cpus = multiprocessing.cpu_count() - 1
 
         # Create queues for failing SNPs and the consumer queue.
-        failed = multiprocessing.Queue()
-        q = multiprocessing.Queue(500)
-        results = multiprocessing.Queue()
+        failed = multiprocessing.JoinableQueue()
+        q = multiprocessing.JoinableQueue(500)
+        results = multiprocessing.JoinableQueue()
         abort = multiprocessing.Event()
 
         # Do we have GWAS interaction?
@@ -587,10 +589,12 @@ def _execute_gwas(genotypes, modelspec, subscribers, y, X, variant_predicates,
                 return 0
 
             if res is None:
+                results.task_done()
                 return 1
 
             for subscriber in subscribers:
                 try:
+                    results.task_done()
                     subscriber.handle(res)
                 except KeyError as e:
                     subscribers_module.subscriber_error(e.args[0], abort)
@@ -635,7 +639,7 @@ def _execute_gwas(genotypes, modelspec, subscribers, y, X, variant_predicates,
                 nb_failed_done += 1
             else:
                 messages["failed"].append(snp)
-        failed.put(None)
+            failed.task_done()
 
         # Dump the not analyzed SNPs to disk.
         for snp in not_analyzed:
@@ -649,6 +653,8 @@ def _execute_gwas(genotypes, modelspec, subscribers, y, X, variant_predicates,
             while not a_queue.empty():
                 val = a_queue.get()
                 assert val is None, (name, val)
+                a_queue.task_done()
+            a_queue.join()
 
         # Join the workers.
         for worker in workers:
