@@ -19,8 +19,8 @@ model = outcome:(phenotype_or_variant | labelled_outcome_group)
         [ "|" ~ conditions:condition_group ]
         "~" predictors:predictors $;
 
-condition_group = ",".{ condition };
-condition = name:phenotype_or_variant ["=" level:integer];
+condition_group = ",".{ condition }+;
+condition = name:phenotype ["=" level:integer];
 
 labelled_outcome_group = "[" ~ tags:",".{ labelled_outcome } "]";
 labelled_outcome = key:name "=" name:phenotype;

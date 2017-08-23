@@ -396,7 +396,15 @@ class ModelSpec(object):
         # dataframe.
         if markers is not SNPs:
             for entity, marker in markers:
-                entity_id = self.dependencies[("GENOTYPES", marker)]
+                # Previously:
+                # entity_id = self.dependencies[("GENOTYPES", marker)]
+
+                if self.stratify_by and (entity in self.stratify_by):
+                    raise ValueError(
+                        "Stratifying by genotype is not allowed because "
+                        "encodings are error-prone. Create genetic categories "
+                        "as phenotype variables to achieve this."
+                    )
 
                 try:
                     g = genotypes.get_variant_by_name(marker)
@@ -414,7 +422,7 @@ class ModelSpec(object):
                 # Rename the genotypes column before joining.
                 df = df.join(
                     pd.Series(g.genotypes, index=genotypes.get_samples(),
-                              name=entity_id.id),
+                              name=entity.id),
                     how="inner",
                 )
 
@@ -427,15 +435,16 @@ class ModelSpec(object):
 
                 # Compute the maf.
                 maf, minor, major, flip = get_maf(
-                    df[entity_id.id], g.coded, g.reference,
+                    df[entity.id], g.coded, g.reference,
                 )
 
                 if flip:
-                    df.loc[:, entity_id.id] = 2 - df.loc[:, entity_id.id]
+                    df.loc[:, entity.id] = 2 - df.loc[:, entity.id]
 
                 # Also bind the EntityIdentifier in case we need to compute
                 # a GRS.
-                entity_id.bind(df[entity_id.id])
+                # Vestigial code:
+                # entity.bind(df[entity])
 
                 # And save the variant metadata.
                 self.variant_metadata[entity.id] = {
