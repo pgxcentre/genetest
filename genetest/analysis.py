@@ -422,7 +422,7 @@ def _execute_stratified(genotypes, modelspec, subscribers, y, X,
         if subgroup is None:
             levels = X[modelspec.stratify_by[i].id].dropna().unique()
             var_levels.append(levels)
-        elif hasattr(subgroup, "__iter__"):
+        elif hasattr(subgroup, "__iter__") and type(subgroup) is not str:
             var_levels.append(subgroup)
         else:
             var_levels.append([subgroup])
@@ -437,6 +437,9 @@ def _execute_stratified(genotypes, modelspec, subscribers, y, X,
     translations = modelspec.get_translations()
 
     for levels in subsets:
+        # levels is a list of the same length as modelspec.stratify_by giving
+        # the current level of the variable to subset.
+        #
         # current_subset is an iterable of (entity, level) pairs.
         current_subset = list(zip(modelspec.stratify_by, levels))
 
@@ -466,10 +469,15 @@ def _execute_stratified(genotypes, modelspec, subscribers, y, X,
 
         # Make sure everything went ok.
         if this_x.shape[0] == 0:
+            observed_levels = {
+                translations[var.id]: list(X[var.id].dropna().unique())
+                for var in modelspec.stratify_by
+            }
             raise ValueError(
                 "No samples left in subgroup analysis ({}). Are all requested "
-                "levels valid?"
-                "".format(subset_info)
+                "levels valid?\n"
+                "The observed levels are: {}"
+                "".format(subset_info, observed_levels)
             )
         elif this_x.shape[1] == 0:
             raise ValueError(

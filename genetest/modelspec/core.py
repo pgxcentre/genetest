@@ -18,6 +18,7 @@ import functools
 
 import numpy as np
 import pandas as pd
+from geneparse.utils import genotype_to_df
 
 from ..statistics import model_map
 from ..statistics.descriptive import get_maf
@@ -399,13 +400,6 @@ class ModelSpec(object):
                 # Previously:
                 # entity_id = self.dependencies[("GENOTYPES", marker)]
 
-                if self.stratify_by and (entity in self.stratify_by):
-                    raise ValueError(
-                        "Stratifying by genotype is not allowed because "
-                        "encodings are error-prone. Create genetic categories "
-                        "as phenotype variables to achieve this."
-                    )
-
                 try:
                     g = genotypes.get_variant_by_name(marker)
                 except (KeyError, ValueError):
@@ -419,12 +413,22 @@ class ModelSpec(object):
                     raise ValueError("{}: invalid marker name".format(marker))
                 g = g.pop()
 
-                # Rename the genotypes column before joining.
-                df = df.join(
-                    pd.Series(g.genotypes, index=genotypes.get_samples(),
-                              name=entity.id),
-                    how="inner",
+                is_stratification_variable = (
+                    self.stratify_by and (entity in self.stratify_by)
                 )
+                if is_stratification_variable:
+                    # This genetic variable is a stratifying factor.
+                    # We automatically convert it to a str representation.
+                    cur = genotype_to_df(g, genotypes.get_samples(),
+                                         as_string=True)
+                else:
+                    cur = genotype_to_df(g, genotypes.get_samples(),
+                                         as_string=False)
+
+                cur.columns = [entity.id]
+                # FIXME I think that inner-joining here is too early.
+                # Maybe it should be handled at the analysis level?
+                df = df.join(cur, how="inner")
 
                 if df.shape[0] == 0:
                     raise ValueError(
@@ -433,25 +437,26 @@ class ModelSpec(object):
                         "different."
                     )
 
-                # Compute the maf.
-                maf, minor, major, flip = get_maf(
-                    df[entity.id], g.coded, g.reference,
-                )
+                if not is_stratification_variable:
+                    # Compute the maf.
+                    maf, minor, major, flip = get_maf(
+                        df[entity.id], g.coded, g.reference,
+                    )
 
-                if flip:
-                    df.loc[:, entity.id] = 2 - df.loc[:, entity.id]
+                    if flip:
+                        df.loc[:, entity.id] = 2 - df.loc[:, entity.id]
 
-                # Also bind the EntityIdentifier in case we need to compute
-                # a GRS.
-                # Vestigial code:
-                # entity.bind(df[entity])
+                    # Also bind the EntityIdentifier in case we need to compute
+                    # a GRS.
+                    # Vestigial code:
+                    # entity.bind(df[entity])
 
-                # And save the variant metadata.
-                self.variant_metadata[entity.id] = {
-                    "name": marker, "chrom": str(g.variant.chrom),
-                    "pos": g.variant.pos, "minor": minor, "major": major,
-                    "maf": maf
-                }
+                    # And save the variant metadata.
+                    self.variant_metadata[entity.id] = {
+                        "name": marker, "chrom": str(g.variant.chrom),
+                        "pos": g.variant.pos, "minor": minor, "major": major,
+                        "maf": maf, "coded": minor
+                    }
 
         # Apply transformations.
         df = self._apply_transformations(df)

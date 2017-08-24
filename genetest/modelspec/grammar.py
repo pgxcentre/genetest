@@ -45,6 +45,9 @@ class ModelSpecSemantics(object):
     def phenotype(self, ast):
         return phenotypes[ast["name"]]
 
+    def string(self, ast):
+        return ast["str"][1:-1]
+
     def integer(self, ast):
         return int(ast["int"])
 
