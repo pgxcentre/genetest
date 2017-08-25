@@ -16,7 +16,7 @@ import numpy as np
 import pandas as pd
 from pkg_resources import resource_filename
 
-from geneparse.dataframe import DataFrameReader
+from geneparse import parsers
 
 from ..statistics.core import StatsError
 
@@ -35,32 +35,32 @@ class TestStatsCoxPH(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
         # Loading the data
-        cls.data = pd.read_csv(
+        data = pd.read_csv(
             resource_filename(__name__, "data/statistics/coxph.txt.bz2"),
             sep="\t",
             compression="bz2",
         )
 
         # Creating the index
-        cls.data["sample"] = [
-            "s{}".format(i+1) for i in range(cls.data.shape[0])
+        data["sample"] = [
+            "s{}".format(i+1) for i in range(data.shape[0])
         ]
-        cls.data = cls.data.set_index("sample")
+        data = data.set_index("sample")
 
         # Creating the dummy phenotype container
         cls.phenotypes = _DummyPhenotypes()
-        cls.phenotypes.data = cls.data.drop(
+        cls.phenotypes.data = data.drop(
             ["snp{}".format(i+1) for i in range(4)],
             axis=1,
         )
 
         # Permuting the sample to add a bit of randomness
-        new_sample_order = np.random.permutation(cls.data.index)
+        new_sample_order = np.random.permutation(data.index)
 
         # Creating the genotypes data frame
-        genotypes = cls.data.loc[
+        genotypes = data.loc[
             new_sample_order,
-            [_ for _ in cls.data.columns if _.startswith("snp")],
+            [_ for _ in data.columns if _.startswith("snp")],
         ].copy()
 
         # Creating the mapping information
@@ -73,7 +73,7 @@ class TestStatsCoxPH(unittest.TestCase):
         )
 
         # Creating the genotype parser
-        cls.genotypes = DataFrameReader(
+        cls.genotypes = parsers["dataframe"](
             dataframe=genotypes,
             map_info=map_info,
         )
@@ -185,6 +185,116 @@ class TestStatsCoxPH(unittest.TestCase):
         self.assertAlmostEqual(-0.01743867824160966,
                                results["SNPs"]["z_value"])
         self.assertAlmostEqual(0.9860866530659741, results["SNPs"]["p_value"])
+
+        # There should be a file for the failed snp4
+        self.assertTrue(os.path.isfile(out_prefix + "_failed_snps.txt"))
+        with open(out_prefix + "_failed_snps.txt") as f:
+            self.assertEqual(
+                [["snp4", "Singular matrix"]],
+                [line.split("\t") for line in f.read().splitlines()],
+            )
+
+    @unittest.expectedFailure
+    def test_coxph_gwas_inter(self):
+        """Tests coxph regression for GWAS inter (failure: singular matrix)."""
+        # The variables which are factors
+        gender = spec.factor(spec.phenotypes.gender)
+
+        # The interaction term
+        inter = spec.interaction(spec.phenotypes.var1)
+
+        # Creating the model specification
+        modelspec = spec.ModelSpec(
+            outcome=dict(tte=spec.phenotypes.tte, event=spec.phenotypes.event),
+            predictors=[spec.SNPs, spec.phenotypes.age,
+                        spec.phenotypes.var1, gender, inter],
+            test="coxph",
+        )
+
+        # The output prefix
+        out_prefix = os.path.join(self.tmp_dir.name, "results")
+
+        # Performing the analysis and retrieving the results
+        subscriber = subscribers.ResultsMemory()
+        analysis.execute(
+            self.phenotypes, self.genotypes, modelspec,
+            subscribers=[subscriber], output_prefix=out_prefix,
+        )
+        gwas_results = subscriber._get_gwas_results()
+
+        # Checking the number of results (should be 3)
+        self.assertEqual(3, len(gwas_results.keys()))
+
+        # Checking the first marker (snp1)
+        results = gwas_results["snp1"]
+        self.assertEqual("snp1", results["SNPs"]["name"])
+        self.assertEqual("3", results["SNPs"]["chrom"])
+        self.assertEqual(1234, results["SNPs"]["pos"])
+        self.assertEqual("C", results["SNPs"]["minor"])
+        self.assertEqual("T", results["SNPs"]["major"])
+        self.assertAlmostEqual(0.48162903225806442, results["SNPs"]["maf"])
+
+        # Checking the results (according to R)
+        self.assertAlmostEqual(-0.04756704444017357, results[inter.id]["coef"],
+                               places=4)
+        self.assertAlmostEqual(0.06434818489300186,
+                               results[inter.id]["std_err"], places=5)
+        self.assertAlmostEqual(0.9535465409954826, results[inter.id]["hr"],
+                               places=4)
+        self.assertAlmostEqual(0.8405598094456039,
+                               results[inter.id]["hr_lower_ci"], places=4)
+        self.assertAlmostEqual(1.081720771831991,
+                               results[inter.id]["hr_upper_ci"], places=4)
+        self.assertAlmostEqual(-0.7392134606324645,
+                               results[inter.id]["z_value"], places=3)
+        self.assertAlmostEqual(0.45977738842863736,
+                               results[inter.id]["p_value"], places=3)
+
+        # Checking the second marker (snp2)
+        results = gwas_results["snp2"]
+        self.assertEqual("snp2", results["SNPs"]["name"])
+        self.assertEqual("3", results["SNPs"]["chrom"])
+        self.assertEqual(9618, results["SNPs"]["pos"])
+        self.assertEqual("C", results["SNPs"]["minor"])
+        self.assertEqual("A", results["SNPs"]["major"])
+        self.assertAlmostEqual(0.40833333333333333, results["SNPs"]["maf"])
+
+        # Checking the results (according to R)
+        self.assertAlmostEqual(0.01742308104178164, results[inter.id]["coef"])
+        self.assertAlmostEqual(0.02219048572389944,
+                               results[inter.id]["std_err"])
+        self.assertAlmostEqual(1.0175757482739625, results[inter.id]["hr"])
+        self.assertAlmostEqual(0.9742674031703326,
+                               results[inter.id]["hr_lower_ci"])
+        self.assertAlmostEqual(1.062809245291237,
+                               results[inter.id]["hr_upper_ci"])
+        self.assertAlmostEqual(0.7851599671392845,
+                               results[inter.id]["z_value"])
+        self.assertAlmostEqual(0.4323597838912484,
+                               results[inter.id]["p_value"])
+
+        # Checking the third marker (snp3)
+        results = gwas_results["snp3"]
+        self.assertEqual("snp3", results["SNPs"]["name"])
+        self.assertEqual("2", results["SNPs"]["chrom"])
+        self.assertEqual(1519, results["SNPs"]["pos"])
+        self.assertEqual("G", results["SNPs"]["minor"])
+        self.assertEqual("T", results["SNPs"]["major"])
+        self.assertAlmostEqual(0.20833333333333334, results["SNPs"]["maf"])
+
+        # Checking the results (according to R)
+        self.assertAlmostEqual(0.005873556606557682, results[inter.id]["coef"])
+        self.assertAlmostEqual(0.03350856673847168,
+                               results[inter.id]["std_err"])
+        self.assertAlmostEqual(1.0058908397614570, results[inter.id]["hr"])
+        self.assertAlmostEqual(0.94195099563823814,
+                               results[inter.id]["hr_lower_ci"])
+        self.assertAlmostEqual(1.074170934795214,
+                               results[inter.id]["hr_upper_ci"])
+        self.assertAlmostEqual(0.17528522339972738,
+                               results[inter.id]["z_value"])
+        self.assertAlmostEqual(0.8608555220369414,
+                               results[inter.id]["p_value"])
 
         # There should be a file for the failed snp4
         self.assertTrue(os.path.isfile(out_prefix + "_failed_snps.txt"))

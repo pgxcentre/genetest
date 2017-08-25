@@ -14,7 +14,7 @@ import numpy as np
 import pandas as pd
 from scipy.stats import binom
 
-from geneparse.dataframe import DataFrameReader
+from geneparse import parsers
 
 from .. import modelspec as spec
 from ..phenotypes.dummy import _DummyPhenotypes
@@ -59,7 +59,7 @@ class TestGrammar(unittest.TestCase):
              "a2": ["C"]},
             index=["snp"],
         )
-        cls.genotypes = DataFrameReader(
+        cls.genotypes = parsers["dataframe"](
             dataframe=cls.data[["snp"]].copy(),
             map_info=map_info,
         )

@@ -11,7 +11,7 @@
 
 import yaml
 
-from geneparse import parsers as geno_map
+from geneparse import parsers
 
 from .statistics import available_models as available_tests
 from .phenotypes import (
@@ -86,14 +86,14 @@ class AnalysisConfiguration(object):
         geno_format = section.pop("format")
 
         # Checking if the format is valid
-        if geno_format not in geno_map:
+        if geno_format not in parsers:
             raise ValueError(
                 "Invalid 'format' ({}) for the 'genotypes' section of the "
                 "configuration file.".format(geno_format)
             )
 
         # Getting the object to gather required and optional values
-        self._geno_container = geno_map[geno_format]
+        self._geno_container = parsers[geno_format]
 
         # We want to get the arguments for the genotype container
         self._geno_format = geno_format

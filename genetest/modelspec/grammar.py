@@ -2,11 +2,12 @@
 Semantics for the grako parser.
 """
 
+import os
 import logging
 import warnings
 
 from .core import (SNPs, interaction, phenotypes, genotypes, factor, pow,
-                   log10, ln)
+                   log10, ln, gwas_interaction)
 
 
 logger = logging.getLogger(__name__)
@@ -16,7 +17,6 @@ try:
     from .parser import ModelSpecParser
     PARSER_AVAIL = True
 except ImportError as e:
-    logger.warning("No parser available: " + str(e))
     PARSER_AVAIL = False
 
 
@@ -31,10 +31,22 @@ class ModelSpecSemantics(object):
         return {tree["key"]: tree["name"] for tree in ast["tags"]}
 
     def interaction(self, ast):
-        return interaction(*ast["interaction"], name=ast["as_"])
+        if SNPs in ast["interaction"]:
+            # This is a GWAS interaction
+            return gwas_interaction(
+                *tuple(term for term in ast["interaction"] if term != SNPs),
+                name=ast["as_"] if ast["as_"] else "GWAS_INTER"
+            )
+
+        else:
+            # This is a normal interaction term
+            return interaction(*ast["interaction"], name=ast["as_"])
 
     def phenotype(self, ast):
         return phenotypes[ast["name"]]
+
+    def string(self, ast):
+        return ast["str"][1:-1]
 
     def integer(self, ast):
         return int(ast["int"])
@@ -67,7 +79,29 @@ def parse_modelspec(s):
 def parse_formula(f):
     """Use the modelspec grammar to parse a formula for the modelspec."""
     if not PARSER_AVAIL:
-        return
+        raise RuntimeError("Impossible to parse the grammar. Is the 'grako' "
+                           "module installed?")
 
     parser = ModelSpecParser(parseinfo=False)
-    return parser.parse(f, rule_name="model", semantics=ModelSpecSemantics())
+
+    try:
+        return parser.parse(
+            f, rule_name="model", semantics=ModelSpecSemantics(),
+        )
+
+    except:
+        msg = ("Something went wrong while parsing the grammar. This might be "
+               "because you are using a different 'grako' version than the "
+               "one used to compile the grammar. Please perform the following "
+               "command:\n\n{command}")
+
+        # Getting the path of the files
+        basedir = os.path.abspath(os.path.dirname(__file__))
+
+        # The command to build the parser
+        command = [
+            "python", "-m", "grako", os.path.join(basedir, "modelspec.ebnf"),
+            "-o", os.path.join(basedir, "parser.py"),
+        ]
+
+        raise RuntimeError(msg.format(command=" ".join(command)))

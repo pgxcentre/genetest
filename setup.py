@@ -15,8 +15,8 @@ from setuptools import setup, find_packages
 
 
 MAJOR = 0
-MINOR = 2
-MICRO = 1
+MINOR = 3
+MICRO = 0
 VERSION = "{0}.{1}.{2}".format(MAJOR, MINOR, MICRO)
 
 
@@ -100,10 +100,11 @@ def setup_package():
         install_requires=["numpy >= 1.12.0", "pandas >= 0.19.0",
                           "setuptools >= 26.1.0", "statsmodels >= 0.8.0",
                           "grako >= 3.10.0", "scipy >= 0.19.0",
-                          "geneparse >= 0.1.0", "pyyaml >= 3.12"],
+                          "geneparse >= 0.4.1", "pyyaml >= 3.12"],
         packages=find_packages(),
         package_data={"genetest.tests": ["data/genotypes/*",
-                                         "data/statistics/*"]},
+                                         "data/statistics/*"],
+                      "genetest.modelspec": ["modelspec.ebnf"]},
         classifiers=["Development Status :: 4 - Beta",
                      "Intended Audience :: Science/Research",
                      "License :: Free for non-commercial use",

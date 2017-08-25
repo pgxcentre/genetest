@@ -18,6 +18,7 @@ import functools
 
 import numpy as np
 import pandas as pd
+from geneparse.utils import genotype_to_df
 
 from ..statistics import model_map
 from ..statistics.descriptive import get_maf
@@ -275,6 +276,9 @@ class ModelSpec(object):
         # Hence, it is more efficient to cache it than to request it.
         self.variant_metadata = {}
 
+        # Is there GWAS interaction involved?
+        self.has_gwas_interaction = False
+
     def _clean_test(self, test):
         """Returns a factory function to create instances of a statistical
         model.
@@ -393,7 +397,8 @@ class ModelSpec(object):
         # dataframe.
         if markers is not SNPs:
             for entity, marker in markers:
-                entity_id = self.dependencies[("GENOTYPES", marker)]
+                # Previously:
+                # entity_id = self.dependencies[("GENOTYPES", marker)]
 
                 try:
                     g = genotypes.get_variant_by_name(marker)
@@ -408,12 +413,22 @@ class ModelSpec(object):
                     raise ValueError("{}: invalid marker name".format(marker))
                 g = g.pop()
 
-                # Rename the genotypes column before joining.
-                df = df.join(
-                    pd.Series(g.genotypes, index=genotypes.get_samples(),
-                              name=entity_id.id),
-                    how="inner",
+                is_stratification_variable = (
+                    self.stratify_by and (entity in self.stratify_by)
                 )
+                if is_stratification_variable:
+                    # This genetic variable is a stratifying factor.
+                    # We automatically convert it to a str representation.
+                    cur = genotype_to_df(g, genotypes.get_samples(),
+                                         as_string=True)
+                else:
+                    cur = genotype_to_df(g, genotypes.get_samples(),
+                                         as_string=False)
+
+                cur.columns = [entity.id]
+                # FIXME I think that inner-joining here is too early.
+                # Maybe it should be handled at the analysis level?
+                df = df.join(cur, how="inner")
 
                 if df.shape[0] == 0:
                     raise ValueError(
@@ -422,23 +437,26 @@ class ModelSpec(object):
                         "different."
                     )
 
-                # Compute the maf.
-                maf, minor, major, flip = get_maf(
-                    df[entity_id.id], g.coded, g.reference,
-                )
+                if not is_stratification_variable:
+                    # Compute the maf.
+                    maf, minor, major, flip = get_maf(
+                        df[entity.id], g.coded, g.reference,
+                    )
 
-                if flip:
-                    df.loc[:, entity_id.id] = 2 - df.loc[:, entity_id.id]
+                    if flip:
+                        df.loc[:, entity.id] = 2 - df.loc[:, entity.id]
 
-                # Also bind the EntityIdentifier in case we need to compute
-                # a GRS.
-                entity_id.bind(df[entity_id.id])
+                    # Also bind the EntityIdentifier in case we need to compute
+                    # a GRS.
+                    # Vestigial code:
+                    # entity.bind(df[entity])
 
-                # And save the variant metadata.
-                self.variant_metadata[entity.id] = {
-                    "name": marker, "chrom": g.variant.chrom, "pos":
-                    g.variant.pos, "minor": minor, "major": major, "maf": maf
-                }
+                    # And save the variant metadata.
+                    self.variant_metadata[entity.id] = {
+                        "name": marker, "chrom": str(g.variant.chrom),
+                        "pos": g.variant.pos, "minor": minor, "major": major,
+                        "maf": maf, "coded": minor
+                    }
 
         # Apply transformations.
         df = self._apply_transformations(df)
@@ -458,9 +476,26 @@ class ModelSpec(object):
             f = transformation_handler.handlers[action]
             res = f(df, source, *params)
 
+            # We have a special GWAS interaction transformation, that doesn't
+            # modify the data, but creates a list of "columns" to multiply with
+            # the SNPs column
+            if action == "GWAS_INTERACTION":
+                # Setting the flag for GWAS interaction
+                self.has_gwas_interaction = True
+
+                # Creating a final dictionary where the keys are the output
+                # column names (after the multiplication) and the values are
+                # the columns to multiply
+                self.gwas_interaction = {}
+                for key, cols in res.items():
+                    new_key = "{}{}".format(
+                        target.id, key if key == "" else ":" + key,
+                    )
+                    self.gwas_interaction[new_key] = cols
+
             # Some transformations return multiple columns. We create all the
             # relevant columns in the dataframe.
-            if isinstance(res, dict):
+            elif isinstance(res, dict):
                 for key, col in res.items():
                     df["{}:{}".format(target.id, key)] = col
 
@@ -582,6 +617,33 @@ def _interaction(data, *entities):
     return out
 
 
+@transformation_handler("GWAS_INTERACTION")
+def _gwas_interaction(data, *entities):
+    # Finding all the columns for all the targets
+    column_names = tuple(
+        tuple(name for name in data.columns if name.startswith(entity.id))
+        for entity in entities
+    )
+
+    # Finding the level column names if there are factors
+    factor_levels = tuple(
+        tuple(name[len(entity.id)+1:] for name in names)
+        for names, entity in zip(column_names, entities)
+    )
+
+    # Only creating the column name
+    out = {}
+    for cols, level_names in zip(itertools.product(*column_names),
+                                 itertools.product(*factor_levels)):
+        # Getting the key (for factors, if present)
+        key = re.sub(":{2,}", "", ":".join(level_names).strip(":"))
+
+        # Saving the columns to multiply with SNPs
+        out[key] = cols
+
+    return out
+
+
 def _reset():
     TransformationManager.transformations = []
     DependencyManager.dependencies = {}
@@ -597,3 +659,4 @@ log10 = TransformationManager("LOG10")
 ln = TransformationManager("LN")
 pow = TransformationManager("POW")
 interaction = TransformationManager("INTERACTION")
+gwas_interaction = TransformationManager("GWAS_INTERACTION")

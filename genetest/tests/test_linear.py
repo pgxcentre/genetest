@@ -17,7 +17,7 @@ import pandas as pd
 from pkg_resources import resource_filename
 
 from pyplink import PyPlink
-from geneparse.plink import PlinkReader
+from geneparse import parsers
 
 from ..statistics.core import StatsError
 from ..statistics.models.linear import StatsLinear
@@ -37,21 +37,21 @@ class TestStatsLinear(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
         # Loading the data
-        cls.data = pd.read_csv(
+        data = pd.read_csv(
             resource_filename(__name__, "data/statistics/linear.txt.bz2"),
             sep="\t",
             compression="bz2",
         )
 
         # Creating the index
-        cls.data["sample"] = [
-            "s{}".format(i+1) for i in range(cls.data.shape[0])
+        data["sample"] = [
+            "s{}".format(i+1) for i in range(data.shape[0])
         ]
-        cls.data = cls.data.set_index("sample")
+        data = data.set_index("sample")
 
         # Creating the dummy phenotype container
         cls.phenotypes = _DummyPhenotypes()
-        cls.phenotypes.data = cls.data.drop(
+        cls.phenotypes.data = data.drop(
             ["snp{}".format(i+1) for i in range(5)],
             axis=1,
         )
@@ -63,12 +63,12 @@ class TestStatsLinear(unittest.TestCase):
         cls.plink_prefix = os.path.join(cls.tmp_dir.name, "input")
 
         # Permuting the sample to add a bit of randomness
-        new_sample_order = np.random.permutation(cls.data.index)
+        new_sample_order = np.random.permutation(data.index)
 
         # Creating the BED file
         with PyPlink(cls.plink_prefix, "w") as bed:
-            for snp in [s for s in cls.data.columns if s.startswith("snp")]:
-                bed.write_genotypes(cls.data.loc[new_sample_order, snp])
+            for snp in [s for s in data.columns if s.startswith("snp")]:
+                bed.write_genotypes(data.loc[new_sample_order, snp])
 
         # Creating the BIM file
         with open(cls.plink_prefix + ".bim", "w") as bim:
@@ -84,12 +84,12 @@ class TestStatsLinear(unittest.TestCase):
                 print(sample, sample, 0, 0, 0, -9, file=fam)
 
         # Creating the genotype parser
-        cls.genotypes = PlinkReader(cls.plink_prefix)
+        cls.genotypes = parsers["plink"](cls.plink_prefix)
 
     @classmethod
     def tearDownClass(cls):
-        cls.tmp_dir.cleanup()
         cls.genotypes.close()
+        cls.tmp_dir.cleanup()
 
     def setUp(self):
         # Resetting the model specification
@@ -223,6 +223,148 @@ class TestStatsLinear(unittest.TestCase):
         # Checking the model r squared (adjusted) (according to SAS)
         self.assertAlmostEqual(
             1 - (n - 1) * (1 - 0.1205341542723)/((n - 1) - p),
+            results["MODEL"]["r_squared_adj"],
+        )
+
+        # There should be a file for the failed snp5
+        self.assertTrue(os.path.isfile(out_prefix + "_failed_snps.txt"))
+        with open(out_prefix + "_failed_snps.txt") as f:
+            self.assertEqual(
+                [["snp5", "condition number is large, inf"]],
+                [line.split("\t") for line in f.read().splitlines()],
+            )
+
+    def test_linear_gwas_inter(self):
+        """Tests linear regression for GWAS with interaction."""
+        # The variables which are factors
+        gender = spec.factor(spec.phenotypes.gender)
+
+        # The interaction term
+        inter = spec.gwas_interaction(spec.phenotypes.var1)
+
+        # Creating the model specification
+        modelspec = spec.ModelSpec(
+            outcome=spec.phenotypes.pheno1,
+            predictors=[spec.SNPs, spec.phenotypes.age,
+                        spec.phenotypes.var1, gender, inter],
+            test=lambda: StatsLinear(condition_value_t=15000),
+        )
+
+        # The output prefix
+        out_prefix = os.path.join(self.tmp_dir.name, "results")
+
+        # Performing the analysis and retrieving the results
+        subscriber = subscribers.ResultsMemory()
+        analysis.execute(
+            self.phenotypes, self.genotypes, modelspec,
+            subscribers=[subscriber], output_prefix=out_prefix,
+        )
+        gwas_results = subscriber._get_gwas_results()
+
+        # Checking the number of results (should be 4)
+        self.assertEqual(4, len(gwas_results.keys()))
+
+        # The number of observations and parameters
+        n = self.phenotypes.data.shape[0]
+        p = 5
+
+        # Checking the first marker (snp1)
+        results = gwas_results["snp1"]
+        self.assertEqual("snp1", results["SNPs"]["name"])
+        self.assertEqual("3", results["SNPs"]["chrom"])
+        self.assertEqual(1234, results["SNPs"]["pos"])
+        self.assertEqual("T", results["SNPs"]["minor"])
+        self.assertEqual("C", results["SNPs"]["major"])
+        self.assertAlmostEqual(0.016666666666666666, results["SNPs"]["maf"])
+
+        # Checking the marker statistics (according to SAS)
+        self.assertAlmostEqual(28.3750067790686, results[inter.id]["coef"])
+        self.assertAlmostEqual(15.31571903952, results[inter.id]["std_err"])
+        self.assertAlmostEqual(-2.33116110697257,
+                               results[inter.id]["lower_ci"])
+        self.assertAlmostEqual(59.0811746651098,
+                               results[inter.id]["upper_ci"])
+        self.assertAlmostEqual(1.85267219291832,
+                               results[inter.id]["t_value"])
+        self.assertAlmostEqual(-np.log10(0.06939763567524),
+                               -np.log10(results[inter.id]["p_value"]))
+
+        # Checking the model r squared (adjusted) (according to SAS)
+        self.assertAlmostEqual(
+            1 - (n - 1) * (1 - 0.39367309450771)/((n - 1) - p),
+            results["MODEL"]["r_squared_adj"],
+        )
+
+        # Checking the second marker (snp2)
+        results = gwas_results["snp2"]
+        self.assertEqual("snp2", results["SNPs"]["name"])
+        self.assertEqual("3", results["SNPs"]["chrom"])
+        self.assertEqual(9618, results["SNPs"]["pos"])
+        self.assertEqual("C", results["SNPs"]["minor"])
+        self.assertEqual("A", results["SNPs"]["major"])
+        self.assertAlmostEqual(0.20833333333333334, results["SNPs"]["maf"])
+
+        # Checking the marker statistics (according to SAS)
+        self.assertAlmostEqual(-0.38040787976905, results[inter.id]["coef"])
+        self.assertAlmostEqual(0.56827855931761, results[inter.id]["std_err"])
+        self.assertAlmostEqual(-1.5197377932663, results[inter.id]["lower_ci"])
+        self.assertAlmostEqual(0.75892203372818, results[inter.id]["upper_ci"])
+        self.assertAlmostEqual(-0.66940389274205, results[inter.id]["t_value"])
+        self.assertAlmostEqual(-np.log10(0.50609004475028),
+                               -np.log10(results[inter.id]["p_value"]))
+
+        # Checking the model r squared (adjusted) (according to SAS)
+        self.assertAlmostEqual(
+            1 - (n - 1) * (1 - 0.20974496120713)/((n - 1) - p),
+            results["MODEL"]["r_squared_adj"],
+        )
+
+        # Checking the third marker (snp3)
+        results = gwas_results["snp3"]
+        self.assertEqual("snp3", results["SNPs"]["name"])
+        self.assertEqual("2", results["SNPs"]["chrom"])
+        self.assertEqual(1519, results["SNPs"]["pos"])
+        self.assertEqual("G", results["SNPs"]["minor"])
+        self.assertEqual("T", results["SNPs"]["major"])
+        self.assertAlmostEqual(0.29166666666666669, results["SNPs"]["maf"])
+
+        # Checking the marker statistics (according to SAS)
+        self.assertAlmostEqual(-0.0097102715733324, results[inter.id]["coef"])
+        self.assertAlmostEqual(0.60510302626961, results[inter.id]["std_err"])
+        self.assertAlmostEqual(-1.22286879616119,
+                               results[inter.id]["lower_ci"])
+        self.assertAlmostEqual(1.20344825301452, results[inter.id]["upper_ci"])
+        self.assertAlmostEqual(-0.0160473029414429,
+                               results[inter.id]["t_value"])
+        self.assertAlmostEqual(0.98725579876123, results[inter.id]["p_value"])
+
+        # Checking the model r squared (adjusted) (according to SAS)
+        self.assertAlmostEqual(
+            1 - (n - 1) * (1 - 0.0098129328525696)/((n - 1) - p),
+            results["MODEL"]["r_squared_adj"],
+        )
+
+        # Checking the fourth marker (snp4)
+        results = gwas_results["snp4"]
+        self.assertEqual("snp4", results["SNPs"]["name"])
+        self.assertEqual("1", results["SNPs"]["chrom"])
+        self.assertEqual(5871, results["SNPs"]["pos"])
+        self.assertEqual("G", results["SNPs"]["minor"])
+        self.assertEqual("A", results["SNPs"]["major"])
+        self.assertAlmostEqual(0.275, results["SNPs"]["maf"])
+
+        # Checking the marker statistics (according to SAS)
+        self.assertAlmostEqual(-0.46834820683113, results[inter.id]["coef"])
+        self.assertAlmostEqual(0.50898831048606, results[inter.id]["std_err"])
+        self.assertAlmostEqual(-1.48880832845448,
+                               results[inter.id]["lower_ci"])
+        self.assertAlmostEqual(0.5521119147922, results[inter.id]["upper_ci"])
+        self.assertAlmostEqual(-0.92015513359016, results[inter.id]["t_value"])
+        self.assertAlmostEqual(0.36158411106165, results[inter.id]["p_value"])
+
+        # Checking the model r squared (adjusted) (according to SAS)
+        self.assertAlmostEqual(
+            1 - (n - 1) * (1 - 0.13411074411446)/((n - 1) - p),
             results["MODEL"]["r_squared_adj"],
         )
 

@@ -50,7 +50,7 @@ class MAFFilter(VariantPredicate):
             bool: ``True`` if MAF >= threshold, ``False`` otherwise.
 
         """
-        maf = get_maf(snp.genotypes.values, None, None)[0]
+        maf = get_maf(snp.genotypes, None, None)[0]
         return maf >= self.maf
 
 

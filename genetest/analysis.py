@@ -14,6 +14,7 @@ Run a full statistical analysis.
 import time
 import queue
 import itertools
+import functools
 import multiprocessing
 import traceback
 import logging
@@ -64,12 +65,13 @@ def _generate_sample_order(x_samples, geno_samples):
     return geno_order, x_order
 
 
-def _gwas_worker(q, results_q, failed, abort, fit, y, X, samples, maf_t=None):
+def _gwas_worker(q, results_q, failed, abort, fit, y, X, samples, maf_t=None,
+                 interaction=None):
     # The sample order (to add genotypes to the X data frame
     geno_index = None
     sample_order = None
 
-    # Get a SNP.
+    # Get a SNP
     while not abort.is_set():
         # Get a SNP from the Queue.
         try:
@@ -78,6 +80,8 @@ def _gwas_worker(q, results_q, failed, abort, fit, y, X, samples, maf_t=None):
             # We waited for 1 seconds, just in case abort was set and no more
             # SNP is getting pushed in the Queue
             continue
+
+        q.task_done()
 
         # This is a check for a sentinel.
         if snp is None:
@@ -101,7 +105,21 @@ def _gwas_worker(q, results_q, failed, abort, fit, y, X, samples, maf_t=None):
         # Set the genotypes
         X.loc[sample_order, "SNPs"] = snp.genotypes[geno_index]
 
+        if interaction:
+            # We have an interaction with SNPs, so we also need to compute it
+            # by multiplying SNPs with every columns
+            for key, cols in interaction.items():
+                X.loc[:, key] = functools.reduce(
+                    np.multiply,
+                    (X[col] for col in itertools.chain(["SNPs"], cols)),
+                )
+
         not_missing = _missing(y, X)
+
+        if np.sum(not_missing) == 0:
+            # All genotypes were missing
+            failed.put((snp.variant.name, "All genotypes are missing"))
+            continue
 
         # Computing MAF
         maf, minor, major, flip = get_maf(
@@ -143,8 +161,8 @@ def _gwas_worker(q, results_q, failed, abort, fit, y, X, samples, maf_t=None):
 
         # Update the results for the SNP with metadata.
         results["SNPs"].update({
-            "chrom": snp.variant.chrom, "pos": snp.variant.pos, "major": major,
-            "minor": minor, "name": snp.variant.name,
+            "chrom": str(snp.variant.chrom), "pos": snp.variant.pos,
+            "major": major, "minor": minor, "name": snp.variant.name,
         })
         results["SNPs"]["maf"] = maf
 
@@ -286,13 +304,15 @@ def _execute_phewas(phenotypes, genotypes, modelspec, subscribers,
     data = modelspec.create_data_matrix(phenotypes, genotypes)
 
     # Prepare synchronized data structures.
-    results_queue = multiprocessing.Queue()
-    phen_queue = multiprocessing.Queue()
+    results_queue = multiprocessing.JoinableQueue()
+    phen_queue = multiprocessing.JoinableQueue()
     abort = multiprocessing.Event()
 
     # The number if CPUs
     if cpus is None:
         cpus = multiprocessing.cpu_count() - 1
+
+    cpus = max(1, cpus)
 
     # Create workers.
     predictors = modelspec.predictors
@@ -326,6 +346,8 @@ def _execute_phewas(phenotypes, genotypes, modelspec, subscribers,
             time.sleep(1)
             continue
 
+        results_queue.task_done()
+
         if res is None:
             n_workers_done += 1
             continue
@@ -337,8 +359,20 @@ def _execute_phewas(phenotypes, genotypes, modelspec, subscribers,
             except KeyError as e:
                 subscribers_module.subscriber_error(e.args[0], abort)
 
+    # There should be remaining sentinels in the phen_queue.
+    while not phen_queue.empty():
+        val = phen_queue.get()
+        assert val is None, val
+        phen_queue.task_done()
+
+    for q in (phen_queue, results_queue):
+        q.join()
+
     for worker in workers:
         worker.join()
+
+    for subscriber in subscribers:
+        subscriber.close()
 
     logger.info("PheWAS complete.")
 
@@ -354,6 +388,7 @@ def _phewas_worker(data, predictors, abort, fit, phen_queue, results_queue):
     while not abort.is_set():
         # Get an outcome.
         y = phen_queue.get()
+        phen_queue.task_done()
 
         # Sentinel check.
         if y is None:
@@ -387,7 +422,7 @@ def _execute_stratified(genotypes, modelspec, subscribers, y, X,
         if subgroup is None:
             levels = X[modelspec.stratify_by[i].id].dropna().unique()
             var_levels.append(levels)
-        elif hasattr(subgroup, "__iter__"):
+        elif hasattr(subgroup, "__iter__") and type(subgroup) is not str:
             var_levels.append(subgroup)
         else:
             var_levels.append([subgroup])
@@ -402,6 +437,9 @@ def _execute_stratified(genotypes, modelspec, subscribers, y, X,
     translations = modelspec.get_translations()
 
     for levels in subsets:
+        # levels is a list of the same length as modelspec.stratify_by giving
+        # the current level of the variable to subset.
+        #
         # current_subset is an iterable of (entity, level) pairs.
         current_subset = list(zip(modelspec.stratify_by, levels))
 
@@ -431,10 +469,15 @@ def _execute_stratified(genotypes, modelspec, subscribers, y, X,
 
         # Make sure everything went ok.
         if this_x.shape[0] == 0:
+            observed_levels = {
+                translations[var.id]: list(X[var.id].dropna().unique())
+                for var in modelspec.stratify_by
+            }
             raise ValueError(
                 "No samples left in subgroup analysis ({}). Are all requested "
-                "levels valid?"
-                "".format(subset_info)
+                "levels valid?\n"
+                "The observed levels are: {}"
+                "".format(subset_info, observed_levels)
             )
         elif this_x.shape[1] == 0:
             raise ValueError(
@@ -513,11 +556,24 @@ def _execute_gwas(genotypes, modelspec, subscribers, y, X, variant_predicates,
         if cpus is None:
             cpus = multiprocessing.cpu_count() - 1
 
+        cpus = max(1, cpus)
+
         # Create queues for failing SNPs and the consumer queue.
-        failed = multiprocessing.Queue()
-        q = multiprocessing.Queue(500)
-        results = multiprocessing.Queue()
+        failed = multiprocessing.JoinableQueue()
+        q = multiprocessing.JoinableQueue(500)
+        results = multiprocessing.JoinableQueue()
         abort = multiprocessing.Event()
+
+        # Do we have GWAS interaction?
+        gwas_interaction = None
+        if modelspec.has_gwas_interaction:
+            gwas_interaction = modelspec.gwas_interaction
+
+            # We need to update the subscribers
+            for subscriber in subscribers:
+                subscriber._update_gwas_interaction(
+                    list(sorted(gwas_interaction.keys()))
+                )
 
         # Spawn the worker processes.
         workers = []
@@ -530,7 +586,7 @@ def _execute_gwas(genotypes, modelspec, subscribers, y, X, variant_predicates,
             worker = multiprocessing.Process(
                 target=_gwas_worker,
                 args=(q, results, failed, abort, fit, this_y, this_X, samples,
-                      maf_t)
+                      maf_t, gwas_interaction)
             )
 
             workers.append(worker)
@@ -557,10 +613,12 @@ def _execute_gwas(genotypes, modelspec, subscribers, y, X, variant_predicates,
                 return 0
 
             if res is None:
+                results.task_done()
                 return 1
 
             for subscriber in subscribers:
                 try:
+                    results.task_done()
                     subscriber.handle(res)
                 except KeyError as e:
                     subscribers_module.subscriber_error(e.args[0], abort)
@@ -605,7 +663,7 @@ def _execute_gwas(genotypes, modelspec, subscribers, y, X, variant_predicates,
                 nb_failed_done += 1
             else:
                 messages["failed"].append(snp)
-        failed.put(None)
+            failed.task_done()
 
         # Dump the not analyzed SNPs to disk.
         for snp in not_analyzed:
@@ -619,6 +677,8 @@ def _execute_gwas(genotypes, modelspec, subscribers, y, X, variant_predicates,
             while not a_queue.empty():
                 val = a_queue.get()
                 assert val is None, (name, val)
+                a_queue.task_done()
+            a_queue.join()
 
         # Join the workers.
         for worker in workers:

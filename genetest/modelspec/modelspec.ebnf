@@ -6,7 +6,7 @@
 #   y ~ x + x1 * x2 as z        # Named interaction.
 #   y | male ~ x                # Stratified analysis.
 #   y | diabetes = 0 ~ x        # Subgroup analysis.
-#   y | g(rs12345) ~ x          # Genetic subgroup analysis.
+#   y | rs12345 = "AT"~ x       # Genetic subgroup analysis (needs to be in ).
 #   y ~ g(rs12345) + x          # Genetic analysis.
 #   y ~ SNPs + x                # GWAS.
 #   y ~ factor(x)               # Factors.
@@ -19,8 +19,8 @@ model = outcome:(phenotype_or_variant | labelled_outcome_group)
         [ "|" ~ conditions:condition_group ]
         "~" predictors:predictors $;
 
-condition_group = ",".{ condition };
-condition = name:phenotype_or_variant ["=" level:integer];
+condition_group = ",".{ condition }+;
+condition = name:phenotype_or_variant ["=" level:literal];
 
 labelled_outcome_group = "[" ~ tags:",".{ labelled_outcome } "]";
 labelled_outcome = key:name "=" name:phenotype;
@@ -39,8 +39,8 @@ predictors = "+".{ expression }+;
 
 # Not using phenotype_or_variant to avoid the semantic methods from getting
 # called in the lookahead.
-interaction = &((genotype | "factor(" name ")" | name ) "*")
-              interaction:"*".{ factor | phenotype_or_variant }
+interaction = &(( SNPs | genotype | "factor(" name ")" | name ) "*")
+              interaction:"*".{ SNPs | factor | phenotype_or_variant }
               ["as" as:name];
 
 SNPs = "SNPs";
@@ -53,10 +53,13 @@ phenotype_or_variant = genotype | phenotype;
 
 # num = num:/-?[0-9]+(\.[0-9]+)?/;
 integer = int:/[0-9]+/;
+string = str:(/".+"/|/'.+'/);
+
+literal = integer | string;
 
 expression =
-    | SNPs
     | interaction
+    | SNPs
     | genotype
     | factor
     | ln
