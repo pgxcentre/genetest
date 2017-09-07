@@ -10,255 +10,129 @@ Utilities to build statistical models.
 # Commons, PO Box 1866, Mountain View, CA 94042, USA.
 
 
-import re
-import uuid
-import operator
-import itertools
-import functools
-
-import numpy as np
 import pandas as pd
+
+
 from geneparse.utils import genotype_to_df
 
-from ..statistics import model_map
-from ..statistics.descriptive import get_maf
 
+class Variable(object):
+    def __init__(self, name):
+        self.name = name
 
-SNPs = "SNPs"
-model = "MODEL"
-
-
-class PheWAS(object):
-    """A collection of EntityIdentifiers used to describe pheWAS analyses."""
-    def __init__(self, li=None):
-        self.li = li
-
-
-class transformation_handler(object):
-    handlers = {}
-
-    def __init__(self, action):
-        self.action = action
-
-    def __call__(self, f):
-        self.__class__.handlers[self.action] = f
-        return f
-
-
-class Result(object):
-    def __init__(self, entity):
-        self.path = [entity]
-
-    def __getitem__(self, key):
-        self.path.append(key)
-        return self
-
-    def get(self, results):
-        cur = results
-
-        for field in self.path:
-            if isinstance(field, EntityIdentifier):
-                # Access for transformations and entities.
-                if field.id in results.keys():
-                    cur = cur[field.id]
-                else:
-                    # Check for many levels.
-                    results_per_level = {}
-
-                    for key in results:
-                        split_key = key.split(":")
-                        id, level = (":".join(split_key[:-1]), split_key[-1])
-                        if id == field.id:
-                            results_per_level[level] = cur[key]
-
-                    cur = results_per_level
-
-            else:
-                # Access for special fields like "SNPs", "MODEL" or for
-                # regular keys.
-                cur = cur[field]
-
-        return cur
-
-
-class ResultMetaclass(object):
-    def __getitem__(self, entity):
-        return Result(entity)
-
-
-class Expression(object):
-    def __init__(self, expression):
-        self.expression = expression
-
-    def __mul__(self, other):
-        return Expression((operator.mul, self.expression, other))
-
-    def __div__(self, other):
-        return Expression((operator.div, self.expression, other))
-
-    def __add__(self, other):
-        return Expression((operator.add, self.expression, other))
-
-    def __sub__(self, other):
-        return Expression((operator.sub, self.expression, other))
-
-    __rmul__ = __mul__
-    __rdiv__ = __div__
-    __radd__ = __add__
-    __rsub__ = __sub__
-
-    def eval(self):
-        return self._eval_expression(self.expression)
-
-    @staticmethod
-    def _eval_expression(expression):
-        op, left, right = expression
-
-        if isinstance(left, tuple):
-            left = Expression._eval_expression(left)
-
-        if isinstance(left, Expression):
-            left = Expression._eval_expression(left.expression)
-
-        if isinstance(right, tuple):
-            right = Expression._eval_expression(right)
-
-        if isinstance(right, Expression):
-            right = Expression._eval_expression(right.expression)
-
-        if hasattr(left, "values"):
-            left = left.values
-
-        if hasattr(right, "values"):
-            right = right.values
-
-        return op(left, right)
-
-
-class EntityIdentifier(object):
-    """Placeholder for variables in the modelspec.
-
-    Instances get assigned an ID (a UUID4 if nothing is specified), the
-    chosen identifier otherwise.
-
-    It is possible to do basic arithmetic on instances. This will return an
-    Expression object that can be evaluated. Before evaluation, data needs
-    to be bound to the EntityIdentifier using the bind method.
-
-    """
-    def __init__(self, id=None):
-        if id:
-            self.id = id
-        else:
-            self.id = str(uuid.uuid4())
-
-        self.values = None
-
-    def __mul__(self, other):
-        return Expression((operator.mul, self, other))
-
-    def __div__(self, other):
-        return Expression((operator.div, self, other))
-
-    def __add__(self, other):
-        return Expression((operator.add, self, other))
-
-    def __sub__(self, other):
-        return Expression((operator.sub, self, other))
-
-    __rmul__ = __mul__
-    __rdiv__ = __div__
-    __radd__ = __add__
-    __rsub__ = __sub__
+    def get_data(self):
+        raise NotImplemented()
 
     def __repr__(self):
-        return self.id.split("-")[0]
+        return "{}:{}".format(self.__class__.__name__, self.name)
 
-    def bind(self, values):
-        self.values = values
+    def __hash__(self):
+        return hash(str(self))
 
-
-class DependencyManager(object):
-    """Class that remembers which items are accessed in an internal set.
-
-    For example, "genotypes" and "phenotypes" are dependency managers.
-
-    """
-    dependencies = {}
-
-    def __init__(self, source):
-        self.source = source
-
-    def __getitem__(self, key):
-        deps = self.__class__.dependencies
-
-        if (self.source, key) in deps:
-            return deps[(self.source, key)]
-
-        id = EntityIdentifier()
-        deps[(self.source, key)] = id
-        return id
-
-    __getattr__ = __getitem__
+    def __eq__(self, other):
+        return self.__class__ is other.__class__ and str(self) == str(other)
 
 
-class TransformationManager(object):
-    """Class that remembers which data manipulation will be necessary."""
-    transformations = []
+class Phenotype(Variable):
+    def get_data(self, phenotypes, genotypes):
+        # Returns a DataFrame
+        return phenotypes.get_phenotypes([self.name])
 
-    def __init__(self, action):
-        self.action = action
 
-    def __call__(self, source, *params, name=None):
-        # source is either an EntityIdentifier or an Expression
-        # Generate an identifier for the result of the transformation.
-        if name is None:
-            # Generate an interpretable name.
-            if isinstance(source, Expression):
-                raise ValueError(
-                    "The name parameter is mandatory for expression-based "
-                    "transformations."
-                )
-            else:
-                name = "TRANSFORM:{}:{}".format(self.action, source.id)
+class Genotype(Variable):
+    def get_genotype(self, phenotypes, genotypes):
+        li = genotypes.get_variant_by_name(self.name)
+        if len(li) == 0:
+            raise ValueError("Could not find variant: {}".format(self.name))
+        elif len(li) == 1:
+            return li[0]
+        else:
+            raise NotImplementedError(
+                "Multi-allelic variants are not yet handled ({})."
+                "".format(self.name)
+            )
+
+    def get_data(self, phenotypes, genotypes, allele_string=False):
+        return genotype_to_df(
+            self.get_genotype(phenotypes, genotypes),
+            samples=genotypes.get_samples(),
+            as_string=allele_string
+        )
+
+
+class Transformation(object):
+    def __init__(self, *args, **kwargs):
+        raise NotImplemented()
+
+    def __call__(self, phenotypes, genotypes):
+        raise NotImplemented()
+
+    def __hash__(self):
+        raise NotImplemented()
+
+    def __eq__(self, other):
+        raise NotImplemented()
+
+
+class Factor(Transformation):
+    def __init__(self, variable):
+        self.variable = variable
+
+    def __hash__(self):
+        return hash("{}:{}".format(self.__class__.__name__, self.variable))
+
+    def __eq__(self, other):
+        return (
+            self.__class__ is other.__class__ and
+            self.variable == other.variable
+        )
+
+    def __call__(self, phenotypes, genotypes):
+        if isinstance(self.variable, Genotype):
+            g = self.variable.get_genotype(phenotypes, genotypes)
+
+            df = _make_factor_from_genotype(
+                g, samples=genotypes.get_samples()
+            )
 
         else:
-            name = "TRANSFORM:{}".format(name)
+            df = self.variable.get_data(phenotypes, genotypes)
 
-        target = EntityIdentifier(name)
+        # Take the unique levels and make the dummy variables.
+        assert df.shape[1] == 1
+        levels = sorted(df.iloc[:, 0].dropna().unique())
 
-        # Make sure there are no entities with the same name.
-        existing_transformations = {
-            i[2].id: i[2] for i in TransformationManager.transformations
-        }
-        if target.id in existing_transformations:
-            # The transformation was already performed, so we'll just return
-            # the already created target
-            return existing_transformations[target.id]
+        out = {}
+        for i, level in enumerate(levels):
+            if i == 0:
+                continue
 
-        TransformationManager.transformations.append(
-            (self.action, source, target, params)
-        )
-        return target
+        # TODO
+
+
+def _make_factor_from_genotype(g, samples):
+    """Encode genotypes as factors by using reference allele as reference."""
+    name = g.variant.name if g.variant.name else "genotypes"
+    df = pd.DataFrame(g.genotypes, index=samples, columns=[name])
+
+    df["alleles"] = None
+
+    hard_calls = df[name].round()
+    df.loc[hard_calls == 0, "alleles"] = "0-{0}/{0}".format(g.reference)
+    df.loc[hard_calls == 1, "alleles"] = "1-{0}/{1}".format(g.reference,
+                                                            g.coded)
+    df.loc[hard_calls == 2, "alleles"] = "2-{0}/{0}".format(g.coded)
+
+    df = df[["alleles"]]
+    df.columns = [name]
+
+    return df
 
 
 class ModelSpec(object):
     def __init__(self, outcome, predictors, test, no_intercept=False,
                  stratify_by=None):
-        """Statistical model specification.
 
-        Args:
-            outcome (EntityIdentifier): The outcome variable of the model.
-            predictors (list): A list of EntityIdentifier that represent
-                               covariates.
-            test (callable or str): Either the name of a statistical test or
-                                    a callable that returns an instance of a
-                                    statistical test.
-            no_intercept (bool): Controls if a column of ones is to be added.
-            stratify_by (list): A list of EntityIdentifier instances
-                                to stratify the analysis.
-
-        """
         self.outcome = self._clean_outcome(outcome)
         self.predictors = self._clean_predictors(predictors)
         self.test = self._clean_test(test)
@@ -279,384 +153,23 @@ class ModelSpec(object):
         # Is there GWAS interaction involved?
         self.has_gwas_interaction = False
 
-    def _clean_test(self, test):
-        """Returns a factory function to create instances of a statistical
-        model.
-
-        Args:
-            test (str, class or callable): This can be either the name of the
-                                           test or a class or callable that
-                                           returns a valid instance.
-
-        """
-        try:
-            return model_map[test]
-        except KeyError:
-            pass
-
-        if hasattr(test, "__call__"):
-            return test
-
-        raise ValueError(
-            "{} is not a valid statistical model.".format(test)
-        )
-
-    def _clean_outcome(self, outcome):
-        if isinstance(outcome, EntityIdentifier):
-            return {"y": outcome}
-
-        return outcome
-
-    def _clean_predictors(self, predictors):
-        iter_failed = True
-        try:
-            iter(predictors)
-            iter_failed = False
-        except TypeError:
-            pass
-
-        if iter_failed:
-            raise TypeError("'predictors' argument needs to be an iterable.")
-
-        return predictors
-
     @property
     def dependencies(self):
-        return DependencyManager.dependencies
-
-    @property
-    def transformations(self):
-        return TransformationManager.transformations
+        raise NotImplemented()
 
     def get_tested_variants(self):
-        if SNPs in self.predictors:
-            return SNPs
-        else:
-            return [
-                (v, k[1]) for k, v in self.dependencies.items()
-                if k[0] == "GENOTYPES"
-            ]
-
-    def get_translations(self):
-        """Returns a dict mapping IDs to regular variable names."""
-        return {id.id: tu[1] for tu, id in self.dependencies.items()}
+        raise NotImplemented()
 
     def create_data_matrix(self, phenotypes, genotypes):
-        """Create the data matrix given data containers.
+        raise NotImplemented()
 
-        Args:
-            phenotypes (PhenotypeContainer): The phenotypes.
-            genotypes (geneparse.core.Genotypes): The genotypes.
 
-        """
-        PHENOTYPES = "PHENOTYPES"
+# phenotypes = DependencyManager("PHENOTYPES")
+# genotypes = DependencyManager("GENOTYPES")
 
-        # Extract the phenotype dependencies.
-        if isinstance(self.outcome, PheWAS) and self.outcome.li is None:
-            # Get all the phenotypes.
-            df = phenotypes.get_phenotypes()
-
-            # Create entities if needed for the outcomes.
-            self.outcome.li = []
-
-            col_names = []
-            for col in df.columns:
-                # Get an entity if it already exists.
-                entity = self.dependencies.get((PHENOTYPES, col))
-
-                # Create the entity if it didn't exist.
-                if entity is None:
-                    entity = EntityIdentifier()
-                    self.dependencies[(PHENOTYPES, col)] = entity
-
-                # If the entity is not in the predictors, we should analyze it
-                # in the pheWAS.
-                if entity not in self.predictors:
-                    self.outcome.li.append(entity)
-
-                col_names.append(entity.id)
-
-            df.columns = col_names
-
-        else:
-            phen_keys = [
-                k[1] for k, v in self.dependencies.items()
-                if k[0] == PHENOTYPES
-            ]
-
-            df = phenotypes.get_phenotypes(phen_keys)
-            df.columns = [
-                self.dependencies[(PHENOTYPES, k)].id for k in phen_keys
-            ]
-
-        # Extract the genotype dependencies.
-        markers = self.get_tested_variants()
-
-        # In GWAS we handle the SNPs differently, but the modelspec adds
-        # variants that are specified explicitly directly to the phenotypes
-        # dataframe.
-        if markers is not SNPs:
-            for entity, marker in markers:
-                # Previously:
-                # entity_id = self.dependencies[("GENOTYPES", marker)]
-
-                try:
-                    g = genotypes.get_variant_by_name(marker)
-                except (KeyError, ValueError):
-                    raise ValueError(
-                        "Could not find '{}' in genotypes container."
-                        "".format(marker)
-                    )
-
-                # Checking we have a single value and using it
-                if len(g) != 1:
-                    raise ValueError("{}: invalid marker name".format(marker))
-                g = g.pop()
-
-                is_stratification_variable = (
-                    self.stratify_by and (entity in self.stratify_by)
-                )
-                if is_stratification_variable:
-                    # This genetic variable is a stratifying factor.
-                    # We automatically convert it to a str representation.
-                    cur = genotype_to_df(g, genotypes.get_samples(),
-                                         as_string=True)
-                else:
-                    cur = genotype_to_df(g, genotypes.get_samples(),
-                                         as_string=False)
-
-                cur.columns = [entity.id]
-                # FIXME I think that inner-joining here is too early.
-                # Maybe it should be handled at the analysis level?
-                df = df.join(cur, how="inner")
-
-                if df.shape[0] == 0:
-                    raise ValueError(
-                        "No sample left after joining. Perhaps the sample IDs "
-                        "in the genotypes and phenotypes containers are "
-                        "different."
-                    )
-
-                if not is_stratification_variable:
-                    # Compute the maf.
-                    maf, minor, major, flip = get_maf(
-                        df[entity.id], g.coded, g.reference,
-                    )
-
-                    if flip:
-                        df.loc[:, entity.id] = 2 - df.loc[:, entity.id]
-
-                    # Also bind the EntityIdentifier in case we need to compute
-                    # a GRS.
-                    # Vestigial code:
-                    # entity.bind(df[entity])
-
-                    # And save the variant metadata.
-                    self.variant_metadata[entity.id] = {
-                        "name": marker, "chrom": str(g.variant.chrom),
-                        "pos": g.variant.pos, "minor": minor, "major": major,
-                        "maf": maf, "coded": minor
-                    }
-
-        # Apply transformations.
-        df = self._apply_transformations(df)
-
-        # Only keep predictors and outcomes.
-        keep_cols = self._filter_columns(df)
-
-        # Adding the intercept
-        if not self.no_intercept:
-            keep_cols.append("intercept")
-            df["intercept"] = 1
-
-        return df[keep_cols]
-
-    def _apply_transformations(self, df):
-        for action, source, target, params in self.transformations:
-            f = transformation_handler.handlers[action]
-            res = f(df, source, *params)
-
-            # We have a special GWAS interaction transformation, that doesn't
-            # modify the data, but creates a list of "columns" to multiply with
-            # the SNPs column
-            if action == "GWAS_INTERACTION":
-                # Setting the flag for GWAS interaction
-                self.has_gwas_interaction = True
-
-                # Creating a final dictionary where the keys are the output
-                # column names (after the multiplication) and the values are
-                # the columns to multiply
-                self.gwas_interaction = {}
-                for key, cols in res.items():
-                    new_key = "{}{}".format(
-                        target.id, key if key == "" else ":" + key,
-                    )
-                    self.gwas_interaction[new_key] = cols
-
-            # Some transformations return multiple columns. We create all the
-            # relevant columns in the dataframe.
-            elif isinstance(res, dict):
-                for key, col in res.items():
-                    df["{}:{}".format(target.id, key)] = col
-
-            # In most cases, transformations return a single array. We set it
-            # under the target ID.
-            else:
-                df[target.id] = res
-
-        return df
-
-    def _filter_columns(self, df):
-        if isinstance(self.outcome, PheWAS):
-            keep_cols = [
-                v.id for v in self.outcome.li if v not in self.predictors
-            ]
-        else:
-            keep_cols = [v.id for v in self.outcome.values()]
-
-        for pred in self.predictors:
-            if pred is SNPs:
-                continue
-
-            if not isinstance(pred, EntityIdentifier):
-                raise ValueError(
-                    "Predictors are expected to be entity identifiers (and "
-                    "'{}' is of type {}).".format(pred, type(pred))
-                )
-
-            # Some identifiers might have multiple associated columns (e.g.
-            # factor transformation).
-            for col in df.columns:
-                if col.startswith(pred.id):
-                    keep_cols.append(col)
-
-        if self.stratify_by is not None:
-            for col in self.stratify_by:
-                if not isinstance(col, EntityIdentifier):
-                    raise ValueError(
-                        "Statification variables are expected to be entity "
-                        "identifiers (and '{}' is of type {})."
-                        "".format(col, type(col))
-                    )
-                keep_cols.append(col.id)
-
-        return keep_cols
-
-
-@transformation_handler("LOG10")
-def _log10(data, entity):
-    return np.log10(data[entity.id])
-
-
-@transformation_handler("LN")
-def _ln(data, entity):
-    return np.log(data[entity.id])
-
-
-@transformation_handler("ENCODE_FACTOR")
-def _encode_factor(data, entity):
-    out = {}
-
-    v = data[entity.id]
-    nulls = v.isnull()
-
-    # Pandas category.
-    levels = None
-    if hasattr(v, "cat"):
-        levels = sorted(v.cat.categories)
-    else:
-        levels = sorted(v[~nulls].unique())
-
-    for i, level in enumerate(levels):
-        # First level is the reference.
-        if i == 0:
-            continue
-        level_name = "level.{}".format(level)
-        out[level_name] = (v == level).astype(float)
-        out[level_name][nulls] = np.nan
-
-    return out
-
-
-@transformation_handler("POW")
-def _pow(data, entity, power):
-    return np.power(data[entity.id], power)
-
-
-@transformation_handler("INTERACTION")
-def _interaction(data, *entities):
-    # Finding all the columns for all the targets
-    column_names = tuple(
-        tuple(name for name in data.columns if name.startswith(entity.id))
-        for entity in entities
-    )
-
-    # Finding the level column names if there are factors
-    factor_levels = tuple(
-        tuple(name[len(entity.id)+1:] for name in names)
-        for names, entity in zip(column_names, entities)
-    )
-
-    # Creating the final columns
-    out = {}
-    for cols, level_names in zip(itertools.product(*column_names),
-                                 itertools.product(*factor_levels)):
-        # Getting the key (for factors, if present)
-        key = re.sub(":{2,}", "", ":".join(level_names).strip(":"))
-
-        # Computing the multiplication of all the columns
-        mult = functools.reduce(np.multiply, (data[col] for col in cols))
-
-        # If the key is empty, it means there are no factors in the interaction
-        # term, hence there is only one resulting column and we return it
-        if key == "":
-            return mult
-
-        out[key] = mult
-
-    return out
-
-
-@transformation_handler("GWAS_INTERACTION")
-def _gwas_interaction(data, *entities):
-    # Finding all the columns for all the targets
-    column_names = tuple(
-        tuple(name for name in data.columns if name.startswith(entity.id))
-        for entity in entities
-    )
-
-    # Finding the level column names if there are factors
-    factor_levels = tuple(
-        tuple(name[len(entity.id)+1:] for name in names)
-        for names, entity in zip(column_names, entities)
-    )
-
-    # Only creating the column name
-    out = {}
-    for cols, level_names in zip(itertools.product(*column_names),
-                                 itertools.product(*factor_levels)):
-        # Getting the key (for factors, if present)
-        key = re.sub(":{2,}", "", ":".join(level_names).strip(":"))
-
-        # Saving the columns to multiply with SNPs
-        out[key] = cols
-
-    return out
-
-
-def _reset():
-    TransformationManager.transformations = []
-    DependencyManager.dependencies = {}
-
-
-result = ResultMetaclass()
-
-phenotypes = DependencyManager("PHENOTYPES")
-genotypes = DependencyManager("GENOTYPES")
-
-factor = TransformationManager("ENCODE_FACTOR")
-log10 = TransformationManager("LOG10")
-ln = TransformationManager("LN")
-pow = TransformationManager("POW")
-interaction = TransformationManager("INTERACTION")
-gwas_interaction = TransformationManager("GWAS_INTERACTION")
+# factor = TransformationManager("ENCODE_FACTOR")
+# log10 = TransformationManager("LOG10")
+# ln = TransformationManager("LN")
+# pow = TransformationManager("POW")
+# interaction = TransformationManager("INTERACTION")
+# gwas_interaction = TransformationManager("GWAS_INTERACTION")
