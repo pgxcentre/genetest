@@ -10,17 +10,25 @@ Utilities to build statistical models.
 # Commons, PO Box 1866, Mountain View, CA 94042, USA.
 
 
+import itertools
+import functools
+
+import numpy as np
 import pandas as pd
 
+from ..statistics import model_map
 
 from geneparse.utils import genotype_to_df
+
+
+SNPs = "SNPs"
 
 
 class Variable(object):
     def __init__(self, name):
         self.name = name
 
-    def get_data(self):
+    def get_data(self, phenotypes, genotypes, cache):
         raise NotImplemented()
 
     def __repr__(self):
@@ -34,9 +42,15 @@ class Variable(object):
 
 
 class Phenotype(Variable):
-    def get_data(self, phenotypes, genotypes):
-        # Returns a DataFrame
-        return phenotypes.get_phenotypes([self.name])
+    def get_data(self, phenotypes, genotypes, cache):
+        # Checking in the cache
+        if self in cache:
+            return cache[self]
+
+        # Caching and returning a DataFrame
+        df = phenotypes.get_phenotypes([self.name])
+        cache[self] = df
+        return df
 
 
 class Genotype(Variable):
@@ -52,19 +66,26 @@ class Genotype(Variable):
                 "".format(self.name)
             )
 
-    def get_data(self, phenotypes, genotypes, allele_string=False):
-        return genotype_to_df(
+    def get_data(self, phenotypes, genotypes, cache, allele_string=False):
+        # Checking the cache
+        if self in cache:
+            return cache[self]
+
+        # Caching and returning a DataFrame
+        df = genotype_to_df(
             self.get_genotype(phenotypes, genotypes),
             samples=genotypes.get_samples(),
             as_string=allele_string
         )
+        cache[self] = df
+        return df
 
 
 class Transformation(object):
     def __init__(self, *args, **kwargs):
         raise NotImplemented()
 
-    def __call__(self, phenotypes, genotypes):
+    def __call__(self, phenotypes, genotypes, cache):
         raise NotImplemented()
 
     def __hash__(self):
@@ -75,39 +96,242 @@ class Transformation(object):
 
 
 class Factor(Transformation):
-    def __init__(self, variable):
-        self.variable = variable
+    def __init__(self, entity, name=None):
+        self.entity = entity
+        self.name = name
 
     def __hash__(self):
-        return hash("{}:{}".format(self.__class__.__name__, self.variable))
+        return hash("{}:{}".format(self.__class__.__name__, self.entity))
 
     def __eq__(self, other):
         return (
             self.__class__ is other.__class__ and
-            self.variable == other.variable
+            self.entity == other.entity
         )
 
-    def __call__(self, phenotypes, genotypes):
-        if isinstance(self.variable, Genotype):
-            g = self.variable.get_genotype(phenotypes, genotypes)
+    def __call__(self, phenotypes, genotypes, cache):
+        # Checking the cache
+        if self in cache:
+            return cache[self]
+
+        # Special case where we want to encode genotypes with homozygous of the
+        # reference allele is the reference factor
+        df = None
+        if isinstance(self.entity, Genotype):
+            g = self.entity.get_genotype(phenotypes, genotypes)
 
             df = _make_factor_from_genotype(
                 g, samples=genotypes.get_samples()
             )
 
         else:
-            df = self.variable.get_data(phenotypes, genotypes)
+            df = self.entity.get_data(phenotypes, genotypes, cache)
 
-        # Take the unique levels and make the dummy variables.
         assert df.shape[1] == 1
-        levels = sorted(df.iloc[:, 0].dropna().unique())
 
-        out = {}
+        # Take the unique levels and make the dummy variables (non-null values)
+        nulls = df.iloc[:, 0].isnull()
+        levels = sorted(df.loc[~nulls, self.entity.name].unique())
+
+        # Computing the levels
+        results = {}
         for i, level in enumerate(levels):
             if i == 0:
                 continue
 
-        # TODO
+            # The name of the column
+            col_name = "{}:{}".format(self.name, level)
+            if self.name is None:
+                col_name = "factor({}):{}".format(self.entity.name, level)
+
+            r = (df.iloc[:, 0] == level).astype(float)
+            r[nulls] = np.nan
+            results[col_name] = r
+
+        # Caching and returning a DataFrame
+        df = pd.DataFrame(results)
+        cache[self] = df
+        return df
+
+
+class Pow(Transformation):
+    def __init__(self, entity, power, name=None):
+        self.entity = entity
+        self.power = power
+        self.name = name
+
+    def __hash__(self):
+        return hash("{}:{}:{}".format(
+            self.__class__.__name__, self.entity, self.power
+        ))
+
+    def __eq__(self, other):
+        return (
+            self.__class__ is other.__class__ and
+            self.entity == other.entity and
+            self.power == other.power
+        )
+
+    def __call__(self, phenotypes, genotypes, cache):
+        # Checking the cache
+        if self in cache:
+            return cache[self]
+
+        # Getting the data
+        df = self.entity.get_data(phenotypes, genotypes, cache).pow(self.power)
+
+        assert df.shape[1] == 1
+        d = df.iloc[:, 0]
+
+        # The name of the column
+        col_name = self.name
+        if col_name is None:
+            col_name = "pow({},{})".format(self.entity.name, self.power)
+
+        # Caching and returning a DataFrame
+        df = pd.DataFrame({col_name: d})
+        cache[self] = df
+        return df
+
+
+class Ln(Transformation):
+    def __init__(self, entity, name=None):
+        self.entity = entity
+        self.name = name
+
+    def __hash__(self):
+        return hash("{}:{}".format(self.__class__.__name__, self.entity))
+
+    def __eq__(self, other):
+        return (
+            self.__class__ is other.__class__ and
+            self.entity == other.entity
+        )
+
+    def __call__(self, phenotypes, genotypes, cache):
+        # Checking the cache
+        if self in cache:
+            return cache[self]
+
+        # Getting the data
+        df = self.entity.get_data(phenotypes, genotypes, cache)
+
+        assert df.shape[1] == 1
+
+        # The name of the column
+        col_name = self.name
+        if col_name is None:
+            col_name = "ln({})".format(self.entity.name)
+
+        df[col_name] = np.log(df.iloc[:, 0].values)
+
+        # Caching and returning a DataFrame
+        df = df[[col_name]]
+        cache[self] = df
+        return df
+
+
+class Log10(Transformation):
+    def __init__(self, entity, name=None):
+        self.entity = entity
+        self.name = name
+
+    def __hash__(self):
+        return hash("{}:{}".format(self.__class__.__name__, self.entity))
+
+    def __eq__(self, other):
+        return (
+            self.__class__ is other.__class__ and
+            self.entity == other.entity
+        )
+
+    def __call__(self, phenotypes, genotypes, cache):
+        # Checking the cache
+        if self in cache:
+            return cache[self]
+
+        # Getting the data
+        df = self.entity.get_data(phenotypes, genotypes, cache)
+
+        assert df.shape[1] == 1
+
+        # The name of the column
+        col_name = self.name
+        if col_name is None:
+            col_name = "log10({})".format(self.entity.name)
+
+        df[col_name] = np.log10(df.iloc[:, 0].values)
+
+        # Caching and returning a DataFrame
+        df = df[[col_name]]
+        cache[self] = df
+        return df
+
+
+class Interaction(Transformation):
+    def __init__(self, *entities, name=None):
+        self.entities = entities
+        self.name = name
+
+    def __hash__(self):
+        entity_names = [
+            v.name if isinstance(v, Variable) else v.entity.name
+            for v in self.entities
+        ]
+        return hash("{}:{}".format(
+            self.__class__.__name__, ":".join(entity_names)
+        ))
+
+    def __eq__(self, other):
+        return (
+            self.__class__ is other.__class__ and
+            self.entities == other.entities
+        )
+
+    def __call__(self, phenotypes, genotypes, cache):
+        # Finding all the combinations of 2, 3, ..., n items
+        combinations = []
+        for nb_term in range(2, len(self.entities) + 1):
+            combinations.extend(
+                itertools.combinations(self.entities, nb_term)
+            )
+
+        # Computing each of the columns
+        results = {}
+        for combination in combinations:
+            columns = []
+            dfs = []
+            for entity in combination:
+                df = None
+                if isinstance(entity, Transformation):
+                    df = entity(phenotypes, genotypes, cache)
+                else:
+                    df = entity.get_data(phenotypes, genotypes, cache)
+
+                # Adding the columns and the DataFrame to the list
+                columns.append(df.columns.tolist())
+                dfs.append(df)
+
+            # Creating the final df
+            df = pd.concat(dfs, axis=1, join="outer")
+
+            # Creating the product
+            for cols in itertools.product(*columns):
+                # The column name
+                col_name = None
+                if self.name is None:
+                    col_name = "inter({})".format(",".join(cols))
+                else:
+                    col_name = "{}({})".format(self.name, ",".join(cols))
+
+                results[col_name] = functools.reduce(
+                    np.multiply, (df[col] for col in cols)
+                )
+
+        # Caching and returning a DataFrame
+        df = pd.DataFrame(results)
+        cache[self] = df
+        return df
 
 
 def _make_factor_from_genotype(g, samples):
@@ -131,7 +355,7 @@ def _make_factor_from_genotype(g, samples):
 
 class ModelSpec(object):
     def __init__(self, outcome, predictors, test, no_intercept=False,
-                 stratify_by=None):
+                 stratify_by=None, cache=None):
 
         self.outcome = self._clean_outcome(outcome)
         self.predictors = self._clean_predictors(predictors)
@@ -145,6 +369,15 @@ class ModelSpec(object):
         else:
             self.stratify_by = None
 
+        # The dependencies
+        self.dependencies = list(self.outcome.values()) + self.predictors
+
+        if stratify_by is not None:
+            self.dependencies.extend(stratify_by)
+
+        # The cache
+        self.cache = cache
+
         # SNP metadata is stored in the modelspec because it is obtained as a
         # consequence of building the data matrix.
         # Hence, it is more efficient to cache it than to request it.
@@ -153,23 +386,86 @@ class ModelSpec(object):
         # Is there GWAS interaction involved?
         self.has_gwas_interaction = False
 
-    @property
-    def dependencies(self):
-        raise NotImplemented()
+    def _clean_outcome(self, outcome):
+        if not isinstance(outcome, dict):
+            return {"y": outcome}
 
-    def get_tested_variants(self):
-        raise NotImplemented()
+        return outcome
+
+    def _clean_predictors(self, predictors):
+        iter_failed = True
+        try:
+            iter(predictors)
+            iter_failed = False
+        except TypeError:
+            pass
+
+        if iter_failed:
+            raise TypeError("'predictors' argument needs to be an iterable.")
+
+        return predictors
+
+    def _clean_test(self, test):
+        """Returns a factory function to create instances of a statistical
+        model.
+        Args:
+            test (str, class or callable): This can be either the name of the
+                                           test or a class or callable that
+                                           returns a valid instance.
+        """
+        try:
+            return model_map[test]
+        except KeyError:
+            pass
+
+        if hasattr(test, "__call__"):
+            return test
+
+        raise ValueError(
+            "{} is not a valid statistical model.".format(test)
+        )
 
     def create_data_matrix(self, phenotypes, genotypes):
-        raise NotImplemented()
+        if self.cache is None:
+            self.cache = {}
+            self._create_entities(phenotypes, genotypes)
+
+        df = pd.concat(
+            [self.cache[entity] for entity in self.dependencies], axis=1,
+            join="outer",
+        )
+
+        # TODO: Add intercept
+        return df
+
+    def _create_entities(self, phenotypes, genotypes):
+        """Filling the cache according to the dependencies of the model."""
+        for entity in self.dependencies:
+            if entity in self.cache:
+                continue
+            if isinstance(entity, Transformation):
+                entity(phenotypes, genotypes, self.cache)
+            else:
+                entity.get_data(phenotypes, genotypes, self.cache)
 
 
-# phenotypes = DependencyManager("PHENOTYPES")
-# genotypes = DependencyManager("GENOTYPES")
+class _VariableFactory(object):
+    def __init__(self, variable_type):
+        if variable_type == "PHENOTYPES":
+            self.cls = Phenotype
+        elif variable_type == "GENOTYPES":
+            self.cls = Genotype
+        else:
+            raise ValueError("{}: invalid variable type".format(variable_type))
 
-# factor = TransformationManager("ENCODE_FACTOR")
-# log10 = TransformationManager("LOG10")
-# ln = TransformationManager("LN")
-# pow = TransformationManager("POW")
+    def __getitem__(self, name):
+        return self.cls(name)
+
+    __getattr__ = __getitem__
+
+
+phenotypes = _VariableFactory("PHENOTYPES")
+genotypes = _VariableFactory("GENOTYPES")
+
 # interaction = TransformationManager("INTERACTION")
 # gwas_interaction = TransformationManager("GWAS_INTERACTION")
