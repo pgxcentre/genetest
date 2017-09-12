@@ -304,9 +304,7 @@ class Interaction(Transformation):
         # Finding all the combinations of 2, 3, ..., n items
         combinations = []
         for nb_term in range(2, len(self.entities) + 1):
-            combinations.extend(
-                itertools.combinations(self.entities, nb_term)
-            )
+            combinations.extend(itertools.combinations(self.entities, nb_term))
 
         # Computing each of the columns
         results = {}
@@ -346,6 +344,67 @@ class Interaction(Transformation):
         df = pd.DataFrame(results)
         cache[self] = df
         return df
+
+
+class GWASInteraction(Transformation):
+    def __init__(self, *entities, name=None):
+        # Making sure SNPs isn't in the entity list
+        self.entities = [entity for entity in entities if entity != SNPs]
+        self.name = name
+
+    def __hash__(self):
+        entity_names = [
+            v.name if isinstance(v, Variable) else v.entity.name
+            for v in self.entities
+        ]
+        return hash("{}:{}".format(
+            self.__class__.__name__, ":".join(entity_names)
+        ))
+
+    def __eq__(self, other):
+        return (
+            self.__class__ is other.__class__ and
+            self.entities == other.entities
+        )
+
+    def __call__(self, phenotypes, genotypes, cache):
+        # Creating the entities
+        entities = [SNPs] + self.entities
+
+        # Finding all the combinations of 2, 3, ..., n items (adding the SNPs
+        # entity
+        combinations = []
+        for nb_term in range(2, len(entities) + 1):
+            combinations.extend(itertools.combinations(entities, nb_term))
+
+        # TODO: Needs optimization, since interaction terms without SNPs will
+        # be computed each time during the analysis...
+
+        # Computing each of the columns
+        self.columns = []
+        self.interaction_cols = {}
+        for combination in combinations:
+            columns = []
+            for entity in combination:
+                if entity == SNPs:
+                    columns.append([SNPs])
+                else:
+                    columns.append(entity.columns)
+
+            # Generating the columns for the product (in analysis)
+            for cols in itertools.product(*columns):
+                # The column name
+                col_name = None
+                if self.name is None:
+                    col_name = "gwas_inter({})".format(",".join(cols))
+                else:
+                    col_name = "{}({})".format(self.name, ",".join(cols))
+
+                self.interaction_cols[col_name] = cols
+                self.columns.append(col_name)
+
+    def get_gwas_interaction(self):
+        return self.interaction_cols
 
 
 def _make_factor_from_genotype(g, samples):
@@ -397,6 +456,9 @@ class ModelSpec(object):
         # Hence, it is more efficient to cache it than to request it.
         self.variant_metadata = {}
 
+        # Is this a GWAS?
+        self.is_gwas = False
+
         # Is there GWAS interaction involved?
         self.has_gwas_interaction = False
 
@@ -445,10 +507,20 @@ class ModelSpec(object):
             self._create_entities(phenotypes, genotypes)
 
         # Merging all DataFrames from the different entities
-        df = pd.concat(
-            [self.cache[entity] for entity in self.dependencies], axis=1,
-            join="outer",
-        )
+        dfs = []
+        for entity in self.dependencies:
+            if isinstance(entity, GWASInteraction):
+                # This is a special case (GWAS interaction)
+                self.has_gwas_interaction = True
+                self.gwas_interaction = entity.get_gwas_interaction()
+
+            elif entity == SNPs:
+                # This is a GWAS, so nothing to do here
+                self.is_gwas = True
+
+            else:
+                dfs.append(self.cache[entity])
+        df = pd.concat(dfs, axis=1, join="outer")
 
         # Adding the intercept
         if not self.no_intercept:
@@ -469,12 +541,13 @@ class ModelSpec(object):
     def _create_entities(self, phenotypes, genotypes):
         """Filling the cache according to the dependencies of the model."""
         for entity in self.dependencies:
-            if entity in self.cache:
-                continue
-            if isinstance(entity, Transformation):
-                entity(phenotypes, genotypes, self.cache)
-            else:
-                entity.get_data(phenotypes, genotypes, self.cache)
+            # Is the entity already in the cache?
+            if (entity not in self.cache) and (entity != SNPs):
+                # Populating the cache
+                if isinstance(entity, Transformation):
+                    entity(phenotypes, genotypes, self.cache)
+                else:
+                    entity.get_data(phenotypes, genotypes, self.cache)
 
 
 class _VariableFactory(object):
