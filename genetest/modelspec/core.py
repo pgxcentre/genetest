@@ -21,12 +21,17 @@ from ..statistics import model_map
 from geneparse.utils import genotype_to_df
 
 
+__all__ = ["SNPs", "phenotypes", "genotypes", "Phenotype", "Genotype",
+           "Factor", "Interaction", "Ln", "Log10", "ModelSpec", "Pow"]
+
+
 SNPs = "SNPs"
 
 
 class Variable(object):
     def __init__(self, name):
         self.name = name
+        self.columns = [name]
 
     def get_data(self, phenotypes, genotypes, cache):
         raise NotImplemented()
@@ -135,6 +140,7 @@ class Factor(Transformation):
 
         # Computing the levels
         results = {}
+        self.columns = []
         for i, level in enumerate(levels):
             if i == 0:
                 continue
@@ -147,6 +153,7 @@ class Factor(Transformation):
             r = (df.iloc[:, 0] == level).astype(float)
             r[nulls] = np.nan
             results[col_name] = r
+            self.columns.append(col_name)
 
         # Caching and returning a DataFrame
         df = pd.DataFrame(results)
@@ -191,6 +198,7 @@ class Pow(Transformation):
         # Caching and returning a DataFrame
         df = pd.DataFrame({col_name: d})
         cache[self] = df
+        self.columns = [col_name]
         return df
 
 
@@ -223,11 +231,13 @@ class Ln(Transformation):
         if col_name is None:
             col_name = "ln({})".format(self.entity.name)
 
-        df[col_name] = np.log(df.iloc[:, 0].values)
+        # Creating the new DataFrame
+        df = pd.DataFrame({col_name: np.log(df.iloc[:, 0].values)},
+                          index=df.index)
 
         # Caching and returning a DataFrame
-        df = df[[col_name]]
         cache[self] = df
+        self.columns = [col_name]
         return df
 
 
@@ -260,11 +270,13 @@ class Log10(Transformation):
         if col_name is None:
             col_name = "log10({})".format(self.entity.name)
 
-        df[col_name] = np.log10(df.iloc[:, 0].values)
+        # Creating the new DataFrame
+        df = pd.DataFrame({col_name: np.log10(df.iloc[:, 0].values)},
+                          index=df.index)
 
         # Caching and returning a DataFrame
-        df = df[[col_name]]
         cache[self] = df
+        self.columns = [col_name]
         return df
 
 
@@ -298,6 +310,7 @@ class Interaction(Transformation):
 
         # Computing each of the columns
         results = {}
+        self.columns = []
         for combination in combinations:
             columns = []
             dfs = []
@@ -309,7 +322,7 @@ class Interaction(Transformation):
                     df = entity.get_data(phenotypes, genotypes, cache)
 
                 # Adding the columns and the DataFrame to the list
-                columns.append(df.columns.tolist())
+                columns.append(entity.columns)
                 dfs.append(df)
 
             # Creating the final df
@@ -327,6 +340,7 @@ class Interaction(Transformation):
                 results[col_name] = functools.reduce(
                     np.multiply, (df[col] for col in cols)
                 )
+                self.columns.append(col_name)
 
         # Caching and returning a DataFrame
         df = pd.DataFrame(results)
@@ -430,12 +444,26 @@ class ModelSpec(object):
             self.cache = {}
             self._create_entities(phenotypes, genotypes)
 
+        # Merging all DataFrames from the different entities
         df = pd.concat(
             [self.cache[entity] for entity in self.dependencies], axis=1,
             join="outer",
         )
 
-        # TODO: Add intercept
+        # Adding the intercept
+        if not self.no_intercept:
+            df["intercept"] = 1
+
+        # Checking of all samples have at least one missing value. If it's the
+        # case, it might be because there were no intersect between samples and
+        # genotypes... Since we usually drop NaN before analysis, this will
+        # give an empty DataFrame...
+        if df.isnull().any(axis=1).all():
+            raise ValueError(
+                "No sample left after joining. Perhaps the sample IDs in the "
+                "genotypes and phenotypes containers are different."
+            )
+
         return df
 
     def _create_entities(self, phenotypes, genotypes):
@@ -466,6 +494,3 @@ class _VariableFactory(object):
 
 phenotypes = _VariableFactory("PHENOTYPES")
 genotypes = _VariableFactory("GENOTYPES")
-
-# interaction = TransformationManager("INTERACTION")
-# gwas_interaction = TransformationManager("GWAS_INTERACTION")
