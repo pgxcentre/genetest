@@ -8,6 +8,7 @@
 # Commons, PO Box 1866, Mountain View, CA 94042, USA.
 
 
+import re
 import unittest
 from os import path
 from tempfile import TemporaryDirectory
@@ -84,26 +85,11 @@ class TestModelSpec(unittest.TestCase):
         cls.tmp_dir.cleanup()
 
     def setUp(self):
-        # Resetting the model specification
-        spec._reset()
-
         # Reordering the columns and the rows of the phenotype data frame
         self.phenotypes.data = self.phenotypes.data.iloc[
             np.random.permutation(self.phenotypes.data.shape[0]),
             np.random.permutation(self.phenotypes.data.shape[1])
         ]
-
-    def test_reset(self):
-        """Tests the reset function of the ModelSpec."""
-        # Checking there are no transformations
-        transformations = spec.core.TransformationManager.transformations
-        self.assertEqual(0, len(transformations),
-                         "Transformations were not reset")
-
-        # Checking there are no dependencies
-        dependencies = spec.core.DependencyManager.dependencies
-        self.assertEqual(0, len(dependencies),
-                         "Dependencies were not reset")
 
     def test_simple_modelspec(self):
         """Tests a simple ModelSpec object."""
@@ -125,30 +111,33 @@ class TestModelSpec(unittest.TestCase):
         self.assertEqual((self.data.shape[0], 5), matrix.shape,
                          "The observed matrix is not of the right shape")
 
+        # Checking the index
+        self.assertEqual(set(self.data.index), set(matrix.index),
+                         "Samples are not the same")
+
         # Checking the intercept
         self.assertEqual([1], matrix.intercept.unique().tolist(),
                          "The intercept is not as expected")
 
         # Checking the outcome
-        outcome_col = spec.phenotypes.pheno.id
+        outcome_col = spec.phenotypes.pheno.columns[0]
         outcomes = matrix.loc[self.data.index, outcome_col]
         self.assertTrue(outcomes.equals(self.data.pheno),
                         "The outcomes are not as expected")
 
         # Checking the predictors
-        translations = modelspec.get_translations()
         for predictor in predictors:
             # Getting the name of the predictor
-            name = translations[predictor.id]
+            name = predictor.name
 
             # Comparing the values
             np.testing.assert_array_equal(
-                matrix.loc[self.data.index, predictor.id].values,
+                matrix.loc[self.data.index, predictor.columns[0]].values,
                 self.data[name].values,
                 err_msg="The predictor '{}' is not as expected".format(name),
             )
 
-    def test_no_intersect(self):
+    def test_no_sample_intersect(self):
         """Tests when no intersect between phenotypes and genotypes."""
         # Creating a new phenotype container
         phenotypes = _DummyPhenotypes()
@@ -166,7 +155,7 @@ class TestModelSpec(unittest.TestCase):
         with self.assertRaises(ValueError):
             modelspec.create_data_matrix(phenotypes, self.genotypes)
 
-    def test_smaller_intersect(self):
+    def test_smaller_sample_intersect(self):
         """Tests when the sample intersect is smaller between containers."""
         # Choosing 10 samples to exclude from the dataset
         to_exclude = np.random.choice(self.data.index, 10, replace=False)
@@ -203,32 +192,39 @@ class TestModelSpec(unittest.TestCase):
         with parsers["plink"](plink_prefix) as genotypes:
             matrix = modelspec.create_data_matrix(phenotypes, genotypes)
 
-        # Subset of the new data
-        data = self.data.drop(to_exclude, axis=0)
+        # Creating the copy of the data and setting to NaN the missing samples
+        data = self.data.copy()
+        data.loc[to_exclude[:5], ["pheno", "var1", "var2"]] = np.nan
+        data.loc[to_exclude[5:], "snp"] = np.nan
 
-        # Checking the shape of the matrix
-        self.assertEqual((data.shape[0], 5), matrix.shape,
+        # Checking the shape of the matrix (should be as before)
+        self.assertEqual((self.data.shape[0], 5), matrix.shape,
                          "The observed matrix is not of the right shape")
+
+        # Checking the index
+        self.assertEqual(set(data.index), set(matrix.index),
+                         "Samples are not the same")
 
         # Checking the intercept
         self.assertEqual([1], matrix.intercept.unique().tolist(),
                          "The intercept is not as expected")
 
         # Checking the outcome
-        outcome_col = spec.phenotypes.pheno.id
+        outcome_col = spec.phenotypes.pheno.columns[0]
         outcomes = matrix.loc[data.index, outcome_col]
-        self.assertTrue(outcomes.equals(data.pheno),
-                        "The outcomes are not as expected")
+        self.assertTrue(
+            outcomes.equals(data.pheno),
+            "The outcomes are not as expected",
+        )
 
         # Checking the predictors
-        translations = modelspec.get_translations()
         for predictor in predictors:
             # Getting the name of the predictor
-            name = translations[predictor.id]
+            name = predictor.name
 
             # Comparing the values
             np.testing.assert_array_equal(
-                matrix.loc[data.index, predictor.id].values,
+                matrix.loc[data.index, predictor.columns[0]].values,
                 data[name].values,
                 err_msg="The predictor '{}' is not as expected".format(name),
             )
@@ -252,12 +248,16 @@ class TestModelSpec(unittest.TestCase):
         self.assertEqual((self.data.shape[0], 4), matrix.shape,
                          "The observed matrix is not of the right shape")
 
+        # Checking the index
+        self.assertEqual(set(self.data.index), set(matrix.index),
+                         "Samples are not the same")
+
         # Checking the intercept
         self.assertEqual([1], matrix.intercept.unique().tolist(),
                          "The intercept is not as expected")
 
         # Checking the outcome
-        outcome_col = spec.phenotypes.pheno.id
+        outcome_col = spec.phenotypes.pheno.columns[0]
         outcomes = matrix.loc[self.data.index, outcome_col]
         self.assertTrue(outcomes.equals(self.data.pheno),
                         "The outcomes are not as expected")
@@ -266,7 +266,7 @@ class TestModelSpec(unittest.TestCase):
         for predictor, power, name in zip(predictors, (1, 3), ("snp", "var1")):
             # Comparing the values
             np.testing.assert_array_equal(
-                matrix.loc[self.data.index, predictor.id].values,
+                matrix.loc[self.data.index, predictor.columns[0]].values,
                 self.data[name].values**power,
                 err_msg="The predictor '{}**{}' is not as "
                         "expected".format(name, power),
@@ -292,25 +292,28 @@ class TestModelSpec(unittest.TestCase):
         self.assertEqual((self.data.shape[0], 5), matrix.shape,
                          "The observed matrix is not of the right shape")
 
+        # Checking the index
+        self.assertEqual(set(self.data.index), set(matrix.index),
+                         "Samples are not the same")
+
         # Checking the intercept
         self.assertEqual([1], matrix.intercept.unique().tolist(),
                          "The intercept is not as expected")
 
         # Checking the outcome
-        outcome_col = spec.phenotypes.pheno.id
+        outcome_col = spec.phenotypes.pheno.columns[0]
         outcomes = matrix.loc[self.data.index, outcome_col]
         self.assertTrue(outcomes.equals(self.data.pheno),
                         "The outcomes are not as expected")
 
         # Checking the predictors
-        translations = modelspec.get_translations()
         for predictor in predictors[:1]:
             # Getting the name of the predictor
-            name = translations[predictor.id]
+            name = predictor.name
 
             # Comparing the values
             np.testing.assert_array_equal(
-                matrix.loc[self.data.index, predictor.id].values,
+                matrix.loc[self.data.index, predictor.columns[0]].values,
                 self.data[name].values,
                 err_msg="The predictor '{}' is not as expected".format(name),
             )
@@ -321,7 +324,7 @@ class TestModelSpec(unittest.TestCase):
                                               ("var1", "var1")):
             # Comparing the values
             np.testing.assert_array_equal(
-                matrix.loc[self.data.index, predictor.id].values,
+                matrix.loc[self.data.index, predictor.columns[0]].values,
                 transform(self.data[name].values),
                 err_msg="The predictor '{}**{}' is not as "
                         "expected".format(name, transform.__name__),
@@ -348,12 +351,16 @@ class TestModelSpec(unittest.TestCase):
         self.assertEqual((self.data.shape[0], 8), matrix.shape,
                          "The observed matrix is not of the right shape")
 
+        # Checking the index
+        self.assertEqual(set(self.data.index), set(matrix.index),
+                         "Samples are not the same")
+
         # Checking the intercept
         self.assertEqual([1], matrix.intercept.unique().tolist(),
                          "The intercept is not as expected")
 
         # Checking the outcome
-        outcome_col = spec.phenotypes.pheno.id
+        outcome_col = spec.phenotypes.pheno.columns[0]
         outcomes = matrix.loc[self.data.index, outcome_col]
         self.assertTrue(outcomes.equals(self.data.pheno),
                         "The outcomes are not as expected")
@@ -365,10 +372,7 @@ class TestModelSpec(unittest.TestCase):
             (("x1", "x2"), ("y1", ), (1, 2, 3)),
         )
         for predictor, name, levels in predictor_zipped:
-            for level in levels:
-                # Getting the name of the column containing the level data
-                matrix_col = "{}:level.{}".format(predictor.id, level)
-
+            for matrix_col, level in zip(predictor.columns, levels):
                 # Comparing the results
                 np.testing.assert_array_equal(
                     matrix.loc[self.data.index, matrix_col].values,
@@ -398,12 +402,16 @@ class TestModelSpec(unittest.TestCase):
         self.assertEqual((self.data.shape[0], 5), matrix.shape,
                          "The observed matrix is not of the right shape")
 
+        # Checking the index
+        self.assertEqual(set(self.data.index), set(matrix.index),
+                         "Samples are not the same")
+
         # Checking the intercept
         self.assertEqual([1], matrix.intercept.unique().tolist(),
                          "The intercept is not as expected")
 
         # Checking the outcome
-        outcome_col = spec.phenotypes.pheno.id
+        outcome_col = spec.phenotypes.pheno.columns[0]
         outcomes = matrix.loc[self.data.index, outcome_col]
         self.assertTrue(outcomes.equals(self.data.pheno),
                         "The outcomes are not as expected")
@@ -411,18 +419,18 @@ class TestModelSpec(unittest.TestCase):
         # Checking the predictors
         for predictor in predictors:
             # Getting the name of the predictor
-            name = modelspec.get_translations()[predictor.id]
+            name = predictor.name
 
             # Comparing the values
             np.testing.assert_array_equal(
-                matrix.loc[self.data.index, predictor.id].values,
+                matrix.loc[self.data.index, predictor.columns[0]].values,
                 self.data[name].values,
                 err_msg="The predictor '{}' is not as expected".format(name),
             )
 
         # Checking the interaction
         np.testing.assert_array_equal(
-            matrix.loc[self.data.index, interaction.id].values,
+            matrix.loc[self.data.index, interaction.columns[0]].values,
             (self.data.snp * self.data.var1).values,
             err_msg="The interaction 'snp*var1' is not as expected",
         )
@@ -447,15 +455,19 @@ class TestModelSpec(unittest.TestCase):
         )
 
         # Checking the shape of the matrix
-        self.assertEqual((self.data.shape[0], 6), matrix.shape,
+        self.assertEqual((self.data.shape[0], 9), matrix.shape,
                          "The observed matrix is not of the right shape")
+
+        # Checking the index
+        self.assertEqual(set(self.data.index), set(matrix.index),
+                         "Samples are not the same")
 
         # Checking the intercept
         self.assertEqual([1], matrix.intercept.unique().tolist(),
                          "The intercept is not as expected")
 
         # Checking the outcome
-        outcome_col = spec.phenotypes.pheno.id
+        outcome_col = spec.phenotypes.pheno.columns[0]
         outcomes = matrix.loc[self.data.index, outcome_col]
         self.assertTrue(outcomes.equals(self.data.pheno),
                         "The outcomes are not as expected")
@@ -463,21 +475,35 @@ class TestModelSpec(unittest.TestCase):
         # Checking the predictors
         for predictor in predictors:
             # Getting the name of the predictor
-            name = modelspec.get_translations()[predictor.id]
+            name = predictor.name
 
             # Comparing the values
             np.testing.assert_array_equal(
-                matrix.loc[self.data.index, predictor.id].values,
+                matrix.loc[self.data.index, predictor.columns[0]].values,
                 self.data[name].values,
                 err_msg="The predictor '{}' is not as expected".format(name),
             )
 
         # Checking the interaction
-        np.testing.assert_array_equal(
-            matrix.loc[self.data.index, interaction.id].values,
-            (self.data.snp * self.data.var1 * self.data.var2).values,
-            err_msg="The interaction 'snp*var1*var2' is not as expected",
-        )
+        all_variables = (("snp", "var1"), ("snp", "var2"), ("var1", "var2"),
+                         ("snp", "var1", "var2"))
+        for variables in all_variables:
+            # Creating the name of the column
+            col_name = "inter({})".format(",".join(variables))
+            self.assertTrue(col_name in matrix.columns)
+
+            # Computing the expected values
+            expected = self.data.loc[:, variables[0]]
+            for i in range(1, len(variables)):
+                expected = expected * self.data.loc[:, variables[i]]
+
+            # Comparing with the expected results
+            np.testing.assert_array_equal(
+                matrix.loc[self.data.index, col_name],
+                expected,
+                err_msg="The interaction '{}' is not as expected"
+                        "".format(col_name),
+            )
 
     def test_factor_interaction(self):
         """Tests interaction between a term and a factor."""
@@ -500,41 +526,57 @@ class TestModelSpec(unittest.TestCase):
         self.assertEqual((self.data.shape[0], 9), matrix.shape,
                          "The observed matrix is not of the right shape")
 
+        # Checking the index
+        self.assertEqual(set(self.data.index), set(matrix.index),
+                         "Samples are not the same")
+
         # Checking the intercept
         self.assertEqual([1], matrix.intercept.unique().tolist(),
                          "The intercept is not as expected")
 
         # Checking the outcome
-        outcome_col = spec.phenotypes.pheno.id
+        outcome_col = spec.phenotypes.pheno.columns[0]
         outcomes = matrix.loc[self.data.index, outcome_col]
         self.assertTrue(outcomes.equals(self.data.pheno),
                         "The outcomes are not as expected")
 
         # Checking the predictor
         np.testing.assert_array_equal(
-            matrix.loc[self.data.index, spec.genotypes.snp.id].values,
+            matrix.loc[self.data.index, spec.genotypes.snp.columns[0]].values,
             self.data.snp.values,
             err_msg="The predictor 'snp' is not as expected",
         )
 
-        # For all level:
-        for level in (1, 2, 3):
+        # Checking the factors
+        for col_name in factor.columns:
+            # Getting the level
+            level = int(re.search(
+                r"factor\(var5\):([0-9]+)", col_name
+            ).group(1))
+
             # Creating the expected level
             expected_factor_values = (self.data.var5 == level).astype(float)
 
-            # Checking the factor
-            col = factor.id + ":level.{}".format(level)
+            # Checking the value
             np.testing.assert_array_equal(
-                matrix.loc[self.data.index, col].values,
+                matrix.loc[self.data.index, col_name].values,
                 expected_factor_values.values,
                 err_msg="The predictor 'var5' (level '{}') is not as "
                         "expected".format(level),
             )
 
-            # Checking the interaction
-            col = interaction.id + ":level.{}".format(level)
+        # Checking the interaction
+        for col_name in interaction.columns:
+            # Getting the level
+            level = int(re.search(
+                r"inter\(snp,factor\(var5\):([0-9]+)\)", col_name
+            ).group(1))
+
+            # Creating the expected level
+            expected_factor_values = (self.data.var5 == level).astype(float)
+
             np.testing.assert_array_equal(
-                matrix.loc[self.data.index, col].values,
+                matrix.loc[self.data.index, col_name].values,
                 (expected_factor_values * self.data.snp).values,
                 err_msg="The interaction 'snp*var5' (var5 level '{}') is not "
                         "as expected".format(level),
@@ -562,28 +604,31 @@ class TestModelSpec(unittest.TestCase):
         )
 
         # Checking the shape of the matrix
-        self.assertEqual((self.data.shape[0], 16), matrix.shape,
+        self.assertEqual((self.data.shape[0], 97), matrix.shape,
                          "The observed matrix is not of the right shape")
+
+        # Checking the index
+        self.assertEqual(set(self.data.index), set(matrix.index),
+                         "Samples are not the same")
 
         # Checking the intercept
         self.assertEqual([1], matrix.intercept.unique().tolist(),
                          "The intercept is not as expected")
 
         # Checking the outcome
-        outcome_col = spec.phenotypes.pheno.id
+        outcome_col = spec.phenotypes.pheno.columns[0]
         outcomes = matrix.loc[self.data.index, outcome_col]
         self.assertTrue(outcomes.equals(self.data.pheno),
                         "The outcomes are not as expected")
 
         # Checking the predictors
-        translations = modelspec.get_translations()
         for predictor in predictors[:2]:
             # Getting the name of the predictor
-            name = translations[predictor.id]
+            name = predictor.name
 
             # Comparing the values
             np.testing.assert_array_equal(
-                matrix.loc[self.data.index, predictor.id].values,
+                matrix.loc[self.data.index, predictor.columns[0]].values,
                 self.data[name].values,
                 err_msg="The predictor '{}' is not as expected".format(name),
             )
@@ -595,48 +640,63 @@ class TestModelSpec(unittest.TestCase):
             (("x1", "x2"), ("y1", ), (1, 2, 3)),
         )
         for predictor, name, levels in predictor_zipped:
-            for level in levels:
-                # Getting the name of the column containing the level data
-                matrix_col = "{}:level.{}".format(predictor.id, level)
+            # Checking the number of columns for the predictors
+            self.assertEqual(len(levels), len(predictor.columns))
+
+            for col_name in predictor.columns:
+                # The level
+                level = re.search(
+                    r"factor\({}\):([a-z0-9]+)".format(name), col_name
+                ).group(1)
+
+                # Checking the name of the column
+                self.assertTrue(col_name.endswith(":" + str(level)))
+
+                # var5 is integer
+                if name == "var5":
+                    level = int(level)
 
                 # Comparing the factor
                 np.testing.assert_array_equal(
-                    matrix.loc[self.data.index, matrix_col].values,
+                    matrix.loc[self.data.index, col_name].values,
                     (self.data[name] == level).astype(float).values,
                     err_msg="The predictor '{}' (level '{}') is not as "
                             "expected".format(name, level),
                 )
 
-        # Checking the interaction
-        for var3_l in ("x1", "x2"):
-            for var4_l in ("y1", ):
-                for var5_l in (1, 2, 3):
-                    # The expected factor values
-                    expected_var3 = (self.data.var3 == var3_l).astype(float)
-                    expected_var4 = (self.data.var4 == var4_l).astype(float)
-                    expected_var5 = (self.data.var5 == var5_l).astype(float)
+        # Checking the (unique) interaction
+        self.assertEqual(87, len(set(interaction.columns)))
+        for col_name in interaction.columns:
+            # Getting the list of variables
+            variables = re.search(
+                r"inter\(((\S+,)+\S+)\)", col_name
+            ).group(1).split(",")
 
-                    # The expected interaction
-                    expected_interaction = (
-                        self.data.snp * self.data.var2 * expected_var3 *
-                        expected_var4 * expected_var5
-                    )
+            expected = np.ones(self.data.shape[0], dtype=float)
+            for variable in variables:
+                # We have a factor
+                if variable.startswith("factor"):
+                    # Getting the variable name and level
+                    name = re.search(r"factor\((\S+)\)", variable).group(1)
+                    level = variable.split(":")[-1]
 
-                    # Checking the interaction
-                    matrix_col = "{}:level.{}:level.{}:level.{}".format(
-                        interaction.id, var3_l, var4_l, var5_l,
-                    )
-                    np.testing.assert_array_equal(
-                        matrix.loc[self.data.index, matrix_col].values,
-                        expected_interaction.values,
-                        err_msg=(
-                            "The interaction 'snp*var2*var3*var4*var5*' "
-                            "(var3 level '{}', var4 level '{} and var5 "
-                            "level '{}' is not as expected".format(
-                                var3_l, var4_l, var5_l,
-                            )
-                        ),
-                    )
+                    if name == "var5":
+                        level = int(level)
+
+                    # Multiplying
+                    expected *= (self.data.loc[:, name] == level).astype(float)
+
+                # We have a normal variable
+                else:
+                    expected *= self.data.loc[:, variable]
+
+            # Comparing with the original value
+            np.testing.assert_array_almost_equal(
+                matrix.loc[self.data.index, col_name].values,
+                expected,
+                err_msg="The interaction '{}' is not as expected"
+                        "".format(col_name)
+            )
 
     def test_gwas_interaction(self):
         """Test a simple GWAS interaction."""
