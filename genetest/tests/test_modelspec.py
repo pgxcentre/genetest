@@ -10,6 +10,7 @@
 
 import re
 import unittest
+import itertools
 from os import path
 from tempfile import TemporaryDirectory
 
@@ -373,6 +374,8 @@ class TestModelSpec(unittest.TestCase):
         )
         for predictor, name, levels in predictor_zipped:
             for matrix_col, level in zip(predictor.columns, levels):
+                self.assertTrue(matrix_col.endswith(":" + str(level)))
+
                 # Comparing the results
                 np.testing.assert_array_equal(
                     matrix.loc[self.data.index, matrix_col].values,
@@ -719,37 +722,46 @@ class TestModelSpec(unittest.TestCase):
         self.assertEqual((self.data.shape[0], 3), matrix.shape,
                          "The observed matrix is not of the right shape")
 
+        # Checking the index
+        self.assertEqual(set(self.data.index), set(matrix.index),
+                         "Samples are not the same")
+
         # Checking the intercept
         self.assertEqual([1], matrix.intercept.unique().tolist(),
                          "The intercept is not as expected")
 
         # Checking the outcome
-        outcome_col = spec.phenotypes.pheno.id
+        outcome_col = spec.phenotypes.pheno.columns[0]
         outcomes = matrix.loc[self.data.index, outcome_col]
         self.assertTrue(outcomes.equals(self.data.pheno),
                         "The outcomes are not as expected")
 
         # Checking the predictor
+        var1_col = spec.phenotypes.var1.columns[0]
         np.testing.assert_array_equal(
-            matrix.loc[self.data.index, spec.phenotypes.var1.id].values,
+            matrix.loc[self.data.index, var1_col].values,
             self.data.var1.values,
             err_msg="The predictor 'var1' is not as expected.",
         )
 
         # Checking the resulting column for the GWAS interaction
         multiplication_dict = modelspec.gwas_interaction
+        self.assertEqual(1, len(inter.columns))
+        self.assertEqual(set(multiplication_dict.keys()), set(inter.columns))
         self.assertEqual(1, len(multiplication_dict),
                          "Wrong number of interaction multiplication")
-        self.assertTrue(inter.id in multiplication_dict,
+        self.assertTrue(inter.columns[0] in multiplication_dict,
                         "Wrong result column for the GWAS interaction")
 
         # Checking the columns to multiply for the GWAS interaction
-        multiplication_cols = multiplication_dict[inter.id]
-        self.assertEqual(1, len(multiplication_cols),
+        multiplication_cols = multiplication_dict[inter.columns[0]]
+        self.assertEqual(2, len(multiplication_cols),
                          "Wrong number of columns to multiply for the GWAS "
                          "interaction")
-        self.assertEqual(spec.phenotypes.var1.id, multiplication_cols[0],
-                         "Wrong column to multiply for the GWAS interaction")
+        self.assertEqual(
+            ("SNPs", spec.phenotypes.var1.columns[0]), multiplication_cols,
+            "Wrong column to multiply for the GWAS interaction",
+        )
 
     def test_gwas_interaction_complex_category(self):
         """Test a simple GWAS interaction with a categorical value."""
@@ -774,26 +786,35 @@ class TestModelSpec(unittest.TestCase):
         self.assertEqual((self.data.shape[0], 8), matrix.shape,
                          "The observed matrix is not of the right shape")
 
+        # Checking the index
+        self.assertEqual(set(self.data.index), set(matrix.index),
+                         "Samples are not the same")
+
         # Checking the intercept
         self.assertEqual([1], matrix.intercept.unique().tolist(),
                          "The intercept is not as expected")
 
         # Checking the outcome
-        outcome_col = spec.phenotypes.pheno.id
+        outcome_col = spec.phenotypes.pheno.columns[0]
         outcomes = matrix.loc[self.data.index, outcome_col]
         self.assertTrue(outcomes.equals(self.data.pheno),
                         "The outcomes are not as expected")
 
         # Checking the predictor (var1)
+        var1_col = spec.phenotypes.var1.columns[0]
         np.testing.assert_array_equal(
-            matrix.loc[self.data.index, spec.phenotypes.var1.id].values,
+            matrix.loc[self.data.index, var1_col].values,
             self.data.var1.values,
             err_msg="The predictor 'var1' is not as expected.",
         )
 
         # Checking the predictor (var3, all level)
-        for level in ("x1", "x2"):
-            matrix_col = "{}:level.{}".format(var3.id, level)
+        self.assertEqual(
+            ["factor(var3):x1", "factor(var3):x2"],
+            var3.columns,
+            "Wrong columns for 'factor(var3)'",
+        )
+        for matrix_col, level in zip(var3.columns, ("x1", "x2")):
             np.testing.assert_array_equal(
                 matrix.loc[self.data.index, matrix_col].values,
                 (self.data.var3 == level).astype(float).values,
@@ -802,8 +823,12 @@ class TestModelSpec(unittest.TestCase):
             )
 
         # Checking the predictor (var5, all level)
-        for level in (1, 2, 3):
-            matrix_col = "{}:level.{}".format(var5.id, level)
+        self.assertEqual(
+            ["factor(var5):1", "factor(var5):2", "factor(var5):3"],
+            var5.columns,
+            "Wrong columns for 'factor(var5)'",
+        )
+        for matrix_col, level in zip(var5.columns, (1, 2, 3)):
             np.testing.assert_array_equal(
                 matrix.loc[self.data.index, matrix_col].values,
                 (self.data.var5 == level).astype(float).values,
@@ -813,35 +838,21 @@ class TestModelSpec(unittest.TestCase):
 
         # Checking the resulting column for the GWAS interaction
         multiplication_dict = modelspec.gwas_interaction
-        self.assertEqual(6, len(multiplication_dict),
+        self.assertEqual(40, len(multiplication_dict),
                          "Wrong number of interaction multiplication")
+        self.assertEqual(40, len(inter.columns))
+        self.assertEqual(set(inter.columns), set(multiplication_dict.keys()))
 
-        # Checking the columns to multiply
-        for var3_l in ("x1", "x2"):
-            for var5_l in (1, 2, 3):
-                result_col = "{}:level.{}:level.{}".format(
-                    inter.id, var3_l, var5_l,
-                )
-                self.assertTrue(
-                    result_col in multiplication_dict,
-                    "Wrong result column for the GWAS interaction with "
-                    "var3 level '{}' and var5 level "
-                    "'{}'".format(var3_l, var5_l),
-                )
-
-                multiplication_cols = multiplication_dict[result_col]
-                self.assertEqual(
-                    3, len(multiplication_cols),
-                    "Wrong number of columns to multiply for the GWAS "
-                    "interaction with level var3 level '{}' and var5 level "
-                    "'{}'".format(var3_l, var5_l),
-                )
-                self.assertEqual(
-                    {spec.phenotypes.var1.id,
-                     "{}:level.{}".format(var3.id, var3_l),
-                     "{}:level.{}".format(var5.id, var5_l)},
-                    set(multiplication_cols),
-                    "Wrong column to multiply for the GWAS interaction with "
-                    "var3 level '{}' and var5 level "
-                    "'{}'".format(var3_l, var5_l),
-                )
+        # Checking the two way interaction
+        all_variables = (
+            ("SNPs", ),
+            ("var1", ),
+            ("factor(var3):x1", "factor(var3):x2"),
+            ("factor(var5):1", "factor(var5):2", "factor(var5):3"),
+        )
+        for nb_term in range(2, len(all_variables)):
+            for variables in itertools.combinations(all_variables, nb_term):
+                for columns in itertools.product(*variables):
+                    col_name = "gwas_inter({})".format(",".join(columns))
+                    self.assertTrue(col_name in multiplication_dict)
+                    self.assertEqual(columns, multiplication_dict[col_name])
