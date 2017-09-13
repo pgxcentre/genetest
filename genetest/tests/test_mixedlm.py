@@ -23,7 +23,7 @@ from ..statistics.models.mixedlm import StatsMixedLM
 from .. import analysis
 from .. import subscribers
 from .. import modelspec as spec
-from ..phenotypes.dummy import _DummyPhenotypes
+from ..phenotypes.dataframe import DataFrameContainer
 
 
 __copyright__ = "Copyright 2016, Beaulieu-Saucier Pharmacogenomics Centre"
@@ -45,11 +45,10 @@ class TestStatsMixedLM(unittest.TestCase):
         data = data.set_index("sampleid", drop=False)
 
         # Creating the dummy phenotype container
-        cls.phenotypes = _DummyPhenotypes()
-        cls.phenotypes.data = data.drop(
+        cls.phenotypes = DataFrameContainer(data.drop(
             [col for col in data.columns if col.startswith("snp")],
             axis=1,
-        )
+        ))
 
         # Permuting the sample to add a bit of randomness
         new_sample_order = np.random.permutation(data.index)
@@ -82,13 +81,10 @@ class TestStatsMixedLM(unittest.TestCase):
         cls.tmp_dir = TemporaryDirectory(prefix="genetest_test_mixedlm_")
 
     def setUp(self):
-        # Resetting the model specification
-        spec._reset()
-
         # Reordering the columns and the rows of the phenotypes data frame
-        self.phenotypes.data = self.phenotypes.data.iloc[
-            np.random.permutation(self.phenotypes.data.shape[0]),
-            np.random.permutation(self.phenotypes.data.shape[1])
+        self.phenotypes._phenotypes = self.phenotypes._phenotypes.iloc[
+            np.random.permutation(self.phenotypes._phenotypes.shape[0]),
+            np.random.permutation(self.phenotypes._phenotypes.shape[1])
         ]
 
     @classmethod
@@ -242,6 +238,10 @@ class TestStatsMixedLM(unittest.TestCase):
         )
         gwas_results = subscriber._get_gwas_results()
 
+        # The interaction column
+        self.assertEqual(1, len(inter.columns))
+        col = inter.columns[0]
+
         # Checking the number of results (should be 4)
         self.assertEqual(4, len(gwas_results.keys()))
 
@@ -255,17 +255,17 @@ class TestStatsMixedLM(unittest.TestCase):
         self.assertAlmostEqual(0.17499166666666666, results["SNPs"]["maf"])
 
         # Checking the marker statistics (according to R lme4)
-        self.assertAlmostEqual(1.357502192968099, results[inter.id]["coef"])
-        self.assertAlmostEqual(0.6710947924603057,
-                               results[inter.id]["std_err"], places=5)
-        self.assertAlmostEqual(0.04218056953351801,
-                               results[inter.id]["lower_ci"], places=5)
-        self.assertAlmostEqual(2.6728238164026799,
-                               results[inter.id]["upper_ci"], places=5)
-        self.assertAlmostEqual(2.0228173548946042,
-                               results[inter.id]["z_value"], places=5)
+        self.assertAlmostEqual(1.357502192968099, results[col]["coef"])
+        self.assertAlmostEqual(0.6710947924603057, results[col]["std_err"],
+                               places=5)
+        self.assertAlmostEqual(0.04218056953351801, results[col]["lower_ci"],
+                               places=5)
+        self.assertAlmostEqual(2.6728238164026799, results[col]["upper_ci"],
+                               places=5)
+        self.assertAlmostEqual(2.0228173548946042, results[col]["z_value"],
+                               places=5)
         self.assertAlmostEqual(-np.log10(4.309198170818540e-02),
-                               -np.log10(results[inter.id]["p_value"]),
+                               -np.log10(results[col]["p_value"]),
                                places=5)
 
         # Checking the second marker (snp2)
@@ -278,17 +278,17 @@ class TestStatsMixedLM(unittest.TestCase):
         self.assertAlmostEqual(0.36666666666666664, results["SNPs"]["maf"])
 
         # Checking the marker statistics (according to R lme4)
-        self.assertAlmostEqual(0.8952450482655012, results[inter.id]["coef"])
-        self.assertAlmostEqual(0.5976670951727925,
-                               results[inter.id]["std_err"], places=5)
-        self.assertAlmostEqual(-0.2761609330178445,
-                               results[inter.id]["lower_ci"], places=5)
-        self.assertAlmostEqual(2.0666510295488472,
-                               results[inter.id]["upper_ci"], places=5)
+        self.assertAlmostEqual(0.8952450482655012, results[col]["coef"])
+        self.assertAlmostEqual(0.5976670951727925, results[col]["std_err"],
+                               places=5)
+        self.assertAlmostEqual(-0.2761609330178445, results[col]["lower_ci"],
+                               places=5)
+        self.assertAlmostEqual(2.0666510295488472, results[col]["upper_ci"],
+                               places=5)
         self.assertAlmostEqual(1.497899174132508504,
-                               results[inter.id]["z_value"], places=5)
+                               results[col]["z_value"], places=5)
         self.assertAlmostEqual(-np.log10(1.341594483012889e-01),
-                               -np.log10(results[inter.id]["p_value"]),
+                               -np.log10(results[col]["p_value"]),
                                places=5)
 
         # Checking the third marker (snp3)
@@ -301,17 +301,17 @@ class TestStatsMixedLM(unittest.TestCase):
         self.assertAlmostEqual(0.40833333333333333, results["SNPs"]["maf"])
 
         # Checking the marker statistics (according to R lme4)
-        self.assertAlmostEqual(0.9199422369515684, results[inter.id]["coef"])
-        self.assertAlmostEqual(0.4498593164720226,
-                               results[inter.id]["std_err"], places=5)
-        self.assertAlmostEqual(0.03823417855659805,
-                               results[inter.id]["lower_ci"], places=5)
-        self.assertAlmostEqual(1.8016502953465388,
-                               results[inter.id]["upper_ci"], places=5)
-        self.assertAlmostEqual(2.0449553966473895,
-                               results[inter.id]["z_value"], places=5)
+        self.assertAlmostEqual(0.9199422369515684, results[col]["coef"])
+        self.assertAlmostEqual(0.4498593164720226, results[col]["std_err"],
+                               places=5)
+        self.assertAlmostEqual(0.03823417855659805, results[col]["lower_ci"],
+                               places=5)
+        self.assertAlmostEqual(1.8016502953465388, results[col]["upper_ci"],
+                               places=5)
+        self.assertAlmostEqual(2.0449553966473895, results[col]["z_value"],
+                               places=5)
         self.assertAlmostEqual(-np.log10(4.085925566922222e-02),
-                               -np.log10(results[inter.id]["p_value"]),
+                               -np.log10(results[col]["p_value"]),
                                places=4)
 
         # Checking the fourth marker (snp4)
@@ -324,17 +324,17 @@ class TestStatsMixedLM(unittest.TestCase):
         self.assertAlmostEqual(0.44166666666666665, results["SNPs"]["maf"])
 
         # Checking the marker statistics (according to R lme4)
-        self.assertAlmostEqual(0.05832811192587545, results[inter.id]["coef"])
-        self.assertAlmostEqual(0.7381058671562147,
-                               results[inter.id]["std_err"], places=4)
-        self.assertAlmostEqual(-1.388332804478011,
-                               results[inter.id]["lower_ci"], places=4)
-        self.assertAlmostEqual(1.504989028329762,
-                               results[inter.id]["upper_ci"], places=4)
-        self.assertAlmostEqual(0.07902404590089884,
-                               results[inter.id]["z_value"], places=5)
+        self.assertAlmostEqual(0.05832811192587545, results[col]["coef"])
+        self.assertAlmostEqual(0.7381058671562147, results[col]["std_err"],
+                               places=4)
+        self.assertAlmostEqual(-1.388332804478011, results[col]["lower_ci"],
+                               places=4)
+        self.assertAlmostEqual(1.504989028329762, results[col]["upper_ci"],
+                               places=4)
+        self.assertAlmostEqual(0.07902404590089884, results[col]["z_value"],
+                               places=5)
         self.assertAlmostEqual(-np.log10(9.370134970059800e-01),
-                               -np.log10(results[inter.id]["p_value"]),
+                               -np.log10(results[col]["p_value"]),
                                places=6)
 
     def test_mixedlm_snp1_reml(self):
@@ -472,18 +472,22 @@ class TestStatsMixedLM(unittest.TestCase):
         self.assertEqual("G", results["snp1"]["major"])
         self.assertAlmostEqual(0.17499166666666666, results["snp1"]["maf"])
 
+        # The interaction column
+        self.assertEqual(1, len(inter.columns))
+        col = inter.columns[0]
+
         # Checking the marker statistics (according to R lme4)
-        self.assertAlmostEqual(1.357502192968099, results[inter.id]["coef"])
-        self.assertAlmostEqual(0.6710947924603057,
-                               results[inter.id]["std_err"], places=5)
-        self.assertAlmostEqual(0.04218056953351801,
-                               results[inter.id]["lower_ci"], places=5)
-        self.assertAlmostEqual(2.6728238164026799,
-                               results[inter.id]["upper_ci"], places=5)
-        self.assertAlmostEqual(2.0228173548946042,
-                               results[inter.id]["z_value"], places=5)
+        self.assertAlmostEqual(1.357502192968099, results[col]["coef"])
+        self.assertAlmostEqual(0.6710947924603057, results[col]["std_err"],
+                               places=5)
+        self.assertAlmostEqual(0.04218056953351801, results[col]["lower_ci"],
+                               places=5)
+        self.assertAlmostEqual(2.6728238164026799, results[col]["upper_ci"],
+                               places=5)
+        self.assertAlmostEqual(2.0228173548946042, results[col]["z_value"],
+                               places=5)
         self.assertAlmostEqual(-np.log10(4.309198170818540e-02),
-                               -np.log10(results[inter.id]["p_value"]),
+                               -np.log10(results[col]["p_value"]),
                                places=5)
 
         # TODO: Check the other predictors
@@ -525,18 +529,22 @@ class TestStatsMixedLM(unittest.TestCase):
         self.assertEqual("G", results["snp1"]["major"])
         self.assertAlmostEqual(0.17499166666666666, results["snp1"]["maf"])
 
+        # The interaction column
+        self.assertEqual(1, len(inter.columns))
+        col = inter.columns[0]
+
         # Checking the marker statistics (according to R lme4)
-        self.assertAlmostEqual(1.3575021929662827, results[inter.id]["coef"])
-        self.assertAlmostEqual(0.6366563415656629,
-                               results[inter.id]["std_err"], places=6)
-        self.assertAlmostEqual(0.1096786929685527,
-                               results[inter.id]["lower_ci"], places=6)
-        self.assertAlmostEqual(2.6053256929640130,
-                               results[inter.id]["upper_ci"], places=6)
-        self.assertAlmostEqual(2.1322369767462277,
-                               results[inter.id]["z_value"], places=6)
+        self.assertAlmostEqual(1.3575021929662827, results[col]["coef"])
+        self.assertAlmostEqual(0.6366563415656629, results[col]["std_err"],
+                               places=6)
+        self.assertAlmostEqual(0.1096786929685527, results[col]["lower_ci"],
+                               places=6)
+        self.assertAlmostEqual(2.6053256929640130, results[col]["upper_ci"],
+                               places=6)
+        self.assertAlmostEqual(2.1322369767462277, results[col]["z_value"],
+                               places=6)
         self.assertAlmostEqual(-np.log10(3.298737010780739e-02),
-                               -np.log10(results[inter.id]["p_value"]),
+                               -np.log10(results[col]["p_value"]),
                                places=5)
 
         # TODO: Check the other predictors
@@ -668,18 +676,22 @@ class TestStatsMixedLM(unittest.TestCase):
         self.assertEqual("A", results["snp2"]["major"])
         self.assertAlmostEqual(0.36666666666666664, results["snp2"]["maf"])
 
+        # The interaction column
+        self.assertEqual(1, len(inter.columns))
+        col = inter.columns[0]
+
         # Checking the marker statistics (according to R lme4)
-        self.assertAlmostEqual(0.8952450482655012, results[inter.id]["coef"])
-        self.assertAlmostEqual(0.5976670951727925,
-                               results[inter.id]["std_err"], places=5)
-        self.assertAlmostEqual(-0.2761609330178445,
-                               results[inter.id]["lower_ci"], places=5)
-        self.assertAlmostEqual(2.0666510295488472,
-                               results[inter.id]["upper_ci"], places=5)
-        self.assertAlmostEqual(1.497899174132508504,
-                               results[inter.id]["z_value"], places=5)
+        self.assertAlmostEqual(0.8952450482655012, results[col]["coef"])
+        self.assertAlmostEqual(0.5976670951727925, results[col]["std_err"],
+                               places=5)
+        self.assertAlmostEqual(-0.2761609330178445, results[col]["lower_ci"],
+                               places=5)
+        self.assertAlmostEqual(2.0666510295488472, results[col]["upper_ci"],
+                               places=5)
+        self.assertAlmostEqual(1.497899174132508504, results[col]["z_value"],
+                               places=5)
         self.assertAlmostEqual(-np.log10(1.341594483012889e-01),
-                               -np.log10(results[inter.id]["p_value"]),
+                               -np.log10(results[col]["p_value"]),
                                places=5)
 
         # TODO: Check the other predictors
@@ -713,6 +725,10 @@ class TestStatsMixedLM(unittest.TestCase):
         )
         results = subscriber.results[0]
 
+        # The interaction columns
+        self.assertEqual(1, len(inter.columns))
+        col = inter.columns[0]
+
         # Checking the marker information
         self.assertEqual("snp2", results["snp2"]["name"])
         self.assertEqual("3", results["snp2"]["chrom"])
@@ -722,17 +738,17 @@ class TestStatsMixedLM(unittest.TestCase):
         self.assertAlmostEqual(0.36666666666666664, results["snp2"]["maf"])
 
         # Checking the marker statistics (according to R lme4)
-        self.assertAlmostEqual(0.8952450482657273, results[inter.id]["coef"])
-        self.assertAlmostEqual(0.5669968515485548,
-                               results[inter.id]["std_err"], places=6)
-        self.assertAlmostEqual(-0.2160483601170435,
-                               results[inter.id]["lower_ci"], places=5)
-        self.assertAlmostEqual(2.006538456648498,
-                               results[inter.id]["upper_ci"], places=5)
-        self.assertAlmostEqual(1.578924196528916468,
-                               results[inter.id]["z_value"], places=5)
+        self.assertAlmostEqual(0.8952450482657273, results[col]["coef"])
+        self.assertAlmostEqual(0.5669968515485548, results[col]["std_err"],
+                               places=6)
+        self.assertAlmostEqual(-0.2160483601170435, results[col]["lower_ci"],
+                               places=5)
+        self.assertAlmostEqual(2.006538456648498, results[col]["upper_ci"],
+                               places=5)
+        self.assertAlmostEqual(1.578924196528916468, results[col]["z_value"],
+                               places=5)
         self.assertAlmostEqual(-np.log10(1.143534452552892e-01),
-                               -np.log10(results[inter.id]["p_value"]),
+                               -np.log10(results[col]["p_value"]),
                                places=5)
 
         # TODO: Check the other predictors
@@ -872,18 +888,22 @@ class TestStatsMixedLM(unittest.TestCase):
         self.assertEqual("T", results["snp3"]["major"])
         self.assertAlmostEqual(0.40833333333333333, results["snp3"]["maf"])
 
+        # The interaction column
+        self.assertEqual(1, len(inter.columns))
+        col = inter.columns[0]
+
         # Checking the marker statistics (according to R lme4)
-        self.assertAlmostEqual(0.9199422369515684, results[inter.id]["coef"])
-        self.assertAlmostEqual(0.4498593164720226,
-                               results[inter.id]["std_err"], places=5)
-        self.assertAlmostEqual(0.03823417855659805,
-                               results[inter.id]["lower_ci"], places=5)
-        self.assertAlmostEqual(1.8016502953465388,
-                               results[inter.id]["upper_ci"], places=5)
-        self.assertAlmostEqual(2.0449553966473895,
-                               results[inter.id]["z_value"], places=5)
+        self.assertAlmostEqual(0.9199422369515684, results[col]["coef"])
+        self.assertAlmostEqual(0.4498593164720226, results[col]["std_err"],
+                               places=5)
+        self.assertAlmostEqual(0.03823417855659805, results[col]["lower_ci"],
+                               places=5)
+        self.assertAlmostEqual(1.8016502953465388, results[col]["upper_ci"],
+                               places=5)
+        self.assertAlmostEqual(2.0449553966473895, results[col]["z_value"],
+                               places=5)
         self.assertAlmostEqual(-np.log10(4.085925566922222e-02),
-                               -np.log10(results[inter.id]["p_value"]),
+                               -np.log10(results[col]["p_value"]),
                                places=4)
 
         # TODO: Check the other predictors
@@ -925,18 +945,22 @@ class TestStatsMixedLM(unittest.TestCase):
         self.assertEqual("T", results["snp3"]["major"])
         self.assertAlmostEqual(0.40833333333333333, results["snp3"]["maf"])
 
+        # The interaction columns
+        self.assertEqual(1, len(inter.columns))
+        col = inter.columns[0]
+
         # Checking the marker statistics (according to R lme4)
-        self.assertAlmostEqual(0.9199422369518273, results[inter.id]["coef"])
-        self.assertAlmostEqual(0.4267740150554054,
-                               results[inter.id]["std_err"], places=6)
-        self.assertAlmostEqual(0.08348053790567811,
-                               results[inter.id]["lower_ci"], places=5)
-        self.assertAlmostEqual(1.7564039359979766,
-                               results[inter.id]["upper_ci"], places=5)
-        self.assertAlmostEqual(2.1555722806422435,
-                               results[inter.id]["z_value"], places=5)
+        self.assertAlmostEqual(0.9199422369518273, results[col]["coef"])
+        self.assertAlmostEqual(0.4267740150554054, results[col]["std_err"],
+                               places=6)
+        self.assertAlmostEqual(0.08348053790567811, results[col]["lower_ci"],
+                               places=5)
+        self.assertAlmostEqual(1.7564039359979766, results[col]["upper_ci"],
+                               places=5)
+        self.assertAlmostEqual(2.1555722806422435, results[col]["z_value"],
+                               places=5)
         self.assertAlmostEqual(-np.log10(3.111707895646454e-02),
-                               -np.log10(results[inter.id]["p_value"]),
+                               -np.log10(results[col]["p_value"]),
                                places=5)
 
         # TODO: Check the other predictors
@@ -1076,18 +1100,22 @@ class TestStatsMixedLM(unittest.TestCase):
         self.assertEqual("C", results["snp4"]["major"])
         self.assertAlmostEqual(0.44166666666666665, results["snp4"]["maf"])
 
+        # The interaction column
+        self.assertEqual(1, len(inter.columns))
+        col = inter.columns[0]
+
         # Checking the marker statistics (according to R lme4)
-        self.assertAlmostEqual(0.05832811192587545, results[inter.id]["coef"])
-        self.assertAlmostEqual(0.7381058671562147,
-                               results[inter.id]["std_err"], places=4)
-        self.assertAlmostEqual(-1.388332804478011,
-                               results[inter.id]["lower_ci"], places=4)
-        self.assertAlmostEqual(1.504989028329762,
-                               results[inter.id]["upper_ci"], places=4)
-        self.assertAlmostEqual(0.07902404590089884,
-                               results[inter.id]["z_value"], places=5)
+        self.assertAlmostEqual(0.05832811192587545, results[col]["coef"])
+        self.assertAlmostEqual(0.7381058671562147, results[col]["std_err"],
+                               places=4)
+        self.assertAlmostEqual(-1.388332804478011, results[col]["lower_ci"],
+                               places=4)
+        self.assertAlmostEqual(1.504989028329762, results[col]["upper_ci"],
+                               places=4)
+        self.assertAlmostEqual(0.07902404590089884, results[col]["z_value"],
+                               places=5)
         self.assertAlmostEqual(-np.log10(9.370134970059800e-01),
-                               -np.log10(results[inter.id]["p_value"]),
+                               -np.log10(results[col]["p_value"]),
                                places=6)
 
         # TODO: Check the other predictors
@@ -1129,18 +1157,22 @@ class TestStatsMixedLM(unittest.TestCase):
         self.assertEqual("C", results["snp4"]["major"])
         self.assertAlmostEqual(0.44166666666666665, results["snp4"]["maf"])
 
+        # The interaction column
+        self.assertEqual(1, len(inter.columns))
+        col = inter.columns[0]
+
         # Checking the marker statistics (according to R lme4)
-        self.assertAlmostEqual(0.05832811192492895, results[inter.id]["coef"])
-        self.assertAlmostEqual(0.7002288518048638,
-                               results[inter.id]["std_err"], places=5)
-        self.assertAlmostEqual(-1.314095218548438,
-                               results[inter.id]["lower_ci"], places=4)
-        self.assertAlmostEqual(1.430751442398297,
-                               results[inter.id]["upper_ci"], places=4)
-        self.assertAlmostEqual(0.08329864125790624,
-                               results[inter.id]["z_value"], places=6)
+        self.assertAlmostEqual(0.05832811192492895, results[col]["coef"])
+        self.assertAlmostEqual(0.7002288518048638, results[col]["std_err"],
+                               places=5)
+        self.assertAlmostEqual(-1.314095218548438, results[col]["lower_ci"],
+                               places=4)
+        self.assertAlmostEqual(1.430751442398297, results[col]["upper_ci"],
+                               places=4)
+        self.assertAlmostEqual(0.08329864125790624, results[col]["z_value"],
+                               places=6)
         self.assertAlmostEqual(-np.log10(9.336140806606035e-01),
-                               -np.log10(results[inter.id]["p_value"]),
+                               -np.log10(results[col]["p_value"]),
                                places=6)
 
         # TODO: Check the other predictors

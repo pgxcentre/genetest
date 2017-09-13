@@ -23,7 +23,7 @@ from ..statistics.core import StatsError
 from .. import analysis
 from .. import subscribers
 from .. import modelspec as spec
-from ..phenotypes.dummy import _DummyPhenotypes
+from ..phenotypes.dataframe import DataFrameContainer
 
 
 __copyright__ = "Copyright 2016, Beaulieu-Saucier Pharmacogenomics Centre"
@@ -48,11 +48,10 @@ class TestStatsCoxPH(unittest.TestCase):
         data = data.set_index("sample")
 
         # Creating the dummy phenotype container
-        cls.phenotypes = _DummyPhenotypes()
-        cls.phenotypes.data = data.drop(
+        cls.phenotypes = DataFrameContainer(data.drop(
             ["snp{}".format(i+1) for i in range(4)],
             axis=1,
-        )
+        ))
 
         # Permuting the sample to add a bit of randomness
         new_sample_order = np.random.permutation(data.index)
@@ -82,13 +81,10 @@ class TestStatsCoxPH(unittest.TestCase):
         cls.tmp_dir = TemporaryDirectory(prefix="genetest_test_coxph_")
 
     def setUp(self):
-        # Resetting the model specification
-        spec._reset()
-
         # Reordering the columns and the rows of the phenotype data frame
-        self.phenotypes.data = self.phenotypes.data.iloc[
-            np.random.permutation(self.phenotypes.data.shape[0]),
-            np.random.permutation(self.phenotypes.data.shape[1])
+        self.phenotypes._phenotypes = self.phenotypes._phenotypes.iloc[
+            np.random.permutation(self.phenotypes._phenotypes.shape[0]),
+            np.random.permutation(self.phenotypes._phenotypes.shape[1])
         ]
 
     @classmethod
@@ -201,7 +197,7 @@ class TestStatsCoxPH(unittest.TestCase):
         gender = spec.factor(spec.phenotypes.gender)
 
         # The interaction term
-        inter = spec.interaction(spec.phenotypes.var1)
+        inter = spec.gwas_interaction(spec.phenotypes.var1)
 
         # Creating the model specification
         modelspec = spec.ModelSpec(
@@ -222,6 +218,48 @@ class TestStatsCoxPH(unittest.TestCase):
         )
         gwas_results = subscriber._get_gwas_results()
 
+        # The interaction columns
+        self.assertEqual(1, len(inter.columns))
+        col = inter.columns[0]
+
+        # Checking the second marker (snp2)
+        results = gwas_results["snp2"]
+        self.assertEqual("snp2", results["SNPs"]["name"])
+        self.assertEqual("3", results["SNPs"]["chrom"])
+        self.assertEqual(9618, results["SNPs"]["pos"])
+        self.assertEqual("C", results["SNPs"]["minor"])
+        self.assertEqual("A", results["SNPs"]["major"])
+        self.assertAlmostEqual(0.40833333333333333, results["SNPs"]["maf"])
+
+        # Checking the results (according to R)
+        self.assertAlmostEqual(0.01742308104178164, results[col]["coef"])
+        self.assertAlmostEqual(0.02219048572389944, results[col]["std_err"])
+        self.assertAlmostEqual(1.0175757482739625, results[col]["hr"])
+        self.assertAlmostEqual(0.9742674031703326, results[col]["hr_lower_ci"])
+        self.assertAlmostEqual(1.062809245291237, results[col]["hr_upper_ci"])
+        self.assertAlmostEqual(0.7851599671392845, results[col]["z_value"])
+        self.assertAlmostEqual(0.4323597838912484, results[col]["p_value"])
+
+        # Checking the third marker (snp3)
+        results = gwas_results["snp3"]
+        self.assertEqual("snp3", results["SNPs"]["name"])
+        self.assertEqual("2", results["SNPs"]["chrom"])
+        self.assertEqual(1519, results["SNPs"]["pos"])
+        self.assertEqual("G", results["SNPs"]["minor"])
+        self.assertEqual("T", results["SNPs"]["major"])
+        self.assertAlmostEqual(0.20833333333333334, results["SNPs"]["maf"])
+
+        # Checking the results (according to R)
+        self.assertAlmostEqual(0.005873556606557682, results[col]["coef"])
+        self.assertAlmostEqual(0.03350856673847168, results[col]["std_err"])
+        self.assertAlmostEqual(1.0058908397614570, results[col]["hr"])
+        self.assertAlmostEqual(0.94195099563823814,
+                               results[col]["hr_lower_ci"])
+        self.assertAlmostEqual(1.074170934795214, results[col]["hr_upper_ci"])
+        self.assertAlmostEqual(0.17528522339972738, results[col]["z_value"])
+        self.assertAlmostEqual(0.8608555220369414, results[col]["p_value"])
+
+        # THIS COULD FAIL UNTIL STATSMODELS GETS UPDATED
         # Checking the number of results (should be 3)
         self.assertEqual(3, len(gwas_results.keys()))
 
@@ -235,66 +273,20 @@ class TestStatsCoxPH(unittest.TestCase):
         self.assertAlmostEqual(0.48162903225806442, results["SNPs"]["maf"])
 
         # Checking the results (according to R)
-        self.assertAlmostEqual(-0.04756704444017357, results[inter.id]["coef"],
+        self.assertAlmostEqual(-0.04756704444017357, results[col]["coef"],
                                places=4)
-        self.assertAlmostEqual(0.06434818489300186,
-                               results[inter.id]["std_err"], places=5)
-        self.assertAlmostEqual(0.9535465409954826, results[inter.id]["hr"],
+        self.assertAlmostEqual(0.06434818489300186, results[col]["std_err"],
+                               places=5)
+        self.assertAlmostEqual(0.9535465409954826, results[col]["hr"],
                                places=4)
-        self.assertAlmostEqual(0.8405598094456039,
-                               results[inter.id]["hr_lower_ci"], places=4)
-        self.assertAlmostEqual(1.081720771831991,
-                               results[inter.id]["hr_upper_ci"], places=4)
-        self.assertAlmostEqual(-0.7392134606324645,
-                               results[inter.id]["z_value"], places=3)
-        self.assertAlmostEqual(0.45977738842863736,
-                               results[inter.id]["p_value"], places=3)
-
-        # Checking the second marker (snp2)
-        results = gwas_results["snp2"]
-        self.assertEqual("snp2", results["SNPs"]["name"])
-        self.assertEqual("3", results["SNPs"]["chrom"])
-        self.assertEqual(9618, results["SNPs"]["pos"])
-        self.assertEqual("C", results["SNPs"]["minor"])
-        self.assertEqual("A", results["SNPs"]["major"])
-        self.assertAlmostEqual(0.40833333333333333, results["SNPs"]["maf"])
-
-        # Checking the results (according to R)
-        self.assertAlmostEqual(0.01742308104178164, results[inter.id]["coef"])
-        self.assertAlmostEqual(0.02219048572389944,
-                               results[inter.id]["std_err"])
-        self.assertAlmostEqual(1.0175757482739625, results[inter.id]["hr"])
-        self.assertAlmostEqual(0.9742674031703326,
-                               results[inter.id]["hr_lower_ci"])
-        self.assertAlmostEqual(1.062809245291237,
-                               results[inter.id]["hr_upper_ci"])
-        self.assertAlmostEqual(0.7851599671392845,
-                               results[inter.id]["z_value"])
-        self.assertAlmostEqual(0.4323597838912484,
-                               results[inter.id]["p_value"])
-
-        # Checking the third marker (snp3)
-        results = gwas_results["snp3"]
-        self.assertEqual("snp3", results["SNPs"]["name"])
-        self.assertEqual("2", results["SNPs"]["chrom"])
-        self.assertEqual(1519, results["SNPs"]["pos"])
-        self.assertEqual("G", results["SNPs"]["minor"])
-        self.assertEqual("T", results["SNPs"]["major"])
-        self.assertAlmostEqual(0.20833333333333334, results["SNPs"]["maf"])
-
-        # Checking the results (according to R)
-        self.assertAlmostEqual(0.005873556606557682, results[inter.id]["coef"])
-        self.assertAlmostEqual(0.03350856673847168,
-                               results[inter.id]["std_err"])
-        self.assertAlmostEqual(1.0058908397614570, results[inter.id]["hr"])
-        self.assertAlmostEqual(0.94195099563823814,
-                               results[inter.id]["hr_lower_ci"])
-        self.assertAlmostEqual(1.074170934795214,
-                               results[inter.id]["hr_upper_ci"])
-        self.assertAlmostEqual(0.17528522339972738,
-                               results[inter.id]["z_value"])
-        self.assertAlmostEqual(0.8608555220369414,
-                               results[inter.id]["p_value"])
+        self.assertAlmostEqual(0.8405598094456039, results[col]["hr_lower_ci"],
+                               places=4)
+        self.assertAlmostEqual(1.081720771831991, results[col]["hr_upper_ci"],
+                               places=4)
+        self.assertAlmostEqual(-0.7392134606324645, results[col]["z_value"],
+                               places=3)
+        self.assertAlmostEqual(0.45977738842863736, results[col]["p_value"],
+                               places=3)
 
         # There should be a file for the failed snp4
         self.assertTrue(os.path.isfile(out_prefix + "_failed_snps.txt"))
@@ -380,21 +372,25 @@ class TestStatsCoxPH(unittest.TestCase):
         self.assertEqual("T", results["snp1"]["major"])
         self.assertAlmostEqual(0.48162903225806442, results["snp1"]["maf"])
 
+        # The interaction columns
+        self.assertEqual(1, len(inter.columns))
+        col = inter.columns[0]
+
         # Checking the results (according to R)
-        self.assertAlmostEqual(-0.04756704444017357, results[inter.id]["coef"],
+        self.assertAlmostEqual(-0.04756704444017357, results[col]["coef"],
                                places=4)
-        self.assertAlmostEqual(0.06434818489300186,
-                               results[inter.id]["std_err"], places=5)
-        self.assertAlmostEqual(0.9535465409954826, results[inter.id]["hr"],
+        self.assertAlmostEqual(0.06434818489300186, results[col]["std_err"],
+                               places=5)
+        self.assertAlmostEqual(0.9535465409954826, results[col]["hr"],
                                places=4)
-        self.assertAlmostEqual(0.8405598094456039,
-                               results[inter.id]["hr_lower_ci"], places=4)
-        self.assertAlmostEqual(1.081720771831991,
-                               results[inter.id]["hr_upper_ci"], places=4)
-        self.assertAlmostEqual(-0.7392134606324645,
-                               results[inter.id]["z_value"], places=3)
-        self.assertAlmostEqual(0.45977738842863736,
-                               results[inter.id]["p_value"], places=3)
+        self.assertAlmostEqual(0.8405598094456039, results[col]["hr_lower_ci"],
+                               places=4)
+        self.assertAlmostEqual(1.081720771831991, results[col]["hr_upper_ci"],
+                               places=4)
+        self.assertAlmostEqual(-0.7392134606324645, results[col]["z_value"],
+                               places=3)
+        self.assertAlmostEqual(0.45977738842863736, results[col]["p_value"],
+                               places=3)
 
         # TODO: Check the other predictors
 
@@ -430,8 +426,11 @@ class TestStatsCoxPH(unittest.TestCase):
         self.assertEqual("T", results["snp1"]["major"])
         self.assertAlmostEqual(0.48162903225806442, results["snp1"]["maf"])
 
+        # The interaction columns
+        self.assertEqual(1, len(inter.columns))
+        col = inter.columns[0]
+
         # Checking the results (according to R)
-        col = inter.id + ":level.2"
         self.assertAlmostEqual(1.34436505435604148, results[col]["coef"])
         self.assertAlmostEqual(1.77319747152157015, results[col]["std_err"])
         self.assertAlmostEqual(3.8357502743054757, results[col]["hr"])
@@ -519,19 +518,18 @@ class TestStatsCoxPH(unittest.TestCase):
         self.assertEqual("A", results["snp2"]["major"])
         self.assertAlmostEqual(0.40833333333333333, results["snp2"]["maf"])
 
+        # The interaction columns
+        self.assertEqual(1, len(inter.columns))
+        col = inter.columns[0]
+
         # Checking the results (according to R)
-        self.assertAlmostEqual(0.01742308104178164, results[inter.id]["coef"])
-        self.assertAlmostEqual(0.02219048572389944,
-                               results[inter.id]["std_err"])
-        self.assertAlmostEqual(1.0175757482739625, results[inter.id]["hr"])
-        self.assertAlmostEqual(0.9742674031703326,
-                               results[inter.id]["hr_lower_ci"])
-        self.assertAlmostEqual(1.062809245291237,
-                               results[inter.id]["hr_upper_ci"])
-        self.assertAlmostEqual(0.7851599671392845,
-                               results[inter.id]["z_value"])
-        self.assertAlmostEqual(0.4323597838912484,
-                               results[inter.id]["p_value"])
+        self.assertAlmostEqual(0.01742308104178164, results[col]["coef"])
+        self.assertAlmostEqual(0.02219048572389944, results[col]["std_err"])
+        self.assertAlmostEqual(1.0175757482739625, results[col]["hr"])
+        self.assertAlmostEqual(0.9742674031703326, results[col]["hr_lower_ci"])
+        self.assertAlmostEqual(1.062809245291237, results[col]["hr_upper_ci"])
+        self.assertAlmostEqual(0.7851599671392845, results[col]["z_value"])
+        self.assertAlmostEqual(0.4323597838912484, results[col]["p_value"])
 
         # TODO: Check the other predictors
 
@@ -610,19 +608,19 @@ class TestStatsCoxPH(unittest.TestCase):
         self.assertEqual("T", results["snp3"]["major"])
         self.assertAlmostEqual(0.20833333333333334, results["snp3"]["maf"])
 
+        # The interaction column
+        self.assertEqual(1, len(inter.columns))
+        col = inter.columns[0]
+
         # Checking the results (according to R)
-        self.assertAlmostEqual(0.005873556606557682, results[inter.id]["coef"])
-        self.assertAlmostEqual(0.03350856673847168,
-                               results[inter.id]["std_err"])
-        self.assertAlmostEqual(1.0058908397614570, results[inter.id]["hr"])
+        self.assertAlmostEqual(0.005873556606557682, results[col]["coef"])
+        self.assertAlmostEqual(0.03350856673847168, results[col]["std_err"])
+        self.assertAlmostEqual(1.0058908397614570, results[col]["hr"])
         self.assertAlmostEqual(0.94195099563823814,
-                               results[inter.id]["hr_lower_ci"])
-        self.assertAlmostEqual(1.074170934795214,
-                               results[inter.id]["hr_upper_ci"])
-        self.assertAlmostEqual(0.17528522339972738,
-                               results[inter.id]["z_value"])
-        self.assertAlmostEqual(0.8608555220369414,
-                               results[inter.id]["p_value"])
+                               results[col]["hr_lower_ci"])
+        self.assertAlmostEqual(1.074170934795214, results[col]["hr_upper_ci"])
+        self.assertAlmostEqual(0.17528522339972738, results[col]["z_value"])
+        self.assertAlmostEqual(0.8608555220369414, results[col]["p_value"])
 
         # TODO: Check the other predictors
 

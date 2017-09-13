@@ -23,7 +23,7 @@ from ..statistics.core import StatsError
 from .. import analysis
 from .. import subscribers
 from .. import modelspec as spec
-from ..phenotypes.dummy import _DummyPhenotypes
+from ..phenotypes.dataframe import DataFrameContainer
 
 
 __copyright__ = "Copyright 2016, Beaulieu-Saucier Pharmacogenomics Centre"
@@ -48,11 +48,10 @@ class TestStatsLogistic(unittest.TestCase):
         data = data.set_index("sample")
 
         # Creating the dummy phenotype container
-        cls.phenotypes = _DummyPhenotypes()
-        cls.phenotypes.data = data.drop(
+        cls.phenotypes = DataFrameContainer(data.drop(
             ["snp{}".format(i+1) for i in range(3)],
             axis=1,
-        )
+        ))
 
         # Permuting the sample to add a bit of randomness
         new_sample_order = np.random.permutation(data.index)
@@ -82,13 +81,10 @@ class TestStatsLogistic(unittest.TestCase):
         cls.tmp_dir = TemporaryDirectory(prefix="genetest_test_logistic_")
 
     def setUp(self):
-        # Resetting the model specification
-        spec._reset()
-
         # Reordering the columns and the rows of the phenotype data frame
-        self.phenotypes.data = self.phenotypes.data.iloc[
-            np.random.permutation(self.phenotypes.data.shape[0]),
-            np.random.permutation(self.phenotypes.data.shape[1])
+        self.phenotypes._phenotypes = self.phenotypes._phenotypes.iloc[
+            np.random.permutation(self.phenotypes._phenotypes.shape[0]),
+            np.random.permutation(self.phenotypes._phenotypes.shape[1])
         ]
 
     @classmethod
@@ -219,18 +215,21 @@ class TestStatsLogistic(unittest.TestCase):
         self.assertEqual("C", results["SNPs"]["major"])
         self.assertAlmostEqual(0.3749333333333334, results["SNPs"]["maf"])
 
+        # The interaction column
+        self.assertEqual(1, len(inter.columns))
+        col = inter.columns[0]
+
         # Checking the marker statistics (according to SAS)
-        self.assertAlmostEqual(0.0015311482968189, results[inter.id]["coef"],
+        self.assertAlmostEqual(0.0015311482968189, results[col]["coef"],
                                places=6)
-        self.assertAlmostEqual(0.0423504567007674,
-                               results[inter.id]["std_err"])
-        self.assertAlmostEqual(-0.0814742215655, results[inter.id]["lower_ci"],
+        self.assertAlmostEqual(0.0423504567007674, results[col]["std_err"])
+        self.assertAlmostEqual(-0.0814742215655, results[col]["lower_ci"],
                                places=6)
-        self.assertAlmostEqual(0.08453651815914, results[inter.id]["upper_ci"])
-        self.assertAlmostEqual(0.0013071285938733,
-                               results[inter.id]["t_value"]**2, places=6)
-        self.assertAlmostEqual(0.9711593785536400,
-                               results[inter.id]["p_value"], places=5)
+        self.assertAlmostEqual(0.08453651815914, results[col]["upper_ci"])
+        self.assertAlmostEqual(0.0013071285938733, results[col]["t_value"]**2,
+                               places=6)
+        self.assertAlmostEqual(0.9711593785536400, results[col]["p_value"],
+                               places=5)
 
         # Checking the second marker (snp2)
         results = gwas_results["snp2"]
@@ -242,17 +241,17 @@ class TestStatsLogistic(unittest.TestCase):
         self.assertAlmostEqual(0.41590833333333332, results["SNPs"]["maf"])
 
         # Checking the marker statistics (according to SAS)
-        self.assertAlmostEqual(0.0239292800721822, results[inter.id]["coef"],
+        self.assertAlmostEqual(0.0239292800721822, results[col]["coef"],
                                places=5)
-        self.assertAlmostEqual(0.0342619407842591,
-                               results[inter.id]["std_err"], places=6)
-        self.assertAlmostEqual(-0.0432228899054096,
-                               results[inter.id]["lower_ci"], places=5)
-        self.assertAlmostEqual(0.09108145004977, results[inter.id]["upper_ci"],
+        self.assertAlmostEqual(0.0342619407842591, results[col]["std_err"],
+                               places=6)
+        self.assertAlmostEqual(-0.0432228899054096, results[col]["lower_ci"],
                                places=5)
-        self.assertAlmostEqual(0.48779275460699,
-                               results[inter.id]["t_value"]**2, places=3)
-        self.assertAlmostEqual(0.48491356159603, results[inter.id]["p_value"],
+        self.assertAlmostEqual(0.09108145004977, results[col]["upper_ci"],
+                               places=5)
+        self.assertAlmostEqual(0.48779275460699, results[col]["t_value"]**2,
+                               places=3)
+        self.assertAlmostEqual(0.48491356159603, results[col]["p_value"],
                                places=4)
 
         # There should be a file for the failed snp3
@@ -342,18 +341,21 @@ class TestStatsLogistic(unittest.TestCase):
         self.assertEqual("C", results["snp1"]["major"])
         self.assertAlmostEqual(0.3749333333333334, results["snp1"]["maf"])
 
+        # The interaction columns
+        self.assertEqual(1, len(inter.columns))
+        col = inter.columns[0]
+
         # Checking the marker statistics (according to SAS)
-        self.assertAlmostEqual(0.0015311482968189, results[inter.id]["coef"],
+        self.assertAlmostEqual(0.0015311482968189, results[col]["coef"],
                                places=6)
-        self.assertAlmostEqual(0.0423504567007674,
-                               results[inter.id]["std_err"])
-        self.assertAlmostEqual(-0.0814742215655, results[inter.id]["lower_ci"],
+        self.assertAlmostEqual(0.0423504567007674, results[col]["std_err"])
+        self.assertAlmostEqual(-0.0814742215655, results[col]["lower_ci"],
                                places=6)
-        self.assertAlmostEqual(0.08453651815914, results[inter.id]["upper_ci"])
+        self.assertAlmostEqual(0.08453651815914, results[col]["upper_ci"])
         self.assertAlmostEqual(0.0013071285938733,
-                               results[inter.id]["t_value"]**2, places=6)
+                               results[col]["t_value"]**2, places=6)
         self.assertAlmostEqual(0.9711593785536400,
-                               results[inter.id]["p_value"], places=5)
+                               results[col]["p_value"], places=5)
 
         # TODO: Check the other predictors
 
@@ -389,8 +391,11 @@ class TestStatsLogistic(unittest.TestCase):
         self.assertEqual("C", results["snp1"]["major"])
         self.assertAlmostEqual(0.3749333333333334, results["snp1"]["maf"])
 
+        # The interaction column
+        self.assertEqual(1, len(inter.columns))
+        col = inter.columns[0]
+
         # Checking the marker statistics (according to SAS)
-        col = inter.id + ":level.2"
         self.assertAlmostEqual(-0.0089544870073693, results[col]["coef"],
                                places=4)
         self.assertAlmostEqual(1.19878325025509, results[col]["std_err"],
@@ -484,18 +489,22 @@ class TestStatsLogistic(unittest.TestCase):
         self.assertEqual("A", results["snp2"]["major"])
         self.assertAlmostEqual(0.41590833333333332, results["snp2"]["maf"])
 
+        # The interaction column
+        self.assertEqual(1, len(inter.columns))
+        col = inter.columns[0]
+
         # Checking the marker statistics (according to SAS)
-        self.assertAlmostEqual(0.0239292800721822, results[inter.id]["coef"],
+        self.assertAlmostEqual(0.0239292800721822, results[col]["coef"],
                                places=5)
-        self.assertAlmostEqual(0.0342619407842591,
-                               results[inter.id]["std_err"], places=6)
-        self.assertAlmostEqual(-0.0432228899054096,
-                               results[inter.id]["lower_ci"], places=5)
-        self.assertAlmostEqual(0.09108145004977, results[inter.id]["upper_ci"],
+        self.assertAlmostEqual(0.0342619407842591, results[col]["std_err"],
+                               places=6)
+        self.assertAlmostEqual(-0.0432228899054096, results[col]["lower_ci"],
                                places=5)
-        self.assertAlmostEqual(0.48779275460699,
-                               results[inter.id]["t_value"]**2, places=3)
-        self.assertAlmostEqual(0.48491356159603, results[inter.id]["p_value"],
+        self.assertAlmostEqual(0.09108145004977, results[col]["upper_ci"],
+                               places=5)
+        self.assertAlmostEqual(0.48779275460699, results[col]["t_value"]**2,
+                               places=3)
+        self.assertAlmostEqual(0.48491356159603, results[col]["p_value"],
                                places=4)
 
         # TODO: Check the other predictors

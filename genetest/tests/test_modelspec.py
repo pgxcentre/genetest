@@ -810,7 +810,7 @@ class TestModelSpec(unittest.TestCase):
 
         # Checking the predictor (var3, all level)
         self.assertEqual(
-            ["factor(var3):x1", "factor(var3):x2"],
+            ("factor(var3):x1", "factor(var3):x2"),
             var3.columns,
             "Wrong columns for 'factor(var3)'",
         )
@@ -824,7 +824,7 @@ class TestModelSpec(unittest.TestCase):
 
         # Checking the predictor (var5, all level)
         self.assertEqual(
-            ["factor(var5):1", "factor(var5):2", "factor(var5):3"],
+            ("factor(var5):1", "factor(var5):2", "factor(var5):3"),
             var5.columns,
             "Wrong columns for 'factor(var5)'",
         )

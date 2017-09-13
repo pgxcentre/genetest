@@ -25,7 +25,7 @@ from ..statistics.models.linear import StatsLinear
 from .. import analysis
 from .. import subscribers
 from .. import modelspec as spec
-from ..phenotypes.dummy import _DummyPhenotypes
+from ..phenotypes.dataframe import DataFrameContainer
 
 
 __copyright__ = "Copyright 2016, Beaulieu-Saucier Pharmacogenomics Centre"
@@ -50,11 +50,10 @@ class TestStatsLinear(unittest.TestCase):
         data = data.set_index("sample")
 
         # Creating the dummy phenotype container
-        cls.phenotypes = _DummyPhenotypes()
-        cls.phenotypes.data = data.drop(
+        cls.phenotypes = DataFrameContainer(data.drop(
             ["snp{}".format(i+1) for i in range(5)],
             axis=1,
-        )
+        ))
 
         # Creating a temporary directory
         cls.tmp_dir = TemporaryDirectory(prefix="genetest_test_linear_")
@@ -92,13 +91,10 @@ class TestStatsLinear(unittest.TestCase):
         cls.tmp_dir.cleanup()
 
     def setUp(self):
-        # Resetting the model specification
-        spec._reset()
-
         # Reordering the columns and the rows of the phenotype data frame
-        self.phenotypes.data = self.phenotypes.data.iloc[
-            np.random.permutation(self.phenotypes.data.shape[0]),
-            np.random.permutation(self.phenotypes.data.shape[1])
+        self.phenotypes._phenotypes = self.phenotypes._phenotypes.iloc[
+            np.random.permutation(self.phenotypes._phenotypes.shape[0]),
+            np.random.permutation(self.phenotypes._phenotypes.shape[1])
         ]
 
     def test_linear_gwas(self):
@@ -129,7 +125,7 @@ class TestStatsLinear(unittest.TestCase):
         self.assertEqual(4, len(gwas_results.keys()))
 
         # The number of observations and parameters
-        n = self.phenotypes.data.shape[0]
+        n = self.phenotypes.get_nb_samples()
         p = 4
 
         # Checking the first marker (snp1)
@@ -265,8 +261,12 @@ class TestStatsLinear(unittest.TestCase):
         self.assertEqual(4, len(gwas_results.keys()))
 
         # The number of observations and parameters
-        n = self.phenotypes.data.shape[0]
+        n = self.phenotypes.get_nb_samples()
         p = 5
+
+        # The interaction column
+        self.assertEqual(1, len(inter.columns))
+        col = inter.columns[0]
 
         # Checking the first marker (snp1)
         results = gwas_results["snp1"]
@@ -278,16 +278,13 @@ class TestStatsLinear(unittest.TestCase):
         self.assertAlmostEqual(0.016666666666666666, results["SNPs"]["maf"])
 
         # Checking the marker statistics (according to SAS)
-        self.assertAlmostEqual(28.3750067790686, results[inter.id]["coef"])
-        self.assertAlmostEqual(15.31571903952, results[inter.id]["std_err"])
-        self.assertAlmostEqual(-2.33116110697257,
-                               results[inter.id]["lower_ci"])
-        self.assertAlmostEqual(59.0811746651098,
-                               results[inter.id]["upper_ci"])
-        self.assertAlmostEqual(1.85267219291832,
-                               results[inter.id]["t_value"])
+        self.assertAlmostEqual(28.3750067790686, results[col]["coef"])
+        self.assertAlmostEqual(15.31571903952, results[col]["std_err"])
+        self.assertAlmostEqual(-2.33116110697257, results[col]["lower_ci"])
+        self.assertAlmostEqual(59.0811746651098, results[col]["upper_ci"])
+        self.assertAlmostEqual(1.85267219291832, results[col]["t_value"])
         self.assertAlmostEqual(-np.log10(0.06939763567524),
-                               -np.log10(results[inter.id]["p_value"]))
+                               -np.log10(results[col]["p_value"]))
 
         # Checking the model r squared (adjusted) (according to SAS)
         self.assertAlmostEqual(
@@ -305,13 +302,13 @@ class TestStatsLinear(unittest.TestCase):
         self.assertAlmostEqual(0.20833333333333334, results["SNPs"]["maf"])
 
         # Checking the marker statistics (according to SAS)
-        self.assertAlmostEqual(-0.38040787976905, results[inter.id]["coef"])
-        self.assertAlmostEqual(0.56827855931761, results[inter.id]["std_err"])
-        self.assertAlmostEqual(-1.5197377932663, results[inter.id]["lower_ci"])
-        self.assertAlmostEqual(0.75892203372818, results[inter.id]["upper_ci"])
-        self.assertAlmostEqual(-0.66940389274205, results[inter.id]["t_value"])
+        self.assertAlmostEqual(-0.38040787976905, results[col]["coef"])
+        self.assertAlmostEqual(0.56827855931761, results[col]["std_err"])
+        self.assertAlmostEqual(-1.5197377932663, results[col]["lower_ci"])
+        self.assertAlmostEqual(0.75892203372818, results[col]["upper_ci"])
+        self.assertAlmostEqual(-0.66940389274205, results[col]["t_value"])
         self.assertAlmostEqual(-np.log10(0.50609004475028),
-                               -np.log10(results[inter.id]["p_value"]))
+                               -np.log10(results[col]["p_value"]))
 
         # Checking the model r squared (adjusted) (according to SAS)
         self.assertAlmostEqual(
@@ -329,14 +326,12 @@ class TestStatsLinear(unittest.TestCase):
         self.assertAlmostEqual(0.29166666666666669, results["SNPs"]["maf"])
 
         # Checking the marker statistics (according to SAS)
-        self.assertAlmostEqual(-0.0097102715733324, results[inter.id]["coef"])
-        self.assertAlmostEqual(0.60510302626961, results[inter.id]["std_err"])
-        self.assertAlmostEqual(-1.22286879616119,
-                               results[inter.id]["lower_ci"])
-        self.assertAlmostEqual(1.20344825301452, results[inter.id]["upper_ci"])
-        self.assertAlmostEqual(-0.0160473029414429,
-                               results[inter.id]["t_value"])
-        self.assertAlmostEqual(0.98725579876123, results[inter.id]["p_value"])
+        self.assertAlmostEqual(-0.0097102715733324, results[col]["coef"])
+        self.assertAlmostEqual(0.60510302626961, results[col]["std_err"])
+        self.assertAlmostEqual(-1.22286879616119, results[col]["lower_ci"])
+        self.assertAlmostEqual(1.20344825301452, results[col]["upper_ci"])
+        self.assertAlmostEqual(-0.0160473029414429, results[col]["t_value"])
+        self.assertAlmostEqual(0.98725579876123, results[col]["p_value"])
 
         # Checking the model r squared (adjusted) (according to SAS)
         self.assertAlmostEqual(
@@ -354,13 +349,12 @@ class TestStatsLinear(unittest.TestCase):
         self.assertAlmostEqual(0.275, results["SNPs"]["maf"])
 
         # Checking the marker statistics (according to SAS)
-        self.assertAlmostEqual(-0.46834820683113, results[inter.id]["coef"])
-        self.assertAlmostEqual(0.50898831048606, results[inter.id]["std_err"])
-        self.assertAlmostEqual(-1.48880832845448,
-                               results[inter.id]["lower_ci"])
-        self.assertAlmostEqual(0.5521119147922, results[inter.id]["upper_ci"])
-        self.assertAlmostEqual(-0.92015513359016, results[inter.id]["t_value"])
-        self.assertAlmostEqual(0.36158411106165, results[inter.id]["p_value"])
+        self.assertAlmostEqual(-0.46834820683113, results[col]["coef"])
+        self.assertAlmostEqual(0.50898831048606, results[col]["std_err"])
+        self.assertAlmostEqual(-1.48880832845448, results[col]["lower_ci"])
+        self.assertAlmostEqual(0.5521119147922, results[col]["upper_ci"])
+        self.assertAlmostEqual(-0.92015513359016, results[col]["t_value"])
+        self.assertAlmostEqual(0.36158411106165, results[col]["p_value"])
 
         # Checking the model r squared (adjusted) (according to SAS)
         self.assertAlmostEqual(
@@ -406,7 +400,7 @@ class TestStatsLinear(unittest.TestCase):
         self.assertAlmostEqual(0.016666666666666666, results["snp1"]["maf"])
 
         # The number of observations and parameters
-        n = self.phenotypes.data.shape[0]
+        n = self.phenotypes.get_nb_samples()
         p = 4
 
         # Checking the marker statistics (according to SAS)
@@ -459,20 +453,21 @@ class TestStatsLinear(unittest.TestCase):
         self.assertAlmostEqual(0.016666666666666666, results["snp1"]["maf"])
 
         # The number of observations and parameters
-        n = self.phenotypes.data.shape[0]
+        n = self.phenotypes.get_nb_samples()
         p = 5
 
+        # The interaction column
+        self.assertEqual(1, len(inter.columns))
+        col = inter.columns[0]
+
         # Checking the marker statistics (according to SAS)
-        self.assertAlmostEqual(28.3750067790686, results[inter.id]["coef"])
-        self.assertAlmostEqual(15.31571903952, results[inter.id]["std_err"])
-        self.assertAlmostEqual(-2.33116110697257,
-                               results[inter.id]["lower_ci"])
-        self.assertAlmostEqual(59.0811746651098,
-                               results[inter.id]["upper_ci"])
-        self.assertAlmostEqual(1.85267219291832,
-                               results[inter.id]["t_value"])
+        self.assertAlmostEqual(28.3750067790686, results[col]["coef"])
+        self.assertAlmostEqual(15.31571903952, results[col]["std_err"])
+        self.assertAlmostEqual(-2.33116110697257, results[col]["lower_ci"])
+        self.assertAlmostEqual(59.0811746651098, results[col]["upper_ci"])
+        self.assertAlmostEqual(1.85267219291832, results[col]["t_value"])
         self.assertAlmostEqual(-np.log10(0.06939763567524),
-                               -np.log10(results[inter.id]["p_value"]))
+                               -np.log10(results[col]["p_value"]))
 
         # Checking the model r squared (adjusted) (according to SAS)
         self.assertAlmostEqual(
@@ -515,11 +510,14 @@ class TestStatsLinear(unittest.TestCase):
         self.assertAlmostEqual(0.016666666666666666, results["snp1"]["maf"])
 
         # The number of observations and parameters
-        n = self.phenotypes.data.shape[0]
+        n = self.phenotypes.get_nb_samples()
         p = 5
 
+        # The interaction column
+        self.assertEqual(1, len(inter.columns))
+        col = inter.columns[0]
+
         # Checking the marker statistics (according to SAS)
-        col = inter.id + ":level.2"
         self.assertAlmostEqual(-74.5163756952978, results[col]["coef"])
         self.assertAlmostEqual(40.2210255975831, results[col]["std_err"])
         self.assertAlmostEqual(-155.154676865573, results[col]["lower_ci"],
@@ -568,7 +566,7 @@ class TestStatsLinear(unittest.TestCase):
         self.assertAlmostEqual(0.20833333333333334, results["snp2"]["maf"])
 
         # The number of observations and parameters
-        n = self.phenotypes.data.shape[0]
+        n = self.phenotypes.get_nb_samples()
         p = 4
 
         # Checking the marker statistics (according to SAS)
@@ -621,17 +619,21 @@ class TestStatsLinear(unittest.TestCase):
         self.assertAlmostEqual(0.20833333333333334, results["snp2"]["maf"])
 
         # The number of observations and parameters
-        n = self.phenotypes.data.shape[0]
+        n = self.phenotypes.get_nb_samples()
         p = 5
 
+        # The interaction column
+        self.assertEqual(1, len(inter.columns))
+        col = inter.columns[0]
+
         # Checking the marker statistics (according to SAS)
-        self.assertAlmostEqual(-0.38040787976905, results[inter.id]["coef"])
-        self.assertAlmostEqual(0.56827855931761, results[inter.id]["std_err"])
-        self.assertAlmostEqual(-1.5197377932663, results[inter.id]["lower_ci"])
-        self.assertAlmostEqual(0.75892203372818, results[inter.id]["upper_ci"])
-        self.assertAlmostEqual(-0.66940389274205, results[inter.id]["t_value"])
+        self.assertAlmostEqual(-0.38040787976905, results[col]["coef"])
+        self.assertAlmostEqual(0.56827855931761, results[col]["std_err"])
+        self.assertAlmostEqual(-1.5197377932663, results[col]["lower_ci"])
+        self.assertAlmostEqual(0.75892203372818, results[col]["upper_ci"])
+        self.assertAlmostEqual(-0.66940389274205, results[col]["t_value"])
         self.assertAlmostEqual(-np.log10(0.50609004475028),
-                               -np.log10(results[inter.id]["p_value"]))
+                               -np.log10(results[col]["p_value"]))
 
         # Checking the model r squared (adjusted) (according to SAS)
         self.assertAlmostEqual(
@@ -671,7 +673,7 @@ class TestStatsLinear(unittest.TestCase):
         self.assertAlmostEqual(0.29166666666666669, results["snp3"]["maf"])
 
         # The number of observations and parameters
-        n = self.phenotypes.data.shape[0]
+        n = self.phenotypes.get_nb_samples()
         p = 4
 
         # Checking the marker statistics (according to SAS)
@@ -723,18 +725,20 @@ class TestStatsLinear(unittest.TestCase):
         self.assertAlmostEqual(0.29166666666666669, results["snp3"]["maf"])
 
         # The number of observations and parameters
-        n = self.phenotypes.data.shape[0]
+        n = self.phenotypes.get_nb_samples()
         p = 5
 
+        # The interaction columns
+        self.assertEqual(1, len(inter.columns))
+        col = inter.columns[0]
+
         # Checking the marker statistics (according to SAS)
-        self.assertAlmostEqual(-0.0097102715733324, results[inter.id]["coef"])
-        self.assertAlmostEqual(0.60510302626961, results[inter.id]["std_err"])
-        self.assertAlmostEqual(-1.22286879616119,
-                               results[inter.id]["lower_ci"])
-        self.assertAlmostEqual(1.20344825301452, results[inter.id]["upper_ci"])
-        self.assertAlmostEqual(-0.0160473029414429,
-                               results[inter.id]["t_value"])
-        self.assertAlmostEqual(0.98725579876123, results[inter.id]["p_value"])
+        self.assertAlmostEqual(-0.0097102715733324, results[col]["coef"])
+        self.assertAlmostEqual(0.60510302626961, results[col]["std_err"])
+        self.assertAlmostEqual(-1.22286879616119, results[col]["lower_ci"])
+        self.assertAlmostEqual(1.20344825301452, results[col]["upper_ci"])
+        self.assertAlmostEqual(-0.0160473029414429, results[col]["t_value"])
+        self.assertAlmostEqual(0.98725579876123, results[col]["p_value"])
 
         # Checking the model r squared (adjusted) (according to SAS)
         self.assertAlmostEqual(
@@ -774,7 +778,7 @@ class TestStatsLinear(unittest.TestCase):
         self.assertAlmostEqual(0.275, results["snp4"]["maf"])
 
         # The number of observations and parameters
-        n = self.phenotypes.data.shape[0]
+        n = self.phenotypes.get_nb_samples()
         p = 4
 
         # Checking the marker statistics (according to SAS)
@@ -826,17 +830,20 @@ class TestStatsLinear(unittest.TestCase):
         self.assertAlmostEqual(0.275, results["snp4"]["maf"])
 
         # The number of observations and parameters
-        n = self.phenotypes.data.shape[0]
+        n = self.phenotypes.get_nb_samples()
         p = 5
 
+        # The interaction columns
+        self.assertEqual(1, len(inter.columns))
+        col = inter.columns[0]
+
         # Checking the marker statistics (according to SAS)
-        self.assertAlmostEqual(-0.46834820683113, results[inter.id]["coef"])
-        self.assertAlmostEqual(0.50898831048606, results[inter.id]["std_err"])
-        self.assertAlmostEqual(-1.48880832845448,
-                               results[inter.id]["lower_ci"])
-        self.assertAlmostEqual(0.5521119147922, results[inter.id]["upper_ci"])
-        self.assertAlmostEqual(-0.92015513359016, results[inter.id]["t_value"])
-        self.assertAlmostEqual(0.36158411106165, results[inter.id]["p_value"])
+        self.assertAlmostEqual(-0.46834820683113, results[col]["coef"])
+        self.assertAlmostEqual(0.50898831048606, results[col]["std_err"])
+        self.assertAlmostEqual(-1.48880832845448, results[col]["lower_ci"])
+        self.assertAlmostEqual(0.5521119147922, results[col]["upper_ci"])
+        self.assertAlmostEqual(-0.92015513359016, results[col]["t_value"])
+        self.assertAlmostEqual(0.36158411106165, results[col]["p_value"])
 
         # Checking the model r squared (adjusted) (according to SAS)
         self.assertAlmostEqual(
