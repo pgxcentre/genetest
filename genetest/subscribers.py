@@ -126,10 +126,7 @@ class ResultsMemory(Subscriber):
         self.results = []
 
     def handle(self, results):
-        self.results.append(Subscriber._apply_translation(
-            self.modelspec.get_translations(),
-            results
-        ))
+        self.results.append(results)
 
     def _get_gwas_results(self):
         out = {}
