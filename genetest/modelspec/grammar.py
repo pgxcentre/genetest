@@ -43,7 +43,7 @@ class ModelSpecSemantics(object):
             return Interaction(*ast["interaction"], name=ast["as_"])
 
     def phenotype(self, ast):
-        return Phenotype[ast["name"]]
+        return Phenotype(ast["name"])
 
     def string(self, ast):
         return ast["str"][1:-1]
@@ -52,7 +52,7 @@ class ModelSpecSemantics(object):
         return int(ast["int"])
 
     def genotype(self, ast):
-        return Genotype[ast["variant"]]
+        return Genotype(ast["variant"])
 
     def factor(self, ast):
         return Factor(ast["phen"], name=ast["as_"])
