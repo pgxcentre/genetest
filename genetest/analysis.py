@@ -27,7 +27,7 @@ import pandas as pd
 from .statistics.core import StatsError
 from .statistics.descriptive import get_maf
 from . import subscribers as subscribers_module
-from .modelspec import SNPs, PheWAS, modelspec_from_formula
+from .modelspec import modelspec_from_formula  # , PheWAS
 
 
 logger = logging.getLogger(__name__)
@@ -110,8 +110,7 @@ def _gwas_worker(q, results_q, failed, abort, fit, y, X, samples, maf_t=None,
             # by multiplying SNPs with every columns
             for key, cols in interaction.items():
                 X.loc[:, key] = functools.reduce(
-                    np.multiply,
-                    (X[col] for col in itertools.chain(["SNPs"], cols)),
+                    np.multiply, (X[col] for col in cols),
                 )
 
         not_missing = _missing(y, X)
@@ -225,12 +224,13 @@ def execute(phenotypes, genotypes, modelspec, subscribers=None,
     if variant_predicates is None:
         variant_predicates = []
 
-    # We branch out early if it is a pheWAS analysis because the data
-    # preparation steps are pretty different.
-    if isinstance(modelspec.outcome, PheWAS):
-        return _execute_phewas(phenotypes, genotypes, modelspec, subscribers,
-                               variant_predicates, output_prefix, subgroups,
-                               cpus)
+    # TODO: Fix this (ModelSpec refactor)
+#    # We branch out early if it is a pheWAS analysis because the data
+#    # preparation steps are pretty different.
+#    if isinstance(modelspec.outcome, PheWAS):
+#        return _execute_phewas(phenotypes, genotypes, modelspec, subscribers,
+#                               variant_predicates, output_prefix, subgroups,
+#                               cpus)
 
     data = modelspec.create_data_matrix(phenotypes, genotypes)
 
@@ -238,22 +238,23 @@ def execute(phenotypes, genotypes, modelspec, subscribers=None,
     data = data.dropna()
 
     # Extract y and X matrices
-    y_cols = tuple(modelspec.outcome.keys())
-    y = data[[modelspec.outcome[col].id for col in y_cols]]
+    y_cols = tuple(modelspec.outcome.items())
+    y = data[list(itertools.chain.from_iterable(e[1].columns for e in y_cols))]
     X = data.drop(y.columns, axis=1)
 
-    # Rename y columns
-    y.columns = y_cols
+    # Rename y columns (for the tests)
+    y.columns = [e[0] for e in y_cols]
 
-    # Drop uninformative factors.
-    bad_cols = _get_uninformative_factors(X, modelspec)
-    if len(bad_cols):
-        logger.info(
-            "After removing missing values, dropping ({}) factor levels that "
-            "have no variation."
-            "".format(len(bad_cols))
-        )
-        X = X.drop(bad_cols, axis=1)
+    # TODO: Fix this (ModelSpec refactor)
+#    # Drop uninformative factors.
+#    bad_cols = _get_uninformative_factors(X, modelspec)
+#    if len(bad_cols):
+#        logger.info(
+#            "After removing missing values, dropping ({}) factor levels that "
+#            "have no variation."
+#            "".format(len(bad_cols))
+#        )
+#        X = X.drop(bad_cols, axis=1)
 
     messages = {
         "skipped": [],
@@ -264,7 +265,7 @@ def execute(phenotypes, genotypes, modelspec, subscribers=None,
         _execute_stratified(genotypes, modelspec, subscribers, y, X,
                             variant_predicates, subgroups, messages, maf_t,
                             cpus)
-    elif SNPs in modelspec.predictors:
+    elif modelspec.is_gwas:
         _execute_gwas(genotypes, modelspec, subscribers, y, X,
                       variant_predicates, messages, maf_t, cpus)
     else:
@@ -433,7 +434,7 @@ def _execute_stratified(genotypes, modelspec, subscribers, y, X,
     # The order from modelspec.stratify_by is kept.
     subsets = itertools.product(*var_levels)
 
-    gwas_mode = SNPs in modelspec.predictors
+    gwas_mode = modelspec.is_gwas
     translations = modelspec.get_translations()
 
     for levels in subsets:
