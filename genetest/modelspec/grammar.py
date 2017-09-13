@@ -6,8 +6,8 @@ import os
 import logging
 import warnings
 
-from .core import (SNPs, interaction, phenotypes, genotypes, factor, pow,
-                   log10, ln, gwas_interaction)
+from .core import (SNPs, Interaction, Phenotype, Genotype, Factor, Pow,
+                   Log10, Ln, GWASInteraction)
 
 
 logger = logging.getLogger(__name__)
@@ -33,17 +33,17 @@ class ModelSpecSemantics(object):
     def interaction(self, ast):
         if SNPs in ast["interaction"]:
             # This is a GWAS interaction
-            return gwas_interaction(
+            return GWASInteraction(
                 *tuple(term for term in ast["interaction"] if term != SNPs),
                 name=ast["as_"] if ast["as_"] else "GWAS_INTER"
             )
 
         else:
             # This is a normal interaction term
-            return interaction(*ast["interaction"], name=ast["as_"])
+            return Interaction(*ast["interaction"], name=ast["as_"])
 
     def phenotype(self, ast):
-        return phenotypes[ast["name"]]
+        return Phenotype[ast["name"]]
 
     def string(self, ast):
         return ast["str"][1:-1]
@@ -52,19 +52,19 @@ class ModelSpecSemantics(object):
         return int(ast["int"])
 
     def genotype(self, ast):
-        return genotypes[ast["variant"]]
+        return Genotype[ast["variant"]]
 
     def factor(self, ast):
-        return factor(ast["phen"], name=ast["as_"])
+        return Factor(ast["phen"], name=ast["as_"])
 
     def pow(self, ast):
-        return pow(ast["phen"], ast["power"], name=ast["as_"])
+        return Pow(ast["phen"], ast["power"], name=ast["as_"])
 
     def ln(self, ast):
-        return ln(ast["phen"])
+        return Ln(ast["phen"])
 
     def log10(self, ast):
-        return log10(ast["phen"])
+        return Log10(ast["phen"])
 
     def _default(self, ast):
         return ast
