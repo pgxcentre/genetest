@@ -77,3 +77,13 @@ class PhenotypesContainer(object):
 
         """
         raise NotImplementedError()
+
+    def get_nb_repeats(self):
+        """Returns the number of repeated values for each samples.
+
+        Returns:
+            dict: A dictionary with samples as keys, and number of repeats as
+            values.
+
+        """
+        raise NotImplementedError()

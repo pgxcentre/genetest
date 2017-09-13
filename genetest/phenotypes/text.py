@@ -9,6 +9,8 @@
 # Commons, PO Box 1866, Mountain View, CA 94042, USA.
 
 
+from collections import Counter
+
 import pandas as pd
 
 from .core import PhenotypesContainer
@@ -132,3 +134,13 @@ class TextPhenotypes(PhenotypesContainer):
 
         """
         self._phenotypes = self._phenotypes[self._phenotypes.index.isin(keep)]
+
+    def get_nb_repeats(self):
+        """Returns the number of repeated values for each samples.
+
+        Returns:
+            dict: A dictionary with samples as keys, and number of repeats as
+            values.
+
+        """
+        return Counter(self._phenotypes.index.values)
