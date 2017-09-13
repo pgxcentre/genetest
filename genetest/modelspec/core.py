@@ -17,6 +17,7 @@ import numpy as np
 import pandas as pd
 
 from ..statistics import model_map
+from ..statistics.descriptive import get_maf
 
 from geneparse.utils import genotype_to_df
 
@@ -31,7 +32,7 @@ SNPs = "SNPs"
 class Variable(object):
     def __init__(self, name):
         self.name = name
-        self.columns = [name]
+        self.columns = (name, )
 
     def get_data(self, phenotypes, genotypes, cache):
         raise NotImplemented()
@@ -64,7 +65,25 @@ class Genotype(Variable):
         if len(li) == 0:
             raise ValueError("Could not find variant: {}".format(self.name))
         elif len(li) == 1:
-            return li[0]
+            g = li[0]
+
+            # Getting the MAF, minor and major allele
+            maf, minor, major, flip = get_maf(
+                g.genotypes, g.coded, g.reference,
+            )
+
+            # Flipping, if required
+            if flip:
+                g.genotypes = 2 - g.genotypes
+
+            # Saving the variants metadata
+            self.metadata = {
+                "name": self.name, "chrom": str(g.variant.chrom),
+                "pos": g.variant.pos, "minor": minor, "major": major,
+                "maf": maf, "coded": minor,
+            }
+
+            return g
         else:
             raise NotImplementedError(
                 "Multi-allelic variants are not yet handled ({})."
@@ -155,6 +174,9 @@ class Factor(Transformation):
             results[col_name] = r
             self.columns.append(col_name)
 
+        # Changing the columns to a tuple
+        self.columns = tuple(self.columns)
+
         # Caching and returning a DataFrame
         df = pd.DataFrame(results)
         cache[self] = df
@@ -198,7 +220,7 @@ class Pow(Transformation):
         # Caching and returning a DataFrame
         df = pd.DataFrame({col_name: d})
         cache[self] = df
-        self.columns = [col_name]
+        self.columns = (col_name, )
         return df
 
 
@@ -237,7 +259,7 @@ class Ln(Transformation):
 
         # Caching and returning a DataFrame
         cache[self] = df
-        self.columns = [col_name]
+        self.columns = (col_name, )
         return df
 
 
@@ -276,7 +298,7 @@ class Log10(Transformation):
 
         # Caching and returning a DataFrame
         cache[self] = df
-        self.columns = [col_name]
+        self.columns = (col_name, )
         return df
 
 
@@ -319,9 +341,13 @@ class Interaction(Transformation):
                 else:
                     df = entity.get_data(phenotypes, genotypes, cache)
 
+                    if isinstance(entity, Genotype):
+                        # Fixing for repeated measurements
+                        df = _fix_repeated_measurements(df, phenotypes)
+
                 # Adding the columns and the DataFrame to the list
                 columns.append(entity.columns)
-                dfs.append(df)
+                dfs.append(df.sort_index())
 
             # Creating the final df
             df = pd.concat(dfs, axis=1, join="outer")
@@ -339,6 +365,9 @@ class Interaction(Transformation):
                     np.multiply, (df[col] for col in cols)
                 )
                 self.columns.append(col_name)
+
+        # Changing the columns to a tuple
+        self.columns = tuple(self.columns)
 
         # Caching and returning a DataFrame
         df = pd.DataFrame(results)
@@ -402,6 +431,9 @@ class GWASInteraction(Transformation):
 
                 self.interaction_cols[col_name] = cols
                 self.columns.append(col_name)
+
+        # Changing the list of columns to a tuple
+        self.columns = tuple(self.columns)
 
     def get_gwas_interaction(self):
         return self.interaction_cols
@@ -509,17 +541,26 @@ class ModelSpec(object):
         # Merging all DataFrames from the different entities
         dfs = []
         for entity in self.dependencies:
+            # GWAS interaction
             if isinstance(entity, GWASInteraction):
                 # This is a special case (GWAS interaction)
                 self.has_gwas_interaction = True
                 self.gwas_interaction = entity.get_gwas_interaction()
 
+            # GWAS
             elif entity == SNPs:
-                # This is a GWAS, so nothing to do here
                 self.is_gwas = True
 
             else:
-                dfs.append(self.cache[entity])
+                # Getting the data from the cache
+                df = self.cache[entity]
+
+                if isinstance(entity, Genotype):
+                    # This is a genotype, so we save the metadata
+                    self.variant_metadata[entity.name] = entity.metadata
+                    df = _fix_repeated_measurements(df, phenotypes)
+
+                dfs.append(df.sort_index())
         df = pd.concat(dfs, axis=1, join="outer")
 
         # Adding the intercept
@@ -567,3 +608,62 @@ class _VariableFactory(object):
 
 phenotypes = _VariableFactory("PHENOTYPES")
 genotypes = _VariableFactory("GENOTYPES")
+
+
+class Result(object):
+    def __init__(self, entity):
+        self.path = [entity]
+
+    def __getitem__(self, key):
+        self.path.append(key)
+        return self
+
+    def get(self, results):
+        cur = results
+
+        for field in self.path:
+            print(field)
+            if isinstance(field, EntityIdentifier):
+                # Access for transformations and entities.
+                if field.id in results.keys():
+                    cur = cur[field.id]
+                else:
+                    # Check for many levels.
+                    results_per_level = {}
+
+                    for key in results:
+                        split_key = key.split(":")
+                        id, level = (":".join(split_key[:-1]), split_key[-1])
+                        if id == field.id:
+                            results_per_level[level] = cur[key]
+
+                    cur = results_per_level
+
+            else:
+                # Access for special fields like "SNPs", "MODEL" or for
+                # regular keys.
+                cur = cur[field]
+
+        return cur
+
+
+class ResultMetaclass(object):
+    def __getitem__(self, entity):
+        return Result(entity)
+
+
+result = ResultMetaclass()
+
+
+def _fix_repeated_measurements(df, phenotypes):
+    """Fixes genotypes for repeated measurements."""
+    # TODO: Test this...
+    if phenotypes is not None and phenotypes.is_repeated():
+        nbs = phenotypes.get_nb_repeats()
+        new_index = list(itertools.chain(*[
+            [s]*nbs[s] for s in df.index
+        ]))
+        return df.loc[new_index, :]
+
+    else:
+        return df

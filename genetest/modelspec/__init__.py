@@ -31,18 +31,16 @@ result = core.result
 phenotypes = core.phenotypes
 genotypes = core.genotypes
 
-factor = core.factor
-log10 = core.log10
-ln = core.ln
-pow = core.pow
-interaction = core.interaction
-gwas_interaction = core.gwas_interaction
+factor = core.Factor
+log10 = core.Log10
+ln = core.Ln
+pow = core.Pow
+interaction = core.Interaction
+gwas_interaction = core.GWASInteraction
 
 SNPs = core.SNPs
 
-_reset = core._reset
-
-PheWAS = core.PheWAS
+# PheWAS = core.PheWAS
 
 
 def modelspec_from_formula(formula, test, test_kwargs):
