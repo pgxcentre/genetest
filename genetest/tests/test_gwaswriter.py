@@ -19,10 +19,9 @@ from pkg_resources import resource_filename
 from pyplink import PyPlink
 from geneparse import parsers
 
-from .. import modelspec as spec
 from ..subscribers import GWASWriter
 from ..analysis import execute_formula
-from ..phenotypes.dummy import _DummyPhenotypes
+from ..phenotypes.dataframe import DataFrameContainer
 
 
 __copyright__ = "Copyright 2016, Beaulieu-Saucier Pharmacogenomics Centre"
@@ -41,11 +40,10 @@ class TestGWASWriter(unittest.TestCase):
         ).set_index("sample_id")
 
         # Creating the dummy phenotype container
-        cls.phenotypes = _DummyPhenotypes()
-        cls.phenotypes.data = data.drop(
+        cls.phenotypes = DataFrameContainer(data.drop(
             [col for col in data.columns if col.startswith("snp")],
             axis=1,
-        )
+        ))
 
         # Creating a temporary directory
         cls.tmp_dir = TemporaryDirectory(prefix="genetest_test_linear_")
@@ -78,16 +76,13 @@ class TestGWASWriter(unittest.TestCase):
         cls.tmp_dir.cleanup()
 
     def setUp(self):
-        # Resetting the model specification
-        spec._reset()
-
         # Creating the genotype parser
         self.genotypes = parsers["plink"](self.plink_prefix)
 
         # Reordering the columns and the rows of the phenotype data frame
-        self.phenotypes.data = self.phenotypes.data.iloc[
-            np.random.permutation(self.phenotypes.data.shape[0]),
-            np.random.permutation(self.phenotypes.data.shape[1])
+        self.phenotypes._phenotypes = self.phenotypes._phenotypes.iloc[
+            np.random.permutation(self.phenotypes._phenotypes.shape[0]),
+            np.random.permutation(self.phenotypes._phenotypes.shape[1])
         ]
 
         # Creating a GWAS writer
@@ -200,16 +195,16 @@ class TestGWASWriter(unittest.TestCase):
         self.assertEqual(
             set(df.columns),
             {"snp", "chr", "pos", "major", "minor", "maf", "n", "ll",
-             "TRANSFORM:GWAS_INTER:coef", "TRANSFORM:GWAS_INTER:se",
-             "TRANSFORM:GWAS_INTER:lower", "TRANSFORM:GWAS_INTER:upper",
-             "TRANSFORM:GWAS_INTER:t", "TRANSFORM:GWAS_INTER:p", "adj_r2"},
+             "GWAS_INTER(SNPs,var1):coef", "GWAS_INTER(SNPs,var1):se",
+             "GWAS_INTER(SNPs,var1):lower", "GWAS_INTER(SNPs,var1):upper",
+             "GWAS_INTER(SNPs,var1):t", "GWAS_INTER(SNPs,var1):p", "adj_r2"},
             "Missing columns in the GWAS Writer",
         )
 
         # Checking the coefficients (this should be enough to make sure we get
         # the right columns)
         np.testing.assert_array_almost_equal(
-            df["TRANSFORM:GWAS_INTER:coef"].values,
+            df["GWAS_INTER(SNPs,var1):coef"].values,
             np.array([0.4073975765317, -0.04253919820585, -0.05814970176832]),
         )
 
@@ -219,7 +214,7 @@ class TestGWASWriter(unittest.TestCase):
         execute_formula(
             phenotypes=self.phenotypes,
             genotypes=self.genotypes,
-            formula="pheno ~ SNPs + var1 + var2 + factor(var3) + "
+            formula="pheno ~ SNPs + var1 + var2 + factor(var3) + "
                     "factor(var4) + factor(var5) + SNPs*factor(var3)",
             test="linear",
             subscribers=[self.gwas_writer],
@@ -237,18 +232,18 @@ class TestGWASWriter(unittest.TestCase):
         self.assertEqual(
             set(df.columns),
             {"snp", "chr", "pos", "major", "minor", "maf", "n", "ll",
-             "TRANSFORM:GWAS_INTER:level.x1:coef",
-             "TRANSFORM:GWAS_INTER:level.x1:se",
-             "TRANSFORM:GWAS_INTER:level.x1:lower",
-             "TRANSFORM:GWAS_INTER:level.x1:upper",
-             "TRANSFORM:GWAS_INTER:level.x1:t",
-             "TRANSFORM:GWAS_INTER:level.x1:p",
-             "TRANSFORM:GWAS_INTER:level.x2:coef",
-             "TRANSFORM:GWAS_INTER:level.x2:se",
-             "TRANSFORM:GWAS_INTER:level.x2:lower",
-             "TRANSFORM:GWAS_INTER:level.x2:upper",
-             "TRANSFORM:GWAS_INTER:level.x2:t",
-             "TRANSFORM:GWAS_INTER:level.x2:p", "adj_r2"},
+             "GWAS_INTER(SNPs,factor(var3):x1):coef",
+             "GWAS_INTER(SNPs,factor(var3):x1):se",
+             "GWAS_INTER(SNPs,factor(var3):x1):lower",
+             "GWAS_INTER(SNPs,factor(var3):x1):upper",
+             "GWAS_INTER(SNPs,factor(var3):x1):t",
+             "GWAS_INTER(SNPs,factor(var3):x1):p",
+             "GWAS_INTER(SNPs,factor(var3):x2):coef",
+             "GWAS_INTER(SNPs,factor(var3):x2):se",
+             "GWAS_INTER(SNPs,factor(var3):x2):lower",
+             "GWAS_INTER(SNPs,factor(var3):x2):upper",
+             "GWAS_INTER(SNPs,factor(var3):x2):t",
+             "GWAS_INTER(SNPs,factor(var3):x2):p", "adj_r2"},
             "Missing columns in the GWAS Writer",
         )
 
@@ -256,13 +251,13 @@ class TestGWASWriter(unittest.TestCase):
         # the right columns)
         #   var3=x1
         np.testing.assert_array_almost_equal(
-            df["TRANSFORM:GWAS_INTER:level.x1:coef"].values,
+            df["GWAS_INTER(SNPs,factor(var3):x1):coef"].values,
             np.array([6.15574045825434, 2.2178331615269, -1.94057337856961]),
         )
 
         #   var3=x2
         np.testing.assert_array_almost_equal(
-            df["TRANSFORM:GWAS_INTER:level.x2:coef"].values,
+            df["GWAS_INTER(SNPs,factor(var3):x2):coef"].values,
             np.array([21.47033225862596, 2.7136560668229, -0.05622018358578]),
         )
 
@@ -272,7 +267,7 @@ class TestGWASWriter(unittest.TestCase):
         execute_formula(
             phenotypes=self.phenotypes,
             genotypes=self.genotypes,
-            formula="pheno | var4 ~ SNPs + var1 + var2 + factor(var3) + "
+            formula="pheno | var4 ~ SNPs + var1 + var2 + factor(var3) + "
                     "factor(var5) + SNPs*factor(var3)",
             test="linear",
             subscribers=[self.gwas_writer],
@@ -290,18 +285,18 @@ class TestGWASWriter(unittest.TestCase):
         self.assertEqual(
             set(df.columns),
             {"snp", "chr", "pos", "major", "minor", "maf", "n", "ll",
-             "TRANSFORM:GWAS_INTER:level.x1:coef",
-             "TRANSFORM:GWAS_INTER:level.x1:se",
-             "TRANSFORM:GWAS_INTER:level.x1:lower",
-             "TRANSFORM:GWAS_INTER:level.x1:upper",
-             "TRANSFORM:GWAS_INTER:level.x1:t",
-             "TRANSFORM:GWAS_INTER:level.x1:p",
-             "TRANSFORM:GWAS_INTER:level.x2:coef",
-             "TRANSFORM:GWAS_INTER:level.x2:se",
-             "TRANSFORM:GWAS_INTER:level.x2:lower",
-             "TRANSFORM:GWAS_INTER:level.x2:upper",
-             "TRANSFORM:GWAS_INTER:level.x2:t",
-             "TRANSFORM:GWAS_INTER:level.x2:p", "adj_r2", "subgroup"},
+             "GWAS_INTER(SNPs,factor(var3):x1):coef",
+             "GWAS_INTER(SNPs,factor(var3):x1):se",
+             "GWAS_INTER(SNPs,factor(var3):x1):lower",
+             "GWAS_INTER(SNPs,factor(var3):x1):upper",
+             "GWAS_INTER(SNPs,factor(var3):x1):t",
+             "GWAS_INTER(SNPs,factor(var3):x1):p",
+             "GWAS_INTER(SNPs,factor(var3):x2):coef",
+             "GWAS_INTER(SNPs,factor(var3):x2):se",
+             "GWAS_INTER(SNPs,factor(var3):x2):lower",
+             "GWAS_INTER(SNPs,factor(var3):x2):upper",
+             "GWAS_INTER(SNPs,factor(var3):x2):t",
+             "GWAS_INTER(SNPs,factor(var3):x2):p", "adj_r2", "subgroup"},
             "Missing columns in the GWAS Writer",
         )
 
@@ -310,25 +305,25 @@ class TestGWASWriter(unittest.TestCase):
         #   var3=x1, var4=y0
         subgroup = df.subgroup == "var4:y0"
         np.testing.assert_array_almost_equal(
-            df.loc[subgroup, "TRANSFORM:GWAS_INTER:level.x1:coef"].values,
+            df.loc[subgroup, "GWAS_INTER(SNPs,factor(var3):x1):coef"].values,
             np.array([7.9838584795821, 0.8787655737690, -5.4257289463845]),
         )
 
         #   var3=x2, var4=y0
         np.testing.assert_array_almost_equal(
-            df.loc[subgroup, "TRANSFORM:GWAS_INTER:level.x2:coef"].values,
+            df.loc[subgroup, "GWAS_INTER(SNPs,factor(var3):x2):coef"].values,
             np.array([9.5318845882662, 2.1792184593254, -3.8901765902700]),
         )
 
         #   var3=x1, var4=y1
         subgroup = df.subgroup == "var4:y1"
         np.testing.assert_array_almost_equal(
-            df.loc[subgroup, "TRANSFORM:GWAS_INTER:level.x1:coef"].values,
+            df.loc[subgroup, "GWAS_INTER(SNPs,factor(var3):x1):coef"].values,
             np.array([-7.33292032058131, -2.53148534004492, -14.560258817242]),
         )
 
         #   var3=x2, var4=y1
         np.testing.assert_array_almost_equal(
-            df.loc[subgroup, "TRANSFORM:GWAS_INTER:level.x2:coef"].values,
+            df.loc[subgroup, "GWAS_INTER(SNPs,factor(var3):x2):coef"].values,
             np.array([9.91504894770588, -1.35580107828104, -3.1717946298856]),
         )
