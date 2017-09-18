@@ -44,7 +44,12 @@ class Variable(object):
         return hash(str(self))
 
     def __eq__(self, other):
-        return self.__class__ is other.__class__ and str(self) == str(other)
+        is_equal = (
+            self.__class__ is other.__class__ and str(self) == str(other)
+        )
+        if is_equal:
+            other.match = self
+        return is_equal
 
 
 class Phenotype(Variable):
@@ -128,10 +133,12 @@ class Factor(Transformation):
         return hash("{}:{}".format(self.__class__.__name__, self.entity))
 
     def __eq__(self, other):
-        return (
-            self.__class__ is other.__class__ and
-            self.entity == other.entity
+        is_equal = (
+            self.__class__ is other.__class__ and self.entity == other.entity
         )
+        if is_equal:
+            other.match = self
+        return is_equal
 
     def __call__(self, phenotypes, genotypes, cache):
         # Checking the cache
@@ -195,11 +202,13 @@ class Pow(Transformation):
         ))
 
     def __eq__(self, other):
-        return (
-            self.__class__ is other.__class__ and
-            self.entity == other.entity and
-            self.power == other.power
+        is_equal = (
+            self.__class__ is other.__class__ and self.entity == other.entity
+            and self.power == other.power
         )
+        if is_equal:
+            other.match = self
+        return is_equal
 
     def __call__(self, phenotypes, genotypes, cache):
         # Checking the cache
@@ -233,10 +242,12 @@ class Ln(Transformation):
         return hash("{}:{}".format(self.__class__.__name__, self.entity))
 
     def __eq__(self, other):
-        return (
-            self.__class__ is other.__class__ and
-            self.entity == other.entity
+        is_equal = (
+            self.__class__ is other.__class__ and self.entity == other.entity
         )
+        if is_equal:
+            other.match = self
+        return is_equal
 
     def __call__(self, phenotypes, genotypes, cache):
         # Checking the cache
@@ -272,10 +283,12 @@ class Log10(Transformation):
         return hash("{}:{}".format(self.__class__.__name__, self.entity))
 
     def __eq__(self, other):
-        return (
-            self.__class__ is other.__class__ and
-            self.entity == other.entity
+        is_equal = (
+            self.__class__ is other.__class__ and self.entity == other.entity
         )
+        if is_equal:
+            other.match = self
+        return is_equal
 
     def __call__(self, phenotypes, genotypes, cache):
         # Checking the cache
@@ -317,10 +330,13 @@ class Interaction(Transformation):
         ))
 
     def __eq__(self, other):
-        return (
-            self.__class__ is other.__class__ and
-            self.entities == other.entities
+        is_equal = (
+            self.__class__ is other.__class__
+            and self.entities == other.entities
         )
+        if is_equal:
+            other.match = self
+        return is_equal
 
     def __call__(self, phenotypes, genotypes, cache):
         # Finding all the combinations of 2, 3, ..., n items
@@ -332,9 +348,13 @@ class Interaction(Transformation):
         results = {}
         self.columns = []
         for combination in combinations:
-            columns = []
+            available_columns = []
             dfs = []
             for entity in combination:
+                # Getting the original entity in the cache
+                if entity in cache:
+                    entity = entity.match
+
                 df = None
                 if isinstance(entity, Transformation):
                     df = entity(phenotypes, genotypes, cache)
@@ -346,14 +366,14 @@ class Interaction(Transformation):
                         df = _fix_repeated_measurements(df, phenotypes)
 
                 # Adding the columns and the DataFrame to the list
-                columns.append(entity.columns)
+                available_columns.append(entity.columns)
                 dfs.append(df.sort_index())
 
             # Creating the final df
             df = pd.concat(dfs, axis=1, join="outer")
 
             # Creating the product
-            for cols in itertools.product(*columns):
+            for cols in itertools.product(*available_columns):
                 # The column name
                 col_name = None
                 if self.name is None:
@@ -391,10 +411,13 @@ class GWASInteraction(Transformation):
         ))
 
     def __eq__(self, other):
-        return (
-            self.__class__ is other.__class__ and
-            self.entities == other.entities
+        is_equal = (
+            self.__class__ is other.__class__
+            and self.entities == other.entities
         )
+        if is_equal:
+            other.match = self
+        return is_equal
 
     def __call__(self, phenotypes, genotypes, cache):
         # Creating the entities
@@ -413,15 +436,19 @@ class GWASInteraction(Transformation):
         self.columns = []
         self.interaction_cols = {}
         for combination in combinations:
-            columns = []
+            available_columns = []
             for entity in combination:
+                # Getting the original entity in the cache
+                if entity in cache:
+                    entity = entity.match
+
                 if entity == SNPs:
-                    columns.append([SNPs])
+                    available_columns.append([SNPs])
                 else:
-                    columns.append(entity.columns)
+                    available_columns.append(entity.columns)
 
             # Generating the columns for the product (in analysis)
-            for cols in itertools.product(*columns):
+            for cols in itertools.product(*available_columns):
                 # The column name
                 col_name = None
                 if self.name is None:
@@ -590,6 +617,13 @@ class ModelSpec(object):
                 else:
                     entity.get_data(phenotypes, genotypes, self.cache)
 
+    def get_entity(self, entity):
+        """Returns the original entity."""
+        if entity in self.cache:
+            return entity.match
+        else:
+            raise KeyError(entity)
+
 
 class _VariableFactory(object):
     def __init__(self, variable_type):
@@ -622,8 +656,8 @@ class Result(object):
         cur = results
 
         for field in self.path:
-            print(field)
-            if isinstance(field, EntityIdentifier):
+            if (isinstance(field, Variable)
+                    or isinstance(field, Transformation)):
                 # Access for transformations and entities.
                 if field.id in results.keys():
                     cur = cur[field.id]
