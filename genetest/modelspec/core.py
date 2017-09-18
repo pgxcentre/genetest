@@ -353,7 +353,10 @@ class Interaction(Transformation):
             for entity in combination:
                 # Getting the original entity in the cache
                 if entity in cache:
-                    entity = entity.match
+                    # If the entity doesn't have the attribute 'match', it's
+                    # because we have the real entity
+                    if hasattr(entity, "match"):
+                        entity = entity.match
 
                 df = None
                 if isinstance(entity, Transformation):
@@ -440,7 +443,10 @@ class GWASInteraction(Transformation):
             for entity in combination:
                 # Getting the original entity in the cache
                 if entity in cache:
-                    entity = entity.match
+                    # If the entity doesn't have the attribute 'match', it's
+                    # because we have the real entity
+                    if hasattr(entity, "match"):
+                        entity = entity.match
 
                 if entity == SNPs:
                     available_columns.append([SNPs])
