@@ -8,7 +8,9 @@
 # Commons, PO Box 1866, Mountain View, CA 94042, USA.
 
 
+import re
 import unittest
+import functools
 
 import numpy as np
 import pandas as pd
@@ -17,7 +19,7 @@ from scipy.stats import binom
 from geneparse import parsers
 
 from .. import modelspec as spec
-from ..phenotypes.dummy import _DummyPhenotypes
+from ..phenotypes.dataframe import DataFrameContainer
 from ..statistics.models.linear import StatsLinear
 
 
@@ -48,8 +50,7 @@ class TestGrammar(unittest.TestCase):
 
         # Creating the dummy phenotype container
         phenotypes = ["pheno"] + ["var{}".format(i+1) for i in range(5)]
-        cls.phenotypes = _DummyPhenotypes()
-        cls.phenotypes.data = cls.data[phenotypes].copy()
+        cls.phenotypes = DataFrameContainer(cls.data[phenotypes].copy())
 
         # Creating the dummy genotype container
         map_info = pd.DataFrame(
@@ -65,13 +66,10 @@ class TestGrammar(unittest.TestCase):
         )
 
     def setUp(self):
-        # Resetting the model specification
-        spec._reset()
-
         # Reordering the columns and the rows of the phenotype data frame
-        self.phenotypes.data = self.phenotypes.data.iloc[
-            np.random.permutation(self.phenotypes.data.shape[0]),
-            np.random.permutation(self.phenotypes.data.shape[1])
+        self.phenotypes._phenotypes = self.phenotypes._phenotypes.iloc[
+            np.random.permutation(self.phenotypes._phenotypes.shape[0]),
+            np.random.permutation(self.phenotypes._phenotypes.shape[1])
         ]
 
     def test_simple_formula(self):
@@ -98,7 +96,7 @@ class TestGrammar(unittest.TestCase):
                          "The intercept is not as expected")
 
         # Checking the outcome
-        outcome_col = spec.phenotypes.pheno.id
+        outcome_col = spec.phenotypes.pheno.columns[0]
         outcomes = matrix.loc[self.data.index, outcome_col]
         self.assertTrue(outcomes.equals(self.data.pheno),
                         "The outcomes are not as expected")
@@ -106,14 +104,13 @@ class TestGrammar(unittest.TestCase):
         # Checking the predictors
         predictors = [spec.genotypes.snp, spec.phenotypes.var1,
                       spec.phenotypes.var2]
-        translations = modelspec.get_translations()
         for predictor in predictors:
             # Getting the name of the predictor
-            name = translations[predictor.id]
+            name = predictor.name
 
             # Comparing the values
             np.testing.assert_array_equal(
-                matrix.loc[self.data.index, predictor.id].values,
+                matrix.loc[self.data.index, predictor.columns[0]].values,
                 self.data[name].values,
                 err_msg="The predictor '{}' is not as expected".format(name),
             )
@@ -142,17 +139,20 @@ class TestGrammar(unittest.TestCase):
                          "The intercept is not as expected")
 
         # Checking the outcome
-        outcome_col = spec.phenotypes.pheno.id
+        outcome_col = spec.phenotypes.pheno.columns[0]
         outcomes = matrix.loc[self.data.index, outcome_col]
         self.assertTrue(outcomes.equals(self.data.pheno),
                         "The outcomes are not as expected")
 
         # Checking the predictors
-        predictors = [spec.genotypes.snp, spec.pow(spec.phenotypes.var1, 4)]
+        predictors = [
+            modelspec.get_entity(spec.genotypes.snp),
+            modelspec.get_entity(spec.pow(spec.phenotypes.var1, 4)),
+        ]
         for predictor, power, name in zip(predictors, (1, 4), ("snp", "var1")):
             # Comparing the values
             np.testing.assert_array_equal(
-                matrix.loc[self.data.index, predictor.id].values,
+                matrix.loc[self.data.index, predictor.columns[0]].values,
                 self.data[name].values**power,
                 err_msg="The predictor '{}**{}' is not as "
                         "expected".format(name, power),
@@ -184,32 +184,34 @@ class TestGrammar(unittest.TestCase):
                          "The intercept is not as expected")
 
         # Checking the outcome
-        outcome_col = spec.phenotypes.pheno.id
+        outcome_col = modelspec.get_entity(spec.phenotypes.pheno).columns[0]
         outcomes = matrix.loc[self.data.index, outcome_col]
         self.assertTrue(outcomes.equals(self.data.pheno),
                         "The outcomes are not as expected")
 
         # Checking the predictors
-        translations = modelspec.get_translations()
         for predictor in (spec.genotypes.snp, spec.phenotypes.var1):
-            # Getting the name of the predictor
-            name = translations[predictor.id]
+            # Getting the entity and name
+            entity = modelspec.get_entity(predictor)
 
             # Comparing the values
             np.testing.assert_array_equal(
-                matrix.loc[self.data.index, predictor.id].values,
-                self.data[name].values,
-                err_msg="The predictor '{}' is not as expected".format(name),
+                matrix.loc[self.data.index, entity.columns[0]].values,
+                self.data[entity.name].values,
+                err_msg="The predictor '{}' is not as expected"
+                        "".format(entity.name),
             )
 
         # Checking the log transform
-        predictors = (spec.log10(spec.phenotypes.var1),
-                      spec.ln(spec.phenotypes.var1))
+        predictors = (
+            modelspec.get_entity(spec.log10(spec.phenotypes.var1)),
+            modelspec.get_entity(spec.ln(spec.phenotypes.var1)),
+        )
         for predictor, transform, name in zip(predictors, (np.log10, np.log),
                                               ("var1", "var1")):
             # Comparing the values
             np.testing.assert_array_equal(
-                matrix.loc[self.data.index, predictor.id].values,
+                matrix.loc[self.data.index, predictor.columns[0]].values,
                 transform(self.data[name].values),
                 err_msg="The predictor '{}({})' is not as "
                         "expected".format(transform.__name__, name),
@@ -241,7 +243,7 @@ class TestGrammar(unittest.TestCase):
                          "The intercept is not as expected")
 
         # Checking the outcome
-        outcome_col = spec.phenotypes.pheno.id
+        outcome_col = modelspec.get_entity(spec.phenotypes.pheno).columns[0]
         outcomes = matrix.loc[self.data.index, outcome_col]
         self.assertTrue(outcomes.equals(self.data.pheno),
                         "The outcomes are not as expected")
@@ -249,14 +251,16 @@ class TestGrammar(unittest.TestCase):
         # Checking the factors
         var_names = ("var3", "var4", "var5")
         predictor_zipped = zip(
-            tuple(spec.factor(spec.phenotypes[p]) for p in var_names),
+            tuple(modelspec.get_entity(spec.factor(spec.phenotypes[p]))
+                  for p in var_names),
             var_names,
             (("x1", "x2"), ("y1", ), (1, 2, 3)),
         )
         for predictor, name, levels in predictor_zipped:
-            for level in levels:
+            for i, level in enumerate(levels):
                 # Getting the name of the column containing the level data
-                matrix_col = "{}:level.{}".format(predictor.id, level)
+                matrix_col = predictor.columns[i]
+                self.assertTrue(matrix_col.endswith(":" + str(level)))
 
                 # Comparing the results
                 np.testing.assert_array_equal(
@@ -292,7 +296,7 @@ class TestGrammar(unittest.TestCase):
                          "The intercept is not as expected")
 
         # Checking the outcome
-        outcome_col = spec.phenotypes.pheno.id
+        outcome_col = modelspec.get_entity(spec.phenotypes.pheno).columns[0]
         outcomes = matrix.loc[self.data.index, outcome_col]
         self.assertTrue(outcomes.equals(self.data.pheno),
                         "The outcomes are not as expected")
@@ -300,20 +304,22 @@ class TestGrammar(unittest.TestCase):
         # Checking the predictors
         for predictor in (spec.genotypes.snp, spec.phenotypes.var1):
             # Getting the name of the predictor
-            name = modelspec.get_translations()[predictor.id]
+            predictor = modelspec.get_entity(predictor)
+            name = predictor.name
 
             # Comparing the values
             np.testing.assert_array_equal(
-                matrix.loc[self.data.index, predictor.id].values,
+                matrix.loc[self.data.index, predictor.columns[0]].values,
                 self.data[name].values,
                 err_msg="The predictor '{}' is not as expected".format(name),
             )
 
         # Checking the interaction
-        interaction = spec.interaction(spec.genotypes.snp,
-                                       spec.phenotypes.var1)
+        interaction = modelspec.get_entity(
+            spec.interaction(spec.genotypes.snp, spec.phenotypes.var1),
+        )
         np.testing.assert_array_equal(
-            matrix.loc[self.data.index, interaction.id].values,
+            matrix.loc[self.data.index, interaction.columns[0]].values,
             (self.data.snp * self.data.var1).values,
             err_msg="The interaction 'snp*var1' is not as expected",
         )
@@ -336,7 +342,7 @@ class TestGrammar(unittest.TestCase):
         )
 
         # Checking the shape of the matrix
-        self.assertEqual((self.data.shape[0], 6), matrix.shape,
+        self.assertEqual((self.data.shape[0], 9), matrix.shape,
                          "The observed matrix is not of the right shape")
 
         # Checking the intercept
@@ -344,34 +350,47 @@ class TestGrammar(unittest.TestCase):
                          "The intercept is not as expected")
 
         # Checking the outcome
-        outcome_col = spec.phenotypes.pheno.id
+        outcome_col = modelspec.get_entity(spec.phenotypes.pheno).columns[0]
         outcomes = matrix.loc[self.data.index, outcome_col]
         self.assertTrue(outcomes.equals(self.data.pheno),
                         "The outcomes are not as expected")
 
         # Checking the predictors
-        predictors = (spec.genotypes.snp, spec.phenotypes.var1,
-                      spec.phenotypes.var2)
+        predictors = (
+            modelspec.get_entity(spec.genotypes.snp),
+            modelspec.get_entity(spec.phenotypes.var1),
+            modelspec.get_entity(spec.phenotypes.var2),
+        )
         for predictor in predictors:
             # Getting the name of the predictor
-            name = modelspec.get_translations()[predictor.id]
+            name = predictor.name
 
             # Comparing the values
             np.testing.assert_array_equal(
-                matrix.loc[self.data.index, predictor.id].values,
+                matrix.loc[self.data.index, predictor.columns[0]].values,
                 self.data[name].values,
                 err_msg="The predictor '{}' is not as expected".format(name),
             )
 
         # Checking the interaction
-        interaction = spec.interaction(
-            spec.genotypes.snp, spec.phenotypes.var1, spec.phenotypes.var2,
+        interaction = modelspec.get_entity(
+            spec.interaction(spec.genotypes.snp, spec.phenotypes.var1,
+                             spec.phenotypes.var2),
         )
-        np.testing.assert_array_equal(
-            matrix.loc[self.data.index, interaction.id].values,
-            (self.data.snp * self.data.var1 * self.data.var2).values,
-            err_msg="The interaction 'snp*var1*var2' is not as expected",
-        )
+        for column in interaction.columns:
+            # Getting the variables
+            variables = re.search(
+                r"inter\(((\S+,)+\S+)\)", column
+            ).group(1).split(",")
+
+            # Comparing the values
+            np.testing.assert_array_equal(
+                matrix.loc[self.data.index, column].values,
+                functools.reduce(np.multiply,
+                                 [self.data[col] for col in variables]),
+                err_msg="The interaction '{}' is not as expected"
+                        "".format(column),
+            )
 
     def test_factor_interaction(self):
         """Tests interaction between a term and a factor."""
@@ -399,27 +418,31 @@ class TestGrammar(unittest.TestCase):
                          "The intercept is not as expected")
 
         # Checking the outcome
-        outcome_col = spec.phenotypes.pheno.id
+        outcome_col = modelspec.get_entity(spec.phenotypes.pheno).columns[0]
         outcomes = matrix.loc[self.data.index, outcome_col]
         self.assertTrue(outcomes.equals(self.data.pheno),
                         "The outcomes are not as expected")
 
         # Checking the predictor
+        predictor = modelspec.get_entity(spec.genotypes.snp)
         np.testing.assert_array_equal(
-            matrix.loc[self.data.index, spec.genotypes.snp.id].values,
+            matrix.loc[self.data.index, predictor.columns[0]].values,
             self.data.snp.values,
             err_msg="The predictor 'snp' is not as expected",
         )
 
         # For all level:
-        factor = spec.factor(spec.phenotypes.var5)
-        interaction = spec.interaction(spec.genotypes.snp, factor)
-        for level in (1, 2, 3):
+        factor = modelspec.get_entity(spec.factor(spec.phenotypes.var5))
+        interaction = modelspec.get_entity(
+            spec.interaction(spec.genotypes.snp, factor),
+        )
+        for i, level in enumerate((1, 2, 3)):
             # Creating the expected level
             expected_factor_values = (self.data.var5 == level).astype(float)
 
             # Checking the factor
-            col = factor.id + ":level.{}".format(level)
+            col = factor.columns[i]
+            self.assertTrue(col.endswith(":" + str(level)))
             np.testing.assert_array_equal(
                 matrix.loc[self.data.index, col].values,
                 expected_factor_values.values,
@@ -428,7 +451,8 @@ class TestGrammar(unittest.TestCase):
             )
 
             # Checking the interaction
-            col = interaction.id + ":level.{}".format(level)
+            col = interaction.columns[i]
+            self.assertTrue(col.endswith(":" + str(level) + ")"))
             np.testing.assert_array_equal(
                 matrix.loc[self.data.index, col].values,
                 (expected_factor_values * self.data.snp).values,
@@ -456,7 +480,7 @@ class TestGrammar(unittest.TestCase):
         )
 
         # Checking the shape of the matrix
-        self.assertEqual((self.data.shape[0], 16), matrix.shape,
+        self.assertEqual((self.data.shape[0], 97), matrix.shape,
                          "The observed matrix is not of the right shape")
 
         # Checking the intercept
@@ -464,20 +488,22 @@ class TestGrammar(unittest.TestCase):
                          "The intercept is not as expected")
 
         # Checking the outcome
-        outcome_col = spec.phenotypes.pheno.id
+        outcome_col = modelspec.get_entity(spec.phenotypes.pheno).columns[0]
         outcomes = matrix.loc[self.data.index, outcome_col]
         self.assertTrue(outcomes.equals(self.data.pheno),
                         "The outcomes are not as expected")
 
         # Checking the predictors
-        translations = modelspec.get_translations()
         for predictor in (spec.genotypes.snp, spec.phenotypes.var2):
+            # Getting the entity
+            predictor = modelspec.get_entity(predictor)
+
             # Getting the name of the predictor
-            name = translations[predictor.id]
+            name = predictor.name
 
             # Comparing the values
             np.testing.assert_array_equal(
-                matrix.loc[self.data.index, predictor.id].values,
+                matrix.loc[self.data.index, predictor.columns[0]].values,
                 self.data[name].values,
                 err_msg="The predictor '{}' is not as expected".format(name),
             )
@@ -490,51 +516,57 @@ class TestGrammar(unittest.TestCase):
             (("x1", "x2"), ("y1", ), (1, 2, 3)),
         )
         for predictor, name, levels in predictor_zipped:
-            for level in levels:
-                # Getting the name of the column containing the level data
-                matrix_col = "{}:level.{}".format(predictor.id, level)
+            # Getting the official entity
+            predictor = modelspec.get_entity(predictor)
+
+            for col_name, level in zip(predictor.columns, levels):
+                # Checking the level
+                self.assertTrue(col_name.endswith(":" + str(level)))
 
                 # Comparing the factor
                 np.testing.assert_array_equal(
-                    matrix.loc[self.data.index, matrix_col].values,
+                    matrix.loc[self.data.index, col_name].values,
                     (self.data[name] == level).astype(float).values,
                     err_msg="The predictor '{}' (level '{}') is not as "
                             "expected".format(name, level),
                 )
 
         # Checking the interaction
-        interaction = spec.interaction(
+        interaction = modelspec.get_entity(spec.interaction(
             spec.genotypes.snp, spec.phenotypes.var2,
             spec.factor(spec.phenotypes.var3),
             spec.factor(spec.phenotypes.var4),
             spec.factor(spec.phenotypes.var5),
-        )
-        for var3_l in ("x1", "x2"):
-            for var4_l in ("y1", ):
-                for var5_l in (1, 2, 3):
-                    # The expected factor values
-                    expected_var3 = (self.data.var3 == var3_l).astype(float)
-                    expected_var4 = (self.data.var4 == var4_l).astype(float)
-                    expected_var5 = (self.data.var5 == var5_l).astype(float)
+        ))
+        self.assertEqual(87, len(set(interaction.columns)))
+        for col_name in interaction.columns:
+            # Getting the list of variables
+            variables = re.search(
+                r"inter\(((\S+,)+\S+)\)", col_name
+            ).group(1).split(",")
 
-                    # The expected interaction
-                    expected_interaction = (
-                        self.data.snp * self.data.var2 * expected_var3 *
-                        expected_var4 * expected_var5
-                    )
+            expected = np.ones(self.data.shape[0], dtype=float)
+            for variable in variables:
+                # Do we have a factor?
+                if variable.startswith("factor"):
+                    # Getting the variable name and level
+                    name = re.search(r"factor\((\S+)\)", variable).group(1)
+                    level = variable.split(":")[-1]
 
-                    # Checking the interaction
-                    matrix_col = "{}:level.{}:level.{}:level.{}".format(
-                        interaction.id, var3_l, var4_l, var5_l,
-                    )
-                    np.testing.assert_array_equal(
-                        matrix.loc[self.data.index, matrix_col].values,
-                        expected_interaction.values,
-                        err_msg=(
-                            "The interaction 'snp*var2*var3*var4*var5*' "
-                            "(var3 level '{}', var4 level '{} and var5 "
-                            "level '{}' is not as expected".format(
-                                var3_l, var4_l, var5_l,
-                            )
-                        ),
-                    )
+                    if name == "var5":
+                        level = int(level)
+
+                    # Multiplying
+                    expected *= (self.data.loc[:, name] == level).astype(float)
+
+                else:
+                    # Normal variable
+                    expected *= self.data.loc[:, variable]
+
+            # Comparing with the original value
+            np.testing.assert_array_almost_equal(
+                matrix.loc[self.data.index, col_name].values,
+                expected,
+                err_msg="The interaction '{}' is not as expected"
+                        "".format(col_name)
+            )
