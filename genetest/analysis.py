@@ -28,6 +28,7 @@ from .statistics.core import StatsError
 from .statistics.descriptive import get_maf
 from . import subscribers as subscribers_module
 from .modelspec import modelspec_from_formula  # , PheWAS
+from .modelspec.core import Factor
 
 
 logger = logging.getLogger(__name__)
@@ -245,16 +246,15 @@ def execute(phenotypes, genotypes, modelspec, subscribers=None,
     # Rename y columns (for the tests)
     y.columns = [e[0] for e in y_cols]
 
-    # TODO: Fix this (ModelSpec refactor)
-#    # Drop uninformative factors.
-#    bad_cols = _get_uninformative_factors(X, modelspec)
-#    if len(bad_cols):
-#        logger.info(
-#            "After removing missing values, dropping ({}) factor levels that "
-#            "have no variation."
-#            "".format(len(bad_cols))
-#        )
-#        X = X.drop(bad_cols, axis=1)
+    # Drop uninformative factors.
+    bad_cols = _get_uninformative_factors(X, modelspec)
+    if len(bad_cols):
+        logger.info(
+            "After removing missing values, dropping ({}) factor levels that "
+            "have no variation."
+            "".format(len(bad_cols))
+        )
+        X = X.drop(bad_cols, axis=1)
 
     messages = {
         "skipped": [],
@@ -421,7 +421,10 @@ def _execute_stratified(genotypes, modelspec, subscribers, y, X,
     var_levels = []
     for i, subgroup in enumerate(subgroups):
         if subgroup is None:
-            levels = X[modelspec.stratify_by[i].id].dropna().unique()
+            if len(modelspec.stratify_by[i].columns) != 1:
+                raise ValueError("{}: to many columns to stratify by"
+                                 "".format(modelspec.stratify_by[i]))
+            levels = X[modelspec.stratify_by[i].columns[0]].dropna().unique()
             var_levels.append(levels)
         elif hasattr(subgroup, "__iter__") and type(subgroup) is not str:
             var_levels.append(subgroup)
@@ -435,7 +438,6 @@ def _execute_stratified(genotypes, modelspec, subscribers, y, X,
     subsets = itertools.product(*var_levels)
 
     gwas_mode = modelspec.is_gwas
-    translations = modelspec.get_translations()
 
     for levels in subsets:
         # levels is a list of the same length as modelspec.stratify_by giving
@@ -446,12 +448,12 @@ def _execute_stratified(genotypes, modelspec, subscribers, y, X,
 
         # Build the filtering vector.
         idx = np.logical_and.reduce(
-            [X[var.id] == level for var, level in current_subset]
+            [X[var.columns[0]] == level for var, level in current_subset]
         )
 
         # Extract the stratification and execute the analysis.
         subset_info = {
-            translations[var.id]: level for var, level in current_subset
+            var.name: level for var, level in current_subset
         }
         for sub in subscribers:
             sub._update_current_subset(subset_info)
@@ -461,8 +463,10 @@ def _execute_stratified(genotypes, modelspec, subscribers, y, X,
         bad_cols = _get_uninformative_factors(this_x, modelspec)
         this_x = this_x.drop(bad_cols, axis=1)
 
+        # TODO: FIX THIS
         # Also drop the columns from the stratification variables.
-        this_x = this_x.drop([i.id for i in modelspec.stratify_by], axis=1)
+        this_x = this_x.drop([i.columns[0] for i in modelspec.stratify_by],
+                             axis=1)
 
         logger.info("Analysing subgroup {}".format(
             ";".join("{}:{}".format(*_) for _ in sorted(subset_info.items()))
@@ -471,7 +475,7 @@ def _execute_stratified(genotypes, modelspec, subscribers, y, X,
         # Make sure everything went ok.
         if this_x.shape[0] == 0:
             observed_levels = {
-                translations[var.id]: list(X[var.id].dropna().unique())
+                var.columns[0]: list(X[var.id].dropna().unique())
                 for var in modelspec.stratify_by
             }
             raise ValueError(
@@ -507,16 +511,13 @@ def _execute_stratified(genotypes, modelspec, subscribers, y, X,
 
 def _get_uninformative_factors(df, modelspec):
     factor_cols = [
-        i[2] for i in modelspec.transformations if i[0] == "ENCODE_FACTOR"
+        e.columns for e in modelspec.dependencies if isinstance(e, Factor)
     ]
 
     bad_cols = []
-    zero_cols = df.columns[df.sum() == 0]
-    for col in zero_cols:
-        for factor_col in factor_cols:
-            if col.startswith(factor_col.id):
-                bad_cols.append(col)
-                break
+    for col in itertools.chain(*factor_cols):
+        if len(df.loc[:, col].unique()) == 1:
+            bad_cols.append(col)
 
     return bad_cols
 
