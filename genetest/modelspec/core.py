@@ -121,6 +121,13 @@ class Transformation(object):
         raise NotImplemented()
 
     def __eq__(self, other):
+        is_equal = self._is_equal(other)
+        if is_equal:
+            other.match = self
+        return is_equal
+
+    def _is_equal(self, other):
+        """Function that checks if 'other' is the same as 'self'."""
         raise NotImplemented()
 
 
@@ -132,13 +139,10 @@ class Factor(Transformation):
     def __hash__(self):
         return hash("{}:{}".format(self.__class__.__name__, self.entity))
 
-    def __eq__(self, other):
-        is_equal = (
+    def _is_equal(self, other):
+        return (
             self.__class__ is other.__class__ and self.entity == other.entity
         )
-        if is_equal:
-            other.match = self
-        return is_equal
 
     def __call__(self, phenotypes, genotypes, cache):
         # Checking the cache
@@ -201,14 +205,11 @@ class Pow(Transformation):
             self.__class__.__name__, self.entity, self.power
         ))
 
-    def __eq__(self, other):
-        is_equal = (
+    def _is_equal(self, other):
+        return (
             self.__class__ is other.__class__ and self.entity == other.entity
             and self.power == other.power
         )
-        if is_equal:
-            other.match = self
-        return is_equal
 
     def __call__(self, phenotypes, genotypes, cache):
         # Checking the cache
@@ -241,13 +242,10 @@ class Ln(Transformation):
     def __hash__(self):
         return hash("{}:{}".format(self.__class__.__name__, self.entity))
 
-    def __eq__(self, other):
-        is_equal = (
+    def _is_equal(self, other):
+        return (
             self.__class__ is other.__class__ and self.entity == other.entity
         )
-        if is_equal:
-            other.match = self
-        return is_equal
 
     def __call__(self, phenotypes, genotypes, cache):
         # Checking the cache
@@ -282,13 +280,10 @@ class Log10(Transformation):
     def __hash__(self):
         return hash("{}:{}".format(self.__class__.__name__, self.entity))
 
-    def __eq__(self, other):
-        is_equal = (
+    def _is_equal(self, other):
+        return (
             self.__class__ is other.__class__ and self.entity == other.entity
         )
-        if is_equal:
-            other.match = self
-        return is_equal
 
     def __call__(self, phenotypes, genotypes, cache):
         # Checking the cache
@@ -329,14 +324,11 @@ class Interaction(Transformation):
             self.__class__.__name__, ":".join(entity_names)
         ))
 
-    def __eq__(self, other):
-        is_equal = (
+    def _is_equal(self, other):
+        return (
             self.__class__ is other.__class__
             and self.entities == other.entities
         )
-        if is_equal:
-            other.match = self
-        return is_equal
 
     def __call__(self, phenotypes, genotypes, cache):
         # Finding all the combinations of 2, 3, ..., n items
@@ -413,14 +405,11 @@ class GWASInteraction(Transformation):
             self.__class__.__name__, ":".join(entity_names)
         ))
 
-    def __eq__(self, other):
-        is_equal = (
+    def _is_equal(self, other):
+        return (
             self.__class__ is other.__class__
             and self.entities == other.entities
         )
-        if is_equal:
-            other.match = self
-        return is_equal
 
     def __call__(self, phenotypes, genotypes, cache):
         # Creating the entities
