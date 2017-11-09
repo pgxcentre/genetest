@@ -27,6 +27,7 @@ install:
   - conda install -q pyplink -c http://statgen.org/wp-content/uploads/Softwares/pyplink
   - pip install --no-deps cyvcf2
   - pip install --no-deps geneparse
+  - pip install --no-deps pybgen
   - conda list
 
 script: python setup.py test
