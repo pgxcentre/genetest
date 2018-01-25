@@ -111,15 +111,6 @@ def _gwas_worker(q, results_q, failed, abort, fit, y, X, samples, maf_t=None,
         # Set the genotypes
         X.loc[sample_order, "SNPs"] = snp.genotypes[geno_index]
 
-        if interaction:
-            # We have an interaction with SNPs, so we also need to compute it
-            # by multiplying SNPs with every columns
-            for key, cols in interaction.items():
-                X.loc[:, key] = functools.reduce(
-                    np.multiply,
-                    (X[col] for col in itertools.chain(["SNPs"], cols)),
-                )
-
         # The not missing values
         not_missing = _missing(y, X)
 
@@ -147,6 +138,15 @@ def _gwas_worker(q, results_q, failed, abort, fit, y, X, samples, maf_t=None,
         # Flipping if required
         if flip:
             X.loc[:, "SNPs"] = 2 - X.loc[:, "SNPs"]
+
+        if interaction:
+            # We have an interaction with SNPs, so we also need to compute it
+            # by multiplying SNPs with every columns
+            for key, cols in interaction.items():
+                X.loc[:, key] = functools.reduce(
+                    np.multiply,
+                    (X[col] for col in itertools.chain(["SNPs"], cols)),
+                )
 
         # Computing
         results = None
