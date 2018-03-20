@@ -142,11 +142,10 @@ def _gwas_worker(q, results_q, failed, abort, fit, y, X, samples, maf_t=None,
 
         if interaction:
             # We have an interaction with SNPs, so we also need to compute it
-            # by multiplying SNPs with every columns
+            # by multiplying the required columns
             for key, cols in interaction.items():
                 X.loc[:, key] = functools.reduce(
-                    np.multiply,
-                    (X[col] for col in itertools.chain(["SNPs"], cols)),
+                    np.multiply, (X[col] for col in cols),
                 )
 
         # Computing
