@@ -273,6 +273,9 @@ class GWASWriter(RowWriter):
                 ("z", ("SNPs", "z_value")),
                 ("p", ("SNPs", "p_value")),
             ]
+            self._specific_model_cols.append(
+                ("n_groups", analysis_results["MODEL"]["n_groups"]),
+            )
 
         else:
             logger.warning("{}: invalid test: only common columns will be "

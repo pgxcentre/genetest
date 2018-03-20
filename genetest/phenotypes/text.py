@@ -43,7 +43,8 @@ class TextPhenotypes(PhenotypesContainer):
         """
         # TODO: Check the different column names
         self._phenotypes = pd.read_csv(filename, sep=field_separator,
-                                       na_values=missing_values)
+                                       na_values=missing_values,
+                                       dtype={sample_column: str})
 
         # If there are repeated measurements, the sample column will have
         # duplicated values. We will set the index, but we won't verify its

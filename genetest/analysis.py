@@ -72,6 +72,12 @@ def _gwas_worker(q, results_q, failed, abort, fit, y, X, samples, maf_t=None,
     geno_index = None
     sample_order = None
 
+    # Checking if we have duplicated samples (i.e. for mixedlm)
+    duplicated = X.index.duplicated(keep="first")
+    has_duplicates = duplicated.any()
+    if has_duplicates:
+        unique_samples = ~duplicated
+
     # Get a SNP
     while not abort.is_set():
         # Get a SNP from the Queue.
@@ -106,14 +112,7 @@ def _gwas_worker(q, results_q, failed, abort, fit, y, X, samples, maf_t=None,
         # Set the genotypes
         X.loc[sample_order, "SNPs"] = snp.genotypes[geno_index]
 
-        if interaction:
-            # We have an interaction with SNPs, so we also need to compute it
-            # by multiplying SNPs with every columns
-            for key, cols in interaction.items():
-                X.loc[:, key] = functools.reduce(
-                    np.multiply, (X[col] for col in cols),
-                )
-
+        # The not missing values
         not_missing = _missing(y, X)
 
         if np.sum(not_missing) == 0:
@@ -122,8 +121,12 @@ def _gwas_worker(q, results_q, failed, abort, fit, y, X, samples, maf_t=None,
             continue
 
         # Computing MAF
+        samples_for_maf = not_missing
+        if has_duplicates:
+            samples_for_maf = samples_for_maf & unique_samples
+
         maf, minor, major, flip = get_maf(
-            genotypes=X.loc[not_missing, "SNPs"],
+            genotypes=X.loc[samples_for_maf, "SNPs"],
             minor=snp.coded,
             major=snp.reference,
         )
@@ -136,6 +139,15 @@ def _gwas_worker(q, results_q, failed, abort, fit, y, X, samples, maf_t=None,
         # Flipping if required
         if flip:
             X.loc[:, "SNPs"] = 2 - X.loc[:, "SNPs"]
+
+        if interaction:
+            # We have an interaction with SNPs, so we also need to compute it
+            # by multiplying SNPs with every columns
+            for key, cols in interaction.items():
+                X.loc[:, key] = functools.reduce(
+                    np.multiply,
+                    (X[col] for col in itertools.chain(["SNPs"], cols)),
+                )
 
         # Computing
         results = None
