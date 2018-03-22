@@ -357,4 +357,6 @@ intersphinx_mapping = {
     'numpy': ('http://docs.scipy.org/doc/numpy/', None),
     'pandas': ('http://pandas.pydata.org/pandas-docs/stable/', None),
     'jinja2': ('http://jinja.pocoo.org/docs', None),
+    'pybgen': ('https://lemieuxl.github.io/pybgen/', None),
+    'pyplink': ('https://lemieuxl.github.io/pyplink/', None),
 }

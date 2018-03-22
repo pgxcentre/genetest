@@ -21,7 +21,7 @@ VERSION = "{0}.{1}.{2}".format(MAJOR, MINOR, MICRO)
 
 
 def check_python_version():
-    """Checks the python version, exits if < 3.3."""
+    """Checks the python version, exits if < 3.4."""
     python_major, python_minor = sys.version_info[:2]
 
     if python_major != 3 or python_minor < 4:

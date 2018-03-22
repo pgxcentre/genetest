@@ -3,15 +3,30 @@
    You can adapt this file completely to your liking, but it should at least
    contain the root `toctree` directive.
 
-Welcome to genetest's documentation!
-=====================================
+genetest: efficient genetic association analysis
+=================================================
 
-Contents:
+
+Introduction
+-------------
+
+The :py:mod:`genetest` module provides an easy and efficient way of performing
+genetics association analysis. It uses :py:mod:`geneparse` to efficiently parse
+genetic data files (using indexes) of many commonly used format (*Plink*
+binary, *IMPUTE2*, *BGEN* and *VCF* files) and can analyse the data using
+linear and logistic regressions, mixed linear model (repeated measurements) or
+survival regression (Cox Proportional Hazards). It allows for interactions and
+multiple co-variables.
+
+A command line interface tool was also added to facilitate genome-wide
+association studies using a configuration file (*YAML* format) to describe the
+analysis.
 
 .. toctree::
-   :maxdepth: 2
+    :maxdepth: 2
 
-   module_content/modules
+    installation
+    module_content/modules
 
 
 
