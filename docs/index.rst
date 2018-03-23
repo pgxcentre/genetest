@@ -26,6 +26,7 @@ analysis.
     :maxdepth: 2
 
     installation
+    analysis
     module_content/modules
 
 
