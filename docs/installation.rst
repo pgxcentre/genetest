@@ -28,7 +28,7 @@ environment, it requires to be activated.
     The text ``(gentest_venv)`` will be added at the beginning of the terminal
     *prompt*.
 
-We recommend to upgrade or install some dependencies first.
+We recommend upgrading or installing some dependencies first.
 
 .. code-block:: bash
 
@@ -58,7 +58,7 @@ The installation process should at least install the following dependencies.
 .. note::
 
     If you intend to parse *BGEN* files with the 1.3 format specifications (or
-    more recent), you will required the :py:mod:`zstandard` module.
+    more recent), you will require the :py:mod:`zstandard` module.
 
     .. code-block:: bash
 
