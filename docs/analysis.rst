@@ -2,7 +2,7 @@
 Analysis
 =========
 
-Multiple statistic models exists. To execute a genome-wide study, you can use
+Multiple statistic models exist. To execute a genome-wide study, you can use
 the ``geneparse`` tool.
 
 
@@ -48,7 +48,7 @@ Genotypes
 ----------
 
 The ``genotypes`` section describes the genetic part of the analysis. Multiple
-file format are available (see below). The required keyword ``format``
+file formats are available (see below). The required keyword ``format``
 describes the file format for the genotypes.
 
 Each of the formats have their own required arguments and options.
@@ -103,7 +103,7 @@ Only one argument is required.
     +---------------------------+--------------------------------------+----------+
 
 Below is an example of a ``genotypes`` section of the *YAML* configuration file
-for a binary plink format.
+for a binary Plink format.
 
 .. code-block:: yaml
 
@@ -239,10 +239,10 @@ Statistical model
 
 For now, a total of 4 different analysis is possible: linear and logistic
 regressions, repeated measurements analysis using a mixed linear model, and
-survival analysis using the Cox proportional hazards regression. Each of those
-models (with their configuration) are describe below.
+survival analysis using the Cox proportional hazard regression. Each of those
+models (with their configuration) are described below.
 
-The model is describe in the ``model`` section of the *YAML* configuration
+The model is described in the ``model`` section of the *YAML* configuration
 file and using the ``test`` argument.
 
 
@@ -260,7 +260,7 @@ The following arguments and options are available for the linear regression.
     | ``formula``               | The formula describing the analysis  | Yes      |
     |                           | to be perfomed. Note that the formula|          |
     |                           | is similar to the one used in R. The |          |
-    |                           | names of the variables needs to be   |          |
+    |                           | names of the variables need to be    |          |
     |                           | the same as the columns in the       |          |
     |                           | phenotype file. The keyword ``SNPs`` |          |
     |                           | is used to perform a GWAS.           |          |
@@ -298,7 +298,7 @@ information about the class.
 Logistic regression
 ^^^^^^^^^^^^^^^^^^^^
 
-The logisitc regression only requires the formula describing the model.
+The logistic regression only requires the formula describing the model.
 
 .. table::
     :widths: 20 70 10
@@ -358,7 +358,7 @@ options.
     |                           | time. Then, if the p-value is lower  |          |
     |                           | than a user defined threshold, a     |          |
     |                           | complete LMM is fitted for this      |          |
-    |                           | marker. Note that this optimiziation |          |
+    |                           | marker. Note that this optimization  |          |
     |                           | is invalid when using an             |          |
     |                           | genetic/environment interaction.     |          |
     |                           | [Default: True]                      |          |
@@ -388,7 +388,7 @@ information about the class.
 Survival analysis
 ^^^^^^^^^^^^^^^^^^
 
-The Cox proportional hazards regression only requires the formula describing
+The Cox proportional hazard regression only requires the formula describing
 the model.
 
 .. table::
@@ -407,7 +407,7 @@ the model.
     +---------------------------+--------------------------------------+----------+
 
 Below is an example of a ``model`` section of the *YAML* configuration file
-for a survival analysis (Cox proportional hazards regression) of the event
+for a survival analysis (Cox proportional hazard regression) of the event
 *Event* and time to event *TTE* over the variables *SNPs* (meaning a GWAS),
 *Age* and *Sex*.
 

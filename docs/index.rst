@@ -13,7 +13,7 @@ Introduction
 The :py:mod:`genetest` module provides an easy and efficient way of performing
 genetics association analysis. It uses :py:mod:`geneparse` to efficiently parse
 genetic data files (using indexes) of many commonly used format (*Plink*
-binary, *IMPUTE2*, *BGEN* and *VCF* files) and can analyse the data using
+binary, *IMPUTE2*, *BGEN* and *VCF* files) and can analyze the data using
 linear and logistic regressions, mixed linear model (repeated measurements) or
 survival regression (Cox Proportional Hazards). It allows for interactions and
 multiple co-variables.
