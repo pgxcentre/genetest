@@ -1,0 +1,889 @@
+
+
+<!DOCTYPE html>
+<!--[if IE 8]><html class="no-js lt-ie9" lang="en" > <![endif]-->
+<!--[if gt IE 8]><!--> <html class="no-js" lang="en" > <!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <title>genetest.tests.test_coxph &mdash; genetest 0.3.0 documentation</title>
+  
+
+  
+  
+  
+  
+
+  
+
+  
+  
+    
+
+  
+
+  
+    <link rel="stylesheet" href="../../../_static/css/theme.css" type="text/css" />
+  <link rel="stylesheet" href="../../../_static/pygments.css" type="text/css" />
+  <link rel="stylesheet" href="../../../_static/theme_overrides.css" type="text/css" />
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" /> 
+
+  
+  <script src="../../../_static/js/modernizr.min.js"></script>
+
+</head>
+
+<body class="wy-body-for-nav">
+
+   
+  <div class="wy-grid-for-nav">
+
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search">
+          
+
+          
+            <a href="../../../index.html" class="icon icon-home"> genetest
+          
+
+          
+          </a>
+
+          
+            
+            
+              <div class="version">
+                0.3
+              </div>
+            
+          
+
+          
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          
+        </div>
+
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+              
+            
+            
+              <ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../installation.html">Installation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../analysis.html">Analysis</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../module_content/modules.html">genetest</a></li>
+</ul>
+
+            
+          
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" aria-label="top navigation">
+        
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../index.html">genetest</a>
+        
+      </nav>
+
+
+      <div class="wy-nav-content">
+        
+        <div class="rst-content">
+        
+          
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+
+  <ul class="wy-breadcrumbs">
+    
+      <li><a href="../../../index.html">Docs</a> &raquo;</li>
+        
+          <li><a href="../../index.html">Module code</a> &raquo;</li>
+        
+          <li><a href="../../genetest.html">genetest</a> &raquo;</li>
+        
+      <li>genetest.tests.test_coxph</li>
+    
+    
+      <li class="wy-breadcrumbs-aside">
+        
+      </li>
+    
+  </ul>
+
+  
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+            
+  <h1>Source code for genetest.tests.test_coxph</h1><div class="highlight"><pre>
+<span></span>
+
+<span class="c1"># This file is part of genetest.</span>
+<span class="c1">#</span>
+<span class="c1"># This work is licensed under the Creative Commons Attribution-NonCommercial</span>
+<span class="c1"># 4.0 International License. To view a copy of this license, visit</span>
+<span class="c1"># http://creativecommons.org/licenses/by-nc/4.0/ or send a letter to Creative</span>
+<span class="c1"># Commons, PO Box 1866, Mountain View, CA 94042, USA.</span>
+
+
+<span class="kn">import</span> <span class="nn">os</span>
+<span class="kn">import</span> <span class="nn">unittest</span>
+<span class="kn">from</span> <span class="nn">tempfile</span> <span class="k">import</span> <span class="n">TemporaryDirectory</span>
+
+<span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+<span class="kn">import</span> <span class="nn">pandas</span> <span class="k">as</span> <span class="nn">pd</span>
+<span class="kn">from</span> <span class="nn">pkg_resources</span> <span class="k">import</span> <span class="n">resource_filename</span>
+
+<span class="kn">from</span> <span class="nn">geneparse</span> <span class="k">import</span> <span class="n">parsers</span>
+
+<span class="kn">from</span> <span class="nn">..statistics.core</span> <span class="k">import</span> <span class="n">StatsError</span>
+
+<span class="kn">from</span> <span class="nn">..</span> <span class="k">import</span> <span class="n">analysis</span>
+<span class="kn">from</span> <span class="nn">..</span> <span class="k">import</span> <span class="n">subscribers</span>
+<span class="kn">from</span> <span class="nn">..</span> <span class="k">import</span> <span class="n">modelspec</span> <span class="k">as</span> <span class="n">spec</span>
+<span class="kn">from</span> <span class="nn">..phenotypes.dummy</span> <span class="k">import</span> <span class="n">_DummyPhenotypes</span>
+
+
+<span class="n">__copyright__</span> <span class="o">=</span> <span class="s2">&quot;Copyright 2016, Beaulieu-Saucier Pharmacogenomics Centre&quot;</span>
+<span class="n">__license__</span> <span class="o">=</span> <span class="s2">&quot;Attribution-NonCommercial 4.0 International (CC BY-NC 4.0)&quot;</span>
+
+
+<div class="viewcode-block" id="TestStatsCoxPH"><a class="viewcode-back" href="../../../module_content/genetest.tests.html#genetest.tests.test_coxph.TestStatsCoxPH">[docs]</a><span class="k">class</span> <span class="nc">TestStatsCoxPH</span><span class="p">(</span><span class="n">unittest</span><span class="o">.</span><span class="n">TestCase</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Tests the &#39;StatsCoxPH&#39; class.&quot;&quot;&quot;</span>
+<div class="viewcode-block" id="TestStatsCoxPH.setUpClass"><a class="viewcode-back" href="../../../module_content/genetest.tests.html#genetest.tests.test_coxph.TestStatsCoxPH.setUpClass">[docs]</a>    <span class="nd">@classmethod</span>
+    <span class="k">def</span> <span class="nf">setUpClass</span><span class="p">(</span><span class="bp">cls</span><span class="p">):</span>
+        <span class="c1"># Loading the data</span>
+        <span class="n">data</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">read_csv</span><span class="p">(</span>
+            <span class="n">resource_filename</span><span class="p">(</span><span class="vm">__name__</span><span class="p">,</span> <span class="s2">&quot;data/statistics/coxph.txt.bz2&quot;</span><span class="p">),</span>
+            <span class="n">sep</span><span class="o">=</span><span class="s2">&quot;</span><span class="se">\t</span><span class="s2">&quot;</span><span class="p">,</span>
+            <span class="n">compression</span><span class="o">=</span><span class="s2">&quot;bz2&quot;</span><span class="p">,</span>
+        <span class="p">)</span>
+
+        <span class="c1"># Creating the index</span>
+        <span class="n">data</span><span class="p">[</span><span class="s2">&quot;sample&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="p">[</span>
+            <span class="s2">&quot;s</span><span class="si">{}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">i</span><span class="o">+</span><span class="mi">1</span><span class="p">)</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">data</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
+        <span class="p">]</span>
+        <span class="n">data</span> <span class="o">=</span> <span class="n">data</span><span class="o">.</span><span class="n">set_index</span><span class="p">(</span><span class="s2">&quot;sample&quot;</span><span class="p">)</span>
+
+        <span class="c1"># Creating the dummy phenotype container</span>
+        <span class="bp">cls</span><span class="o">.</span><span class="n">phenotypes</span> <span class="o">=</span> <span class="n">_DummyPhenotypes</span><span class="p">()</span>
+        <span class="bp">cls</span><span class="o">.</span><span class="n">phenotypes</span><span class="o">.</span><span class="n">data</span> <span class="o">=</span> <span class="n">data</span><span class="o">.</span><span class="n">drop</span><span class="p">(</span>
+            <span class="p">[</span><span class="s2">&quot;snp</span><span class="si">{}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">i</span><span class="o">+</span><span class="mi">1</span><span class="p">)</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">4</span><span class="p">)],</span>
+            <span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span>
+        <span class="p">)</span>
+
+        <span class="c1"># Permuting the sample to add a bit of randomness</span>
+        <span class="n">new_sample_order</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">permutation</span><span class="p">(</span><span class="n">data</span><span class="o">.</span><span class="n">index</span><span class="p">)</span>
+
+        <span class="c1"># Creating the genotypes data frame</span>
+        <span class="n">genotypes</span> <span class="o">=</span> <span class="n">data</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span>
+            <span class="n">new_sample_order</span><span class="p">,</span>
+            <span class="p">[</span><span class="n">_</span> <span class="k">for</span> <span class="n">_</span> <span class="ow">in</span> <span class="n">data</span><span class="o">.</span><span class="n">columns</span> <span class="k">if</span> <span class="n">_</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="s2">&quot;snp&quot;</span><span class="p">)],</span>
+        <span class="p">]</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
+
+        <span class="c1"># Creating the mapping information</span>
+        <span class="n">map_info</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">(</span>
+            <span class="p">{</span><span class="s2">&quot;chrom&quot;</span><span class="p">:</span> <span class="p">[</span><span class="mi">3</span><span class="p">,</span> <span class="mi">3</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">1</span><span class="p">],</span>
+             <span class="s2">&quot;pos&quot;</span><span class="p">:</span> <span class="p">[</span><span class="mi">1234</span><span class="p">,</span> <span class="mi">9618</span><span class="p">,</span> <span class="mi">1519</span><span class="p">,</span> <span class="mi">5871</span><span class="p">],</span>
+             <span class="s2">&quot;a1&quot;</span><span class="p">:</span> <span class="p">[</span><span class="s2">&quot;T&quot;</span><span class="p">,</span> <span class="s2">&quot;C&quot;</span><span class="p">,</span> <span class="s2">&quot;G&quot;</span><span class="p">,</span> <span class="s2">&quot;G&quot;</span><span class="p">],</span>
+             <span class="s2">&quot;a2&quot;</span><span class="p">:</span> <span class="p">[</span><span class="s2">&quot;C&quot;</span><span class="p">,</span> <span class="s2">&quot;A&quot;</span><span class="p">,</span> <span class="s2">&quot;T&quot;</span><span class="p">,</span> <span class="s2">&quot;A&quot;</span><span class="p">]},</span>
+            <span class="n">index</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;snp1&quot;</span><span class="p">,</span> <span class="s2">&quot;snp2&quot;</span><span class="p">,</span> <span class="s2">&quot;snp3&quot;</span><span class="p">,</span> <span class="s2">&quot;snp4&quot;</span><span class="p">],</span>
+        <span class="p">)</span>
+
+        <span class="c1"># Creating the genotype parser</span>
+        <span class="bp">cls</span><span class="o">.</span><span class="n">genotypes</span> <span class="o">=</span> <span class="n">parsers</span><span class="p">[</span><span class="s2">&quot;dataframe&quot;</span><span class="p">](</span>
+            <span class="n">dataframe</span><span class="o">=</span><span class="n">genotypes</span><span class="p">,</span>
+            <span class="n">map_info</span><span class="o">=</span><span class="n">map_info</span><span class="p">,</span>
+        <span class="p">)</span>
+
+        <span class="c1"># Creating a temporary directory for the analysis</span>
+        <span class="bp">cls</span><span class="o">.</span><span class="n">tmp_dir</span> <span class="o">=</span> <span class="n">TemporaryDirectory</span><span class="p">(</span><span class="n">prefix</span><span class="o">=</span><span class="s2">&quot;genetest_test_coxph_&quot;</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="TestStatsCoxPH.setUp"><a class="viewcode-back" href="../../../module_content/genetest.tests.html#genetest.tests.test_coxph.TestStatsCoxPH.setUp">[docs]</a>    <span class="k">def</span> <span class="nf">setUp</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="c1"># Resetting the model specification</span>
+        <span class="n">spec</span><span class="o">.</span><span class="n">_reset</span><span class="p">()</span>
+
+        <span class="c1"># Reordering the columns and the rows of the phenotype data frame</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">phenotypes</span><span class="o">.</span><span class="n">data</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">phenotypes</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">iloc</span><span class="p">[</span>
+            <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">permutation</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">phenotypes</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]),</span>
+            <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">permutation</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">phenotypes</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">1</span><span class="p">])</span>
+        <span class="p">]</span></div>
+
+<div class="viewcode-block" id="TestStatsCoxPH.tearDownClass"><a class="viewcode-back" href="../../../module_content/genetest.tests.html#genetest.tests.test_coxph.TestStatsCoxPH.tearDownClass">[docs]</a>    <span class="nd">@classmethod</span>
+    <span class="k">def</span> <span class="nf">tearDownClass</span><span class="p">(</span><span class="bp">cls</span><span class="p">):</span>
+        <span class="c1"># Cleaning the temporary directory</span>
+        <span class="bp">cls</span><span class="o">.</span><span class="n">tmp_dir</span><span class="o">.</span><span class="n">cleanup</span><span class="p">()</span></div>
+
+<div class="viewcode-block" id="TestStatsCoxPH.test_coxph_gwas"><a class="viewcode-back" href="../../../module_content/genetest.tests.html#genetest.tests.test_coxph.TestStatsCoxPH.test_coxph_gwas">[docs]</a>    <span class="k">def</span> <span class="nf">test_coxph_gwas</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Tests coxph regression for GWAS.&quot;&quot;&quot;</span>
+        <span class="c1"># The variables which are factors</span>
+        <span class="n">gender</span> <span class="o">=</span> <span class="n">spec</span><span class="o">.</span><span class="n">factor</span><span class="p">(</span><span class="n">spec</span><span class="o">.</span><span class="n">phenotypes</span><span class="o">.</span><span class="n">gender</span><span class="p">)</span>
+
+        <span class="c1"># Creating the model specification</span>
+        <span class="n">modelspec</span> <span class="o">=</span> <span class="n">spec</span><span class="o">.</span><span class="n">ModelSpec</span><span class="p">(</span>
+            <span class="n">outcome</span><span class="o">=</span><span class="nb">dict</span><span class="p">(</span><span class="n">tte</span><span class="o">=</span><span class="n">spec</span><span class="o">.</span><span class="n">phenotypes</span><span class="o">.</span><span class="n">tte</span><span class="p">,</span> <span class="n">event</span><span class="o">=</span><span class="n">spec</span><span class="o">.</span><span class="n">phenotypes</span><span class="o">.</span><span class="n">event</span><span class="p">),</span>
+            <span class="n">predictors</span><span class="o">=</span><span class="p">[</span><span class="n">spec</span><span class="o">.</span><span class="n">SNPs</span><span class="p">,</span> <span class="n">spec</span><span class="o">.</span><span class="n">phenotypes</span><span class="o">.</span><span class="n">age</span><span class="p">,</span>
+                        <span class="n">spec</span><span class="o">.</span><span class="n">phenotypes</span><span class="o">.</span><span class="n">var1</span><span class="p">,</span> <span class="n">gender</span><span class="p">],</span>
+            <span class="n">test</span><span class="o">=</span><span class="s2">&quot;coxph&quot;</span><span class="p">,</span>
+        <span class="p">)</span>
+
+        <span class="c1"># The output prefix</span>
+        <span class="n">out_prefix</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">tmp_dir</span><span class="o">.</span><span class="n">name</span><span class="p">,</span> <span class="s2">&quot;results&quot;</span><span class="p">)</span>
+
+        <span class="c1"># Performing the analysis and retrieving the results</span>
+        <span class="n">subscriber</span> <span class="o">=</span> <span class="n">subscribers</span><span class="o">.</span><span class="n">ResultsMemory</span><span class="p">()</span>
+        <span class="n">analysis</span><span class="o">.</span><span class="n">execute</span><span class="p">(</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">phenotypes</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">genotypes</span><span class="p">,</span> <span class="n">modelspec</span><span class="p">,</span>
+            <span class="n">subscribers</span><span class="o">=</span><span class="p">[</span><span class="n">subscriber</span><span class="p">],</span> <span class="n">output_prefix</span><span class="o">=</span><span class="n">out_prefix</span><span class="p">,</span>
+        <span class="p">)</span>
+        <span class="n">gwas_results</span> <span class="o">=</span> <span class="n">subscriber</span><span class="o">.</span><span class="n">_get_gwas_results</span><span class="p">()</span>
+
+        <span class="c1"># Checking the number of results (should be 3)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">assertEqual</span><span class="p">(</span><span class="mi">3</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="n">gwas_results</span><span class="o">.</span><span class="n">keys</span><span class="p">()))</span>
+
+        <span class="c1"># Checking the first marker (snp1)</span>
+        <span class="n">results</span> <span class="o">=</span> <span class="n">gwas_results</span><span class="p">[</span><span class="s2">&quot;snp1&quot;</span><span class="p">]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">assertEqual</span><span class="p">(</span><span class="s2">&quot;snp1&quot;</span><span class="p">,</span> <span class="n">results</span><span class="p">[</span><span class="s2">&quot;SNPs&quot;</span><span class="p">][</span><span class="s2">&quot;name&quot;</span><span class="p">])</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">assertEqual</span><span class="p">(</span><span class="s2">&quot;3&quot;</span><span class="p">,</span> <span class="n">results</span><span class="p">[</span><span class="s2">&quot;SNPs&quot;</span><span class="p">][</span><span class="s2">&quot;chrom&quot;</span><span class="p">])</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">assertEqual</span><span class="p">(</span><span class="mi">1234</span><span class="p">,</span> <span class="n">results</span><span class="p">[</span><span class="s2">&quot;SNPs&quot;</span><span class="p">][</span><span class="s2">&quot;pos&quot;</span><span class="p">])</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">assertEqual</span><span class="p">(</span><span class="s2">&quot;C&quot;</span><span class="p">,</span> <span class="n">results</span><span class="p">[</span><span class="s2">&quot;SNPs&quot;</span><span class="p">][</span><span class="s2">&quot;minor&quot;</span><span class="p">])</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">assertEqual</span><span class="p">(</span><span class="s2">&quot;T&quot;</span><span class="p">,</span> <span class="n">results</span><span class="p">[</span><span class="s2">&quot;SNPs&quot;</span><span class="p">][</span><span class="s2">&quot;major&quot;</span><span class="p">])</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">assertAlmostEqual</span><span class="p">(</span><span class="mf">0.48162903225806442</span><span class="p">,</span> <span class="n">results</span><span class="p">[</span><span class="s2">&quot;SNPs&quot;</span><span class="p">][</span><span class="s2">&quot;maf&quot;</span><span class="p">])</span>
+
+        <span class="c1"># Checking the results (according to R)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">assertAlmostEqual</span><span class="p">(</span><span class="mf">3.49824157323489571</span><span class="p">,</span> <span class="n">results</span><span class="p">[</span><span class="s2">&quot;SNPs&quot;</span><span class="p">][</span><span class="s2">&quot;coef&quot;</span><span class="p">])</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">assertAlmostEqual</span><span class="p">(</span><span class="mf">1.05744964734605418</span><span class="p">,</span> <span class="n">results</span><span class="p">[</span><span class="s2">&quot;SNPs&quot;</span><span class="p">][</span><span class="s2">&quot;std_err&quot;</span><span class="p">])</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">assertAlmostEqual</span><span class="p">(</span><span class="mf">33.0572720291935767</span><span class="p">,</span> <span class="n">results</span><span class="p">[</span><span class="s2">&quot;SNPs&quot;</span><span class="p">][</span><span class="s2">&quot;hr&quot;</span><span class="p">])</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">assertAlmostEqual</span><span class="p">(</span><span class="mf">4.1606792782002913</span><span class="p">,</span>
+                               <span class="n">results</span><span class="p">[</span><span class="s2">&quot;SNPs&quot;</span><span class="p">][</span><span class="s2">&quot;hr_lower_ci&quot;</span><span class="p">])</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">assertAlmostEqual</span><span class="p">(</span><span class="mf">262.645390558627525</span><span class="p">,</span>
+                               <span class="n">results</span><span class="p">[</span><span class="s2">&quot;SNPs&quot;</span><span class="p">][</span><span class="s2">&quot;hr_upper_ci&quot;</span><span class="p">])</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">assertAlmostEqual</span><span class="p">(</span><span class="mf">3.3081873751763462</span><span class="p">,</span> <span class="n">results</span><span class="p">[</span><span class="s2">&quot;SNPs&quot;</span><span class="p">][</span><span class="s2">&quot;z_value&quot;</span><span class="p">])</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">assertAlmostEqual</span><span class="p">(</span><span class="o">-</span><span class="n">np</span><span class="o">.</span><span class="n">log10</span><span class="p">(</span><span class="mf">0.0009390195967453607</span><span class="p">),</span>
+                               <span class="o">-</span><span class="n">np</span><span class="o">.</span><span class="n">log10</span><span class="p">(</span><span class="n">results</span><span class="p">[</span><span class="s2">&quot;SNPs&quot;</span><span class="p">][</span><span class="s2">&quot;p_value&quot;</span><span class="p">]))</span>
+
+        <span class="c1"># Checking the second marker (snp2)</span>
+        <span class="n">results</span> <span class="o">=</span> <span class="n">gwas_results</span><span class="p">[</span><span class="s2">&quot;snp2&quot;</span><span class="p">]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">assertEqual</span><span class="p">(</span><span class="s2">&quot;snp2&quot;</span><span class="p">,</span> <span class="n">results</span><span class="p">[</span><span class="s2">&quot;SNPs&quot;</span><span class="p">][</span><span class="s2">&quot;name&quot;</span><span class="p">])</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">assertEqual</span><span class="p">(</span><span class="s2">&quot;3&quot;</span><span class="p">,</span> <span class="n">results</span><span class="p">[</span><span class="s2">&quot;SNPs&quot;</span><span class="p">][</span><span class="s2">&quot;chrom&quot;</span><span class="p">])</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">assertEqual</span><span class="p">(</span><span class="mi">9618</span><span class="p">,</span> <span class="n">results</span><span class="p">[</span><span class="s2">&quot;SNPs&quot;</span><span class="p">][</span><span class="s2">&quot;pos&quot;</span><span class="p">])</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">assertEqual</span><span class="p">(</span><span class="s2">&quot;C&quot;</span><span class="p">,</span> <span class="n">results</span><span class="p">[</span><span class="s2">&quot;SNPs&quot;</span><span class="p">][</span><span class="s2">&quot;minor&quot;</span><span class="p">])</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">assertEqual</span><span class="p">(</span><span class="s2">&quot;A&quot;</span><span class="p">,</span> <span class="n">results</span><span class="p">[</span><span class="s2">&quot;SNPs&quot;</span><span class="p">][</span><span class="s2">&quot;major&quot;</span><span class="p">])</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">assertAlmostEqual</span><span class="p">(</span><span class="mf">0.40833333333333333</span><span class="p">,</span> <span class="n">results</span><span class="p">[</span><span class="s2">&quot;SNPs&quot;</span><span class="p">][</span><span class="s2">&quot;maf&quot;</span><span class="p">])</span>
+
+        <span class="c1"># Checking the results (according to R)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">assertAlmostEqual</span><span class="p">(</span><span class="mf">1.13120383793364998</span><span class="p">,</span> <span class="n">results</span><span class="p">[</span><span class="s2">&quot;SNPs&quot;</span><span class="p">][</span><span class="s2">&quot;coef&quot;</span><span class="p">])</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">assertAlmostEqual</span><span class="p">(</span><span class="mf">0.30473046375826845</span><span class="p">,</span> <span class="n">results</span><span class="p">[</span><span class="s2">&quot;SNPs&quot;</span><span class="p">][</span><span class="s2">&quot;std_err&quot;</span><span class="p">])</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">assertAlmostEqual</span><span class="p">(</span><span class="mf">3.0993854129021017</span><span class="p">,</span> <span class="n">results</span><span class="p">[</span><span class="s2">&quot;SNPs&quot;</span><span class="p">][</span><span class="s2">&quot;hr&quot;</span><span class="p">])</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">assertAlmostEqual</span><span class="p">(</span><span class="mf">1.7056446002934191</span><span class="p">,</span>
+                               <span class="n">results</span><span class="p">[</span><span class="s2">&quot;SNPs&quot;</span><span class="p">][</span><span class="s2">&quot;hr_lower_ci&quot;</span><span class="p">])</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">assertAlmostEqual</span><span class="p">(</span><span class="mf">5.631999735500465</span><span class="p">,</span>
+                               <span class="n">results</span><span class="p">[</span><span class="s2">&quot;SNPs&quot;</span><span class="p">][</span><span class="s2">&quot;hr_upper_ci&quot;</span><span class="p">])</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">assertAlmostEqual</span><span class="p">(</span><span class="mf">3.7121455596608572</span><span class="p">,</span> <span class="n">results</span><span class="p">[</span><span class="s2">&quot;SNPs&quot;</span><span class="p">][</span><span class="s2">&quot;z_value&quot;</span><span class="p">])</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">assertAlmostEqual</span><span class="p">(</span><span class="o">-</span><span class="n">np</span><span class="o">.</span><span class="n">log10</span><span class="p">(</span><span class="mf">0.000205509736523446</span><span class="p">),</span>
+                               <span class="o">-</span><span class="n">np</span><span class="o">.</span><span class="n">log10</span><span class="p">(</span><span class="n">results</span><span class="p">[</span><span class="s2">&quot;SNPs&quot;</span><span class="p">][</span><span class="s2">&quot;p_value&quot;</span><span class="p">]))</span>
+
+        <span class="c1"># Checking the third marker (snp3)</span>
+        <span class="n">results</span> <span class="o">=</span> <span class="n">gwas_results</span><span class="p">[</span><span class="s2">&quot;snp3&quot;</span><span class="p">]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">assertEqual</span><span class="p">(</span><span class="s2">&quot;snp3&quot;</span><span class="p">,</span> <span class="n">results</span><span class="p">[</span><span class="s2">&quot;SNPs&quot;</span><span class="p">][</span><span class="s2">&quot;name&quot;</span><span class="p">])</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">assertEqual</span><span class="p">(</span><span class="s2">&quot;2&quot;</span><span class="p">,</span> <span class="n">results</span><span class="p">[</span><span class="s2">&quot;SNPs&quot;</span><span class="p">][</span><span class="s2">&quot;chrom&quot;</span><span class="p">])</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">assertEqual</span><span class="p">(</span><span class="mi">1519</span><span class="p">,</span> <span class="n">results</span><span class="p">[</span><span class="s2">&quot;SNPs&quot;</span><span class="p">][</span><span class="s2">&quot;pos&quot;</span><span class="p">])</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">assertEqual</span><span class="p">(</span><span class="s2">&quot;G&quot;</span><span class="p">,</span> <span class="n">results</span><span class="p">[</span><span class="s2">&quot;SNPs&quot;</span><span class="p">][</span><span class="s2">&quot;minor&quot;</span><span class="p">])</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">assertEqual</span><span class="p">(</span><span class="s2">&quot;T&quot;</span><span class="p">,</span> <span class="n">results</span><span class="p">[</span><span class="s2">&quot;SNPs&quot;</span><span class="p">][</span><span class="s2">&quot;major&quot;</span><span class="p">])</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">assertAlmostEqual</span><span class="p">(</span><span class="mf">0.20833333333333334</span><span class="p">,</span> <span class="n">results</span><span class="p">[</span><span class="s2">&quot;SNPs&quot;</span><span class="p">][</span><span class="s2">&quot;maf&quot;</span><span class="p">])</span>
+
+        <span class="c1"># Checking the results (according to R)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">assertAlmostEqual</span><span class="p">(</span><span class="o">-</span><span class="mf">0.0069461317578822582</span><span class="p">,</span> <span class="n">results</span><span class="p">[</span><span class="s2">&quot;SNPs&quot;</span><span class="p">][</span><span class="s2">&quot;coef&quot;</span><span class="p">])</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">assertAlmostEqual</span><span class="p">(</span><span class="mf">0.39831755948730113</span><span class="p">,</span> <span class="n">results</span><span class="p">[</span><span class="s2">&quot;SNPs&quot;</span><span class="p">][</span><span class="s2">&quot;std_err&quot;</span><span class="p">])</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">assertAlmostEqual</span><span class="p">(</span><span class="mf">0.9930779368551547</span><span class="p">,</span> <span class="n">results</span><span class="p">[</span><span class="s2">&quot;SNPs&quot;</span><span class="p">][</span><span class="s2">&quot;hr&quot;</span><span class="p">])</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">assertAlmostEqual</span><span class="p">(</span><span class="mf">0.4549197711311750</span><span class="p">,</span>
+                               <span class="n">results</span><span class="p">[</span><span class="s2">&quot;SNPs&quot;</span><span class="p">][</span><span class="s2">&quot;hr_lower_ci&quot;</span><span class="p">])</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">assertAlmostEqual</span><span class="p">(</span><span class="mf">2.167863107413991</span><span class="p">,</span>
+                               <span class="n">results</span><span class="p">[</span><span class="s2">&quot;SNPs&quot;</span><span class="p">][</span><span class="s2">&quot;hr_upper_ci&quot;</span><span class="p">])</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">assertAlmostEqual</span><span class="p">(</span><span class="o">-</span><span class="mf">0.01743867824160966</span><span class="p">,</span>
+                               <span class="n">results</span><span class="p">[</span><span class="s2">&quot;SNPs&quot;</span><span class="p">][</span><span class="s2">&quot;z_value&quot;</span><span class="p">])</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">assertAlmostEqual</span><span class="p">(</span><span class="mf">0.9860866530659741</span><span class="p">,</span> <span class="n">results</span><span class="p">[</span><span class="s2">&quot;SNPs&quot;</span><span class="p">][</span><span class="s2">&quot;p_value&quot;</span><span class="p">])</span>
+
+        <span class="c1"># There should be a file for the failed snp4</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">assertTrue</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">isfile</span><span class="p">(</span><span class="n">out_prefix</span> <span class="o">+</span> <span class="s2">&quot;_failed_snps.txt&quot;</span><span class="p">))</span>
+        <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">out_prefix</span> <span class="o">+</span> <span class="s2">&quot;_failed_snps.txt&quot;</span><span class="p">)</span> <span class="k">as</span> <span class="n">f</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">assertEqual</span><span class="p">(</span>
+                <span class="p">[[</span><span class="s2">&quot;snp4&quot;</span><span class="p">,</span> <span class="s2">&quot;Singular matrix&quot;</span><span class="p">]],</span>
+                <span class="p">[</span><span class="n">line</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s2">&quot;</span><span class="se">\t</span><span class="s2">&quot;</span><span class="p">)</span> <span class="k">for</span> <span class="n">line</span> <span class="ow">in</span> <span class="n">f</span><span class="o">.</span><span class="n">read</span><span class="p">()</span><span class="o">.</span><span class="n">splitlines</span><span class="p">()],</span>
+            <span class="p">)</span></div>
+
+<div class="viewcode-block" id="TestStatsCoxPH.test_coxph_gwas_inter"><a class="viewcode-back" href="../../../module_content/genetest.tests.html#genetest.tests.test_coxph.TestStatsCoxPH.test_coxph_gwas_inter">[docs]</a>    <span class="nd">@unittest</span><span class="o">.</span><span class="n">expectedFailure</span>
+    <span class="k">def</span> <span class="nf">test_coxph_gwas_inter</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Tests coxph regression for GWAS inter (failure: singular matrix).&quot;&quot;&quot;</span>
+        <span class="c1"># The variables which are factors</span>
+        <span class="n">gender</span> <span class="o">=</span> <span class="n">spec</span><span class="o">.</span><span class="n">factor</span><span class="p">(</span><span class="n">spec</span><span class="o">.</span><span class="n">phenotypes</span><span class="o">.</span><span class="n">gender</span><span class="p">)</span>
+
+        <span class="c1"># The interaction term</span>
+        <span class="n">inter</span> <span class="o">=</span> <span class="n">spec</span><span class="o">.</span><span class="n">interaction</span><span class="p">(</span><span class="n">spec</span><span class="o">.</span><span class="n">phenotypes</span><span class="o">.</span><span class="n">var1</span><span class="p">)</span>
+
+        <span class="c1"># Creating the model specification</span>
+        <span class="n">modelspec</span> <span class="o">=</span> <span class="n">spec</span><span class="o">.</span><span class="n">ModelSpec</span><span class="p">(</span>
+            <span class="n">outcome</span><span class="o">=</span><span class="nb">dict</span><span class="p">(</span><span class="n">tte</span><span class="o">=</span><span class="n">spec</span><span class="o">.</span><span class="n">phenotypes</span><span class="o">.</span><span class="n">tte</span><span class="p">,</span> <span class="n">event</span><span class="o">=</span><span class="n">spec</span><span class="o">.</span><span class="n">phenotypes</span><span class="o">.</span><span class="n">event</span><span class="p">),</span>
+            <span class="n">predictors</span><span class="o">=</span><span class="p">[</span><span class="n">spec</span><span class="o">.</span><span class="n">SNPs</span><span class="p">,</span> <span class="n">spec</span><span class="o">.</span><span class="n">phenotypes</span><span class="o">.</span><span class="n">age</span><span class="p">,</span>
+                        <span class="n">spec</span><span class="o">.</span><span class="n">phenotypes</span><span class="o">.</span><span class="n">var1</span><span class="p">,</span> <span class="n">gender</span><span class="p">,</span> <span class="n">inter</span><span class="p">],</span>
+            <span class="n">test</span><span class="o">=</span><span class="s2">&quot;coxph&quot;</span><span class="p">,</span>
+        <span class="p">)</span>
+
+        <span class="c1"># The output prefix</span>
+        <span class="n">out_prefix</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">tmp_dir</span><span class="o">.</span><span class="n">name</span><span class="p">,</span> <span class="s2">&quot;results&quot;</span><span class="p">)</span>
+
+        <span class="c1"># Performing the analysis and retrieving the results</span>
+        <span class="n">subscriber</span> <span class="o">=</span> <span class="n">subscribers</span><span class="o">.</span><span class="n">ResultsMemory</span><span class="p">()</span>
+        <span class="n">analysis</span><span class="o">.</span><span class="n">execute</span><span class="p">(</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">phenotypes</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">genotypes</span><span class="p">,</span> <span class="n">modelspec</span><span class="p">,</span>
+            <span class="n">subscribers</span><span class="o">=</span><span class="p">[</span><span class="n">subscriber</span><span class="p">],</span> <span class="n">output_prefix</span><span class="o">=</span><span class="n">out_prefix</span><span class="p">,</span>
+        <span class="p">)</span>
+        <span class="n">gwas_results</span> <span class="o">=</span> <span class="n">subscriber</span><span class="o">.</span><span class="n">_get_gwas_results</span><span class="p">()</span>
+
+        <span class="c1"># Checking the number of results (should be 3)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">assertEqual</span><span class="p">(</span><span class="mi">3</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="n">gwas_results</span><span class="o">.</span><span class="n">keys</span><span class="p">()))</span>
+
+        <span class="c1"># Checking the first marker (snp1)</span>
+        <span class="n">results</span> <span class="o">=</span> <span class="n">gwas_results</span><span class="p">[</span><span class="s2">&quot;snp1&quot;</span><span class="p">]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">assertEqual</span><span class="p">(</span><span class="s2">&quot;snp1&quot;</span><span class="p">,</span> <span class="n">results</span><span class="p">[</span><span class="s2">&quot;SNPs&quot;</span><span class="p">][</span><span class="s2">&quot;name&quot;</span><span class="p">])</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">assertEqual</span><span class="p">(</span><span class="s2">&quot;3&quot;</span><span class="p">,</span> <span class="n">results</span><span class="p">[</span><span class="s2">&quot;SNPs&quot;</span><span class="p">][</span><span class="s2">&quot;chrom&quot;</span><span class="p">])</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">assertEqual</span><span class="p">(</span><span class="mi">1234</span><span class="p">,</span> <span class="n">results</span><span class="p">[</span><span class="s2">&quot;SNPs&quot;</span><span class="p">][</span><span class="s2">&quot;pos&quot;</span><span class="p">])</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">assertEqual</span><span class="p">(</span><span class="s2">&quot;C&quot;</span><span class="p">,</span> <span class="n">results</span><span class="p">[</span><span class="s2">&quot;SNPs&quot;</span><span class="p">][</span><span class="s2">&quot;minor&quot;</span><span class="p">])</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">assertEqual</span><span class="p">(</span><span class="s2">&quot;T&quot;</span><span class="p">,</span> <span class="n">results</span><span class="p">[</span><span class="s2">&quot;SNPs&quot;</span><span class="p">][</span><span class="s2">&quot;major&quot;</span><span class="p">])</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">assertAlmostEqual</span><span class="p">(</span><span class="mf">0.48162903225806442</span><span class="p">,</span> <span class="n">results</span><span class="p">[</span><span class="s2">&quot;SNPs&quot;</span><span class="p">][</span><span class="s2">&quot;maf&quot;</span><span class="p">])</span>
+
+        <span class="c1"># Checking the results (according to R)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">assertAlmostEqual</span><span class="p">(</span><span class="o">-</span><span class="mf">0.04756704444017357</span><span class="p">,</span> <span class="n">results</span><span class="p">[</span><span class="n">inter</span><span class="o">.</span><span class="n">id</span><span class="p">][</span><span class="s2">&quot;coef&quot;</span><span class="p">],</span>
+                               <span class="n">places</span><span class="o">=</span><span class="mi">4</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">assertAlmostEqual</span><span class="p">(</span><span class="mf">0.06434818489300186</span><span class="p">,</span>
+                               <span class="n">results</span><span class="p">[</span><span class="n">inter</span><span class="o">.</span><span class="n">id</span><span class="p">][</span><span class="s2">&quot;std_err&quot;</span><span class="p">],</span> <span class="n">places</span><span class="o">=</span><span class="mi">5</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">assertAlmostEqual</span><span class="p">(</span><span class="mf">0.9535465409954826</span><span class="p">,</span> <span class="n">results</span><span class="p">[</span><span class="n">inter</span><span class="o">.</span><span class="n">id</span><span class="p">][</span><span class="s2">&quot;hr&quot;</span><span class="p">],</span>
+                               <span class="n">places</span><span class="o">=</span><span class="mi">4</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">assertAlmostEqual</span><span class="p">(</span><span class="mf">0.8405598094456039</span><span class="p">,</span>
+                               <span class="n">results</span><span class="p">[</span><span class="n">inter</span><span class="o">.</span><span class="n">id</span><span class="p">][</span><span class="s2">&quot;hr_lower_ci&quot;</span><span class="p">],</span> <span class="n">places</span><span class="o">=</span><span class="mi">4</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">assertAlmostEqual</span><span class="p">(</span><span class="mf">1.081720771831991</span><span class="p">,</span>
+                               <span class="n">results</span><span class="p">[</span><span class="n">inter</span><span class="o">.</span><span class="n">id</span><span class="p">][</span><span class="s2">&quot;hr_upper_ci&quot;</span><span class="p">],</span> <span class="n">places</span><span class="o">=</span><span class="mi">4</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">assertAlmostEqual</span><span class="p">(</span><span class="o">-</span><span class="mf">0.7392134606324645</span><span class="p">,</span>
+                               <span class="n">results</span><span class="p">[</span><span class="n">inter</span><span class="o">.</span><span class="n">id</span><span class="p">][</span><span class="s2">&quot;z_value&quot;</span><span class="p">],</span> <span class="n">places</span><span class="o">=</span><span class="mi">3</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">assertAlmostEqual</span><span class="p">(</span><span class="mf">0.45977738842863736</span><span class="p">,</span>
+                               <span class="n">results</span><span class="p">[</span><span class="n">inter</span><span class="o">.</span><span class="n">id</span><span class="p">][</span><span class="s2">&quot;p_value&quot;</span><span class="p">],</span> <span class="n">places</span><span class="o">=</span><span class="mi">3</span><span class="p">)</span>
+
+        <span class="c1"># Checking the second marker (snp2)</span>
+        <span class="n">results</span> <span class="o">=</span> <span class="n">gwas_results</span><span class="p">[</span><span class="s2">&quot;snp2&quot;</span><span class="p">]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">assertEqual</span><span class="p">(</span><span class="s2">&quot;snp2&quot;</span><span class="p">,</span> <span class="n">results</span><span class="p">[</span><span class="s2">&quot;SNPs&quot;</span><span class="p">][</span><span class="s2">&quot;name&quot;</span><span class="p">])</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">assertEqual</span><span class="p">(</span><span class="s2">&quot;3&quot;</span><span class="p">,</span> <span class="n">results</span><span class="p">[</span><span class="s2">&quot;SNPs&quot;</span><span class="p">][</span><span class="s2">&quot;chrom&quot;</span><span class="p">])</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">assertEqual</span><span class="p">(</span><span class="mi">9618</span><span class="p">,</span> <span class="n">results</span><span class="p">[</span><span class="s2">&quot;SNPs&quot;</span><span class="p">][</span><span class="s2">&quot;pos&quot;</span><span class="p">])</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">assertEqual</span><span class="p">(</span><span class="s2">&quot;C&quot;</span><span class="p">,</span> <span class="n">results</span><span class="p">[</span><span class="s2">&quot;SNPs&quot;</span><span class="p">][</span><span class="s2">&quot;minor&quot;</span><span class="p">])</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">assertEqual</span><span class="p">(</span><span class="s2">&quot;A&quot;</span><span class="p">,</span> <span class="n">results</span><span class="p">[</span><span class="s2">&quot;SNPs&quot;</span><span class="p">][</span><span class="s2">&quot;major&quot;</span><span class="p">])</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">assertAlmostEqual</span><span class="p">(</span><span class="mf">0.40833333333333333</span><span class="p">,</span> <span class="n">results</span><span class="p">[</span><span class="s2">&quot;SNPs&quot;</span><span class="p">][</span><span class="s2">&quot;maf&quot;</span><span class="p">])</span>
+
+        <span class="c1"># Checking the results (according to R)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">assertAlmostEqual</span><span class="p">(</span><span class="mf">0.01742308104178164</span><span class="p">,</span> <span class="n">results</span><span class="p">[</span><span class="n">inter</span><span class="o">.</span><span class="n">id</span><span class="p">][</span><span class="s2">&quot;coef&quot;</span><span class="p">])</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">assertAlmostEqual</span><span class="p">(</span><span class="mf">0.02219048572389944</span><span class="p">,</span>
+                               <span class="n">results</span><span class="p">[</span><span class="n">inter</span><span class="o">.</span><span class="n">id</span><span class="p">][</span><span class="s2">&quot;std_err&quot;</span><span class="p">])</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">assertAlmostEqual</span><span class="p">(</span><span class="mf">1.0175757482739625</span><span class="p">,</span> <span class="n">results</span><span class="p">[</span><span class="n">inter</span><span class="o">.</span><span class="n">id</span><span class="p">][</span><span class="s2">&quot;hr&quot;</span><span class="p">])</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">assertAlmostEqual</span><span class="p">(</span><span class="mf">0.9742674031703326</span><span class="p">,</span>
+                               <span class="n">results</span><span class="p">[</span><span class="n">inter</span><span class="o">.</span><span class="n">id</span><span class="p">][</span><span class="s2">&quot;hr_lower_ci&quot;</span><span class="p">])</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">assertAlmostEqual</span><span class="p">(</span><span class="mf">1.062809245291237</span><span class="p">,</span>
+                               <span class="n">results</span><span class="p">[</span><span class="n">inter</span><span class="o">.</span><span class="n">id</span><span class="p">][</span><span class="s2">&quot;hr_upper_ci&quot;</span><span class="p">])</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">assertAlmostEqual</span><span class="p">(</span><span class="mf">0.7851599671392845</span><span class="p">,</span>
+                               <span class="n">results</span><span class="p">[</span><span class="n">inter</span><span class="o">.</span><span class="n">id</span><span class="p">][</span><span class="s2">&quot;z_value&quot;</span><span class="p">])</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">assertAlmostEqual</span><span class="p">(</span><span class="mf">0.4323597838912484</span><span class="p">,</span>
+                               <span class="n">results</span><span class="p">[</span><span class="n">inter</span><span class="o">.</span><span class="n">id</span><span class="p">][</span><span class="s2">&quot;p_value&quot;</span><span class="p">])</span>
+
+        <span class="c1"># Checking the third marker (snp3)</span>
+        <span class="n">results</span> <span class="o">=</span> <span class="n">gwas_results</span><span class="p">[</span><span class="s2">&quot;snp3&quot;</span><span class="p">]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">assertEqual</span><span class="p">(</span><span class="s2">&quot;snp3&quot;</span><span class="p">,</span> <span class="n">results</span><span class="p">[</span><span class="s2">&quot;SNPs&quot;</span><span class="p">][</span><span class="s2">&quot;name&quot;</span><span class="p">])</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">assertEqual</span><span class="p">(</span><span class="s2">&quot;2&quot;</span><span class="p">,</span> <span class="n">results</span><span class="p">[</span><span class="s2">&quot;SNPs&quot;</span><span class="p">][</span><span class="s2">&quot;chrom&quot;</span><span class="p">])</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">assertEqual</span><span class="p">(</span><span class="mi">1519</span><span class="p">,</span> <span class="n">results</span><span class="p">[</span><span class="s2">&quot;SNPs&quot;</span><span class="p">][</span><span class="s2">&quot;pos&quot;</span><span class="p">])</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">assertEqual</span><span class="p">(</span><span class="s2">&quot;G&quot;</span><span class="p">,</span> <span class="n">results</span><span class="p">[</span><span class="s2">&quot;SNPs&quot;</span><span class="p">][</span><span class="s2">&quot;minor&quot;</span><span class="p">])</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">assertEqual</span><span class="p">(</span><span class="s2">&quot;T&quot;</span><span class="p">,</span> <span class="n">results</span><span class="p">[</span><span class="s2">&quot;SNPs&quot;</span><span class="p">][</span><span class="s2">&quot;major&quot;</span><span class="p">])</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">assertAlmostEqual</span><span class="p">(</span><span class="mf">0.20833333333333334</span><span class="p">,</span> <span class="n">results</span><span class="p">[</span><span class="s2">&quot;SNPs&quot;</span><span class="p">][</span><span class="s2">&quot;maf&quot;</span><span class="p">])</span>
+
+        <span class="c1"># Checking the results (according to R)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">assertAlmostEqual</span><span class="p">(</span><span class="mf">0.005873556606557682</span><span class="p">,</span> <span class="n">results</span><span class="p">[</span><span class="n">inter</span><span class="o">.</span><span class="n">id</span><span class="p">][</span><span class="s2">&quot;coef&quot;</span><span class="p">])</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">assertAlmostEqual</span><span class="p">(</span><span class="mf">0.03350856673847168</span><span class="p">,</span>
+                               <span class="n">results</span><span class="p">[</span><span class="n">inter</span><span class="o">.</span><span class="n">id</span><span class="p">][</span><span class="s2">&quot;std_err&quot;</span><span class="p">])</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">assertAlmostEqual</span><span class="p">(</span><span class="mf">1.0058908397614570</span><span class="p">,</span> <span class="n">results</span><span class="p">[</span><span class="n">inter</span><span class="o">.</span><span class="n">id</span><span class="p">][</span><span class="s2">&quot;hr&quot;</span><span class="p">])</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">assertAlmostEqual</span><span class="p">(</span><span class="mf">0.94195099563823814</span><span class="p">,</span>
+                               <span class="n">results</span><span class="p">[</span><span class="n">inter</span><span class="o">.</span><span class="n">id</span><span class="p">][</span><span class="s2">&quot;hr_lower_ci&quot;</span><span class="p">])</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">assertAlmostEqual</span><span class="p">(</span><span class="mf">1.074170934795214</span><span class="p">,</span>
+                               <span class="n">results</span><span class="p">[</span><span class="n">inter</span><span class="o">.</span><span class="n">id</span><span class="p">][</span><span class="s2">&quot;hr_upper_ci&quot;</span><span class="p">])</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">assertAlmostEqual</span><span class="p">(</span><span class="mf">0.17528522339972738</span><span class="p">,</span>
+                               <span class="n">results</span><span class="p">[</span><span class="n">inter</span><span class="o">.</span><span class="n">id</span><span class="p">][</span><span class="s2">&quot;z_value&quot;</span><span class="p">])</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">assertAlmostEqual</span><span class="p">(</span><span class="mf">0.8608555220369414</span><span class="p">,</span>
+                               <span class="n">results</span><span class="p">[</span><span class="n">inter</span><span class="o">.</span><span class="n">id</span><span class="p">][</span><span class="s2">&quot;p_value&quot;</span><span class="p">])</span>
+
+        <span class="c1"># There should be a file for the failed snp4</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">assertTrue</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">isfile</span><span class="p">(</span><span class="n">out_prefix</span> <span class="o">+</span> <span class="s2">&quot;_failed_snps.txt&quot;</span><span class="p">))</span>
+        <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">out_prefix</span> <span class="o">+</span> <span class="s2">&quot;_failed_snps.txt&quot;</span><span class="p">)</span> <span class="k">as</span> <span class="n">f</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">assertEqual</span><span class="p">(</span>
+                <span class="p">[[</span><span class="s2">&quot;snp4&quot;</span><span class="p">,</span> <span class="s2">&quot;Singular matrix&quot;</span><span class="p">]],</span>
+                <span class="p">[</span><span class="n">line</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s2">&quot;</span><span class="se">\t</span><span class="s2">&quot;</span><span class="p">)</span> <span class="k">for</span> <span class="n">line</span> <span class="ow">in</span> <span class="n">f</span><span class="o">.</span><span class="n">read</span><span class="p">()</span><span class="o">.</span><span class="n">splitlines</span><span class="p">()],</span>
+            <span class="p">)</span></div>
+
+<div class="viewcode-block" id="TestStatsCoxPH.test_coxph_snp1"><a class="viewcode-back" href="../../../module_content/genetest.tests.html#genetest.tests.test_coxph.TestStatsCoxPH.test_coxph_snp1">[docs]</a>    <span class="k">def</span> <span class="nf">test_coxph_snp1</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Tests coxph regression with the first SNP.&quot;&quot;&quot;</span>
+        <span class="c1"># The variables which are factors</span>
+        <span class="n">gender</span> <span class="o">=</span> <span class="n">spec</span><span class="o">.</span><span class="n">factor</span><span class="p">(</span><span class="n">spec</span><span class="o">.</span><span class="n">phenotypes</span><span class="o">.</span><span class="n">gender</span><span class="p">)</span>
+
+        <span class="c1"># Creating the model specification</span>
+        <span class="n">modelspec</span> <span class="o">=</span> <span class="n">spec</span><span class="o">.</span><span class="n">ModelSpec</span><span class="p">(</span>
+            <span class="n">outcome</span><span class="o">=</span><span class="nb">dict</span><span class="p">(</span><span class="n">tte</span><span class="o">=</span><span class="n">spec</span><span class="o">.</span><span class="n">phenotypes</span><span class="o">.</span><span class="n">tte</span><span class="p">,</span> <span class="n">event</span><span class="o">=</span><span class="n">spec</span><span class="o">.</span><span class="n">phenotypes</span><span class="o">.</span><span class="n">event</span><span class="p">),</span>
+            <span class="n">predictors</span><span class="o">=</span><span class="p">[</span><span class="n">spec</span><span class="o">.</span><span class="n">genotypes</span><span class="o">.</span><span class="n">snp1</span><span class="p">,</span> <span class="n">spec</span><span class="o">.</span><span class="n">phenotypes</span><span class="o">.</span><span class="n">age</span><span class="p">,</span>
+                        <span class="n">spec</span><span class="o">.</span><span class="n">phenotypes</span><span class="o">.</span><span class="n">var1</span><span class="p">,</span> <span class="n">gender</span><span class="p">],</span>
+            <span class="n">test</span><span class="o">=</span><span class="s2">&quot;coxph&quot;</span><span class="p">,</span>
+        <span class="p">)</span>
+
+        <span class="c1"># Performing the analysis and retrieving the results</span>
+        <span class="n">subscriber</span> <span class="o">=</span> <span class="n">subscribers</span><span class="o">.</span><span class="n">ResultsMemory</span><span class="p">()</span>
+        <span class="n">analysis</span><span class="o">.</span><span class="n">execute</span><span class="p">(</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">phenotypes</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">genotypes</span><span class="p">,</span> <span class="n">modelspec</span><span class="p">,</span>
+            <span class="n">subscribers</span><span class="o">=</span><span class="p">[</span><span class="n">subscriber</span><span class="p">],</span>
+        <span class="p">)</span>
+        <span class="n">results</span> <span class="o">=</span> <span class="n">subscriber</span><span class="o">.</span><span class="n">results</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+
+        <span class="c1"># Checking the marker information (it&#39;s a flip)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">assertEqual</span><span class="p">(</span><span class="s2">&quot;snp1&quot;</span><span class="p">,</span> <span class="n">results</span><span class="p">[</span><span class="s2">&quot;snp1&quot;</span><span class="p">][</span><span class="s2">&quot;name&quot;</span><span class="p">])</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">assertEqual</span><span class="p">(</span><span class="s2">&quot;3&quot;</span><span class="p">,</span> <span class="n">results</span><span class="p">[</span><span class="s2">&quot;snp1&quot;</span><span class="p">][</span><span class="s2">&quot;chrom&quot;</span><span class="p">])</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">assertEqual</span><span class="p">(</span><span class="mi">1234</span><span class="p">,</span> <span class="n">results</span><span class="p">[</span><span class="s2">&quot;snp1&quot;</span><span class="p">][</span><span class="s2">&quot;pos&quot;</span><span class="p">])</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">assertEqual</span><span class="p">(</span><span class="s2">&quot;C&quot;</span><span class="p">,</span> <span class="n">results</span><span class="p">[</span><span class="s2">&quot;snp1&quot;</span><span class="p">][</span><span class="s2">&quot;minor&quot;</span><span class="p">])</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">assertEqual</span><span class="p">(</span><span class="s2">&quot;T&quot;</span><span class="p">,</span> <span class="n">results</span><span class="p">[</span><span class="s2">&quot;snp1&quot;</span><span class="p">][</span><span class="s2">&quot;major&quot;</span><span class="p">])</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">assertAlmostEqual</span><span class="p">(</span><span class="mf">0.48162903225806442</span><span class="p">,</span> <span class="n">results</span><span class="p">[</span><span class="s2">&quot;snp1&quot;</span><span class="p">][</span><span class="s2">&quot;maf&quot;</span><span class="p">])</span>
+
+        <span class="c1"># Checking the results (according to R)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">assertAlmostEqual</span><span class="p">(</span><span class="mf">3.49824157323489571</span><span class="p">,</span> <span class="n">results</span><span class="p">[</span><span class="s2">&quot;snp1&quot;</span><span class="p">][</span><span class="s2">&quot;coef&quot;</span><span class="p">])</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">assertAlmostEqual</span><span class="p">(</span><span class="mf">1.05744964734605418</span><span class="p">,</span> <span class="n">results</span><span class="p">[</span><span class="s2">&quot;snp1&quot;</span><span class="p">][</span><span class="s2">&quot;std_err&quot;</span><span class="p">])</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">assertAlmostEqual</span><span class="p">(</span><span class="mf">33.0572720291935767</span><span class="p">,</span> <span class="n">results</span><span class="p">[</span><span class="s2">&quot;snp1&quot;</span><span class="p">][</span><span class="s2">&quot;hr&quot;</span><span class="p">])</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">assertAlmostEqual</span><span class="p">(</span><span class="mf">4.1606792782002913</span><span class="p">,</span>
+                               <span class="n">results</span><span class="p">[</span><span class="s2">&quot;snp1&quot;</span><span class="p">][</span><span class="s2">&quot;hr_lower_ci&quot;</span><span class="p">])</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">assertAlmostEqual</span><span class="p">(</span><span class="mf">262.645390558627525</span><span class="p">,</span>
+                               <span class="n">results</span><span class="p">[</span><span class="s2">&quot;snp1&quot;</span><span class="p">][</span><span class="s2">&quot;hr_upper_ci&quot;</span><span class="p">])</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">assertAlmostEqual</span><span class="p">(</span><span class="mf">3.3081873751763462</span><span class="p">,</span> <span class="n">results</span><span class="p">[</span><span class="s2">&quot;snp1&quot;</span><span class="p">][</span><span class="s2">&quot;z_value&quot;</span><span class="p">])</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">assertAlmostEqual</span><span class="p">(</span><span class="o">-</span><span class="n">np</span><span class="o">.</span><span class="n">log10</span><span class="p">(</span><span class="mf">0.0009390195967453607</span><span class="p">),</span>
+                               <span class="o">-</span><span class="n">np</span><span class="o">.</span><span class="n">log10</span><span class="p">(</span><span class="n">results</span><span class="p">[</span><span class="s2">&quot;snp1&quot;</span><span class="p">][</span><span class="s2">&quot;p_value&quot;</span><span class="p">]))</span></div>
+
+        <span class="c1"># TODO: Check the other predictors</span>
+
+<div class="viewcode-block" id="TestStatsCoxPH.test_coxph_snp1_inter"><a class="viewcode-back" href="../../../module_content/genetest.tests.html#genetest.tests.test_coxph.TestStatsCoxPH.test_coxph_snp1_inter">[docs]</a>    <span class="nd">@unittest</span><span class="o">.</span><span class="n">expectedFailure</span>
+    <span class="k">def</span> <span class="nf">test_coxph_snp1_inter</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Tests coxph regression with the first SNP (interaction).&quot;&quot;&quot;</span>
+        <span class="c1"># The variables which are factors</span>
+        <span class="n">gender</span> <span class="o">=</span> <span class="n">spec</span><span class="o">.</span><span class="n">factor</span><span class="p">(</span><span class="n">spec</span><span class="o">.</span><span class="n">phenotypes</span><span class="o">.</span><span class="n">gender</span><span class="p">)</span>
+
+        <span class="c1"># The interaction term</span>
+        <span class="n">inter</span> <span class="o">=</span> <span class="n">spec</span><span class="o">.</span><span class="n">interaction</span><span class="p">(</span><span class="n">spec</span><span class="o">.</span><span class="n">phenotypes</span><span class="o">.</span><span class="n">var1</span><span class="p">,</span> <span class="n">spec</span><span class="o">.</span><span class="n">genotypes</span><span class="o">.</span><span class="n">snp1</span><span class="p">)</span>
+
+        <span class="c1"># Creating the model specification</span>
+        <span class="n">modelspec</span> <span class="o">=</span> <span class="n">spec</span><span class="o">.</span><span class="n">ModelSpec</span><span class="p">(</span>
+            <span class="n">outcome</span><span class="o">=</span><span class="nb">dict</span><span class="p">(</span><span class="n">tte</span><span class="o">=</span><span class="n">spec</span><span class="o">.</span><span class="n">phenotypes</span><span class="o">.</span><span class="n">tte</span><span class="p">,</span> <span class="n">event</span><span class="o">=</span><span class="n">spec</span><span class="o">.</span><span class="n">phenotypes</span><span class="o">.</span><span class="n">event</span><span class="p">),</span>
+            <span class="n">predictors</span><span class="o">=</span><span class="p">[</span><span class="n">spec</span><span class="o">.</span><span class="n">genotypes</span><span class="o">.</span><span class="n">snp1</span><span class="p">,</span> <span class="n">spec</span><span class="o">.</span><span class="n">phenotypes</span><span class="o">.</span><span class="n">age</span><span class="p">,</span>
+                        <span class="n">spec</span><span class="o">.</span><span class="n">phenotypes</span><span class="o">.</span><span class="n">var1</span><span class="p">,</span> <span class="n">gender</span><span class="p">,</span> <span class="n">inter</span><span class="p">],</span>
+            <span class="n">test</span><span class="o">=</span><span class="s2">&quot;coxph&quot;</span><span class="p">,</span>
+        <span class="p">)</span>
+
+        <span class="c1"># Performing the analysis and retrieving the results</span>
+        <span class="n">subscriber</span> <span class="o">=</span> <span class="n">subscribers</span><span class="o">.</span><span class="n">ResultsMemory</span><span class="p">()</span>
+        <span class="n">analysis</span><span class="o">.</span><span class="n">execute</span><span class="p">(</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">phenotypes</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">genotypes</span><span class="p">,</span> <span class="n">modelspec</span><span class="p">,</span>
+            <span class="n">subscribers</span><span class="o">=</span><span class="p">[</span><span class="n">subscriber</span><span class="p">],</span>
+        <span class="p">)</span>
+        <span class="n">results</span> <span class="o">=</span> <span class="n">subscriber</span><span class="o">.</span><span class="n">results</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+
+        <span class="c1"># Checking the marker information (it&#39;s a flip)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">assertEqual</span><span class="p">(</span><span class="s2">&quot;snp1&quot;</span><span class="p">,</span> <span class="n">results</span><span class="p">[</span><span class="s2">&quot;snp1&quot;</span><span class="p">][</span><span class="s2">&quot;name&quot;</span><span class="p">])</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">assertEqual</span><span class="p">(</span><span class="s2">&quot;3&quot;</span><span class="p">,</span> <span class="n">results</span><span class="p">[</span><span class="s2">&quot;snp1&quot;</span><span class="p">][</span><span class="s2">&quot;chrom&quot;</span><span class="p">])</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">assertEqual</span><span class="p">(</span><span class="mi">1234</span><span class="p">,</span> <span class="n">results</span><span class="p">[</span><span class="s2">&quot;snp1&quot;</span><span class="p">][</span><span class="s2">&quot;pos&quot;</span><span class="p">])</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">assertEqual</span><span class="p">(</span><span class="s2">&quot;C&quot;</span><span class="p">,</span> <span class="n">results</span><span class="p">[</span><span class="s2">&quot;snp1&quot;</span><span class="p">][</span><span class="s2">&quot;minor&quot;</span><span class="p">])</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">assertEqual</span><span class="p">(</span><span class="s2">&quot;T&quot;</span><span class="p">,</span> <span class="n">results</span><span class="p">[</span><span class="s2">&quot;snp1&quot;</span><span class="p">][</span><span class="s2">&quot;major&quot;</span><span class="p">])</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">assertAlmostEqual</span><span class="p">(</span><span class="mf">0.48162903225806442</span><span class="p">,</span> <span class="n">results</span><span class="p">[</span><span class="s2">&quot;snp1&quot;</span><span class="p">][</span><span class="s2">&quot;maf&quot;</span><span class="p">])</span>
+
+        <span class="c1"># Checking the results (according to R)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">assertAlmostEqual</span><span class="p">(</span><span class="o">-</span><span class="mf">0.04756704444017357</span><span class="p">,</span> <span class="n">results</span><span class="p">[</span><span class="n">inter</span><span class="o">.</span><span class="n">id</span><span class="p">][</span><span class="s2">&quot;coef&quot;</span><span class="p">],</span>
+                               <span class="n">places</span><span class="o">=</span><span class="mi">4</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">assertAlmostEqual</span><span class="p">(</span><span class="mf">0.06434818489300186</span><span class="p">,</span>
+                               <span class="n">results</span><span class="p">[</span><span class="n">inter</span><span class="o">.</span><span class="n">id</span><span class="p">][</span><span class="s2">&quot;std_err&quot;</span><span class="p">],</span> <span class="n">places</span><span class="o">=</span><span class="mi">5</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">assertAlmostEqual</span><span class="p">(</span><span class="mf">0.9535465409954826</span><span class="p">,</span> <span class="n">results</span><span class="p">[</span><span class="n">inter</span><span class="o">.</span><span class="n">id</span><span class="p">][</span><span class="s2">&quot;hr&quot;</span><span class="p">],</span>
+                               <span class="n">places</span><span class="o">=</span><span class="mi">4</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">assertAlmostEqual</span><span class="p">(</span><span class="mf">0.8405598094456039</span><span class="p">,</span>
+                               <span class="n">results</span><span class="p">[</span><span class="n">inter</span><span class="o">.</span><span class="n">id</span><span class="p">][</span><span class="s2">&quot;hr_lower_ci&quot;</span><span class="p">],</span> <span class="n">places</span><span class="o">=</span><span class="mi">4</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">assertAlmostEqual</span><span class="p">(</span><span class="mf">1.081720771831991</span><span class="p">,</span>
+                               <span class="n">results</span><span class="p">[</span><span class="n">inter</span><span class="o">.</span><span class="n">id</span><span class="p">][</span><span class="s2">&quot;hr_upper_ci&quot;</span><span class="p">],</span> <span class="n">places</span><span class="o">=</span><span class="mi">4</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">assertAlmostEqual</span><span class="p">(</span><span class="o">-</span><span class="mf">0.7392134606324645</span><span class="p">,</span>
+                               <span class="n">results</span><span class="p">[</span><span class="n">inter</span><span class="o">.</span><span class="n">id</span><span class="p">][</span><span class="s2">&quot;z_value&quot;</span><span class="p">],</span> <span class="n">places</span><span class="o">=</span><span class="mi">3</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">assertAlmostEqual</span><span class="p">(</span><span class="mf">0.45977738842863736</span><span class="p">,</span>
+                               <span class="n">results</span><span class="p">[</span><span class="n">inter</span><span class="o">.</span><span class="n">id</span><span class="p">][</span><span class="s2">&quot;p_value&quot;</span><span class="p">],</span> <span class="n">places</span><span class="o">=</span><span class="mi">3</span><span class="p">)</span></div>
+
+        <span class="c1"># TODO: Check the other predictors</span>
+
+<div class="viewcode-block" id="TestStatsCoxPH.test_coxph_snp1_inter_categorical"><a class="viewcode-back" href="../../../module_content/genetest.tests.html#genetest.tests.test_coxph.TestStatsCoxPH.test_coxph_snp1_inter_categorical">[docs]</a>    <span class="k">def</span> <span class="nf">test_coxph_snp1_inter_categorical</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Tests coxph first SNP (interaction, category).&quot;&quot;&quot;</span>
+        <span class="c1"># The variables which are factors</span>
+        <span class="n">gender</span> <span class="o">=</span> <span class="n">spec</span><span class="o">.</span><span class="n">factor</span><span class="p">(</span><span class="n">spec</span><span class="o">.</span><span class="n">phenotypes</span><span class="o">.</span><span class="n">gender</span><span class="p">)</span>
+
+        <span class="c1"># The interaction term</span>
+        <span class="n">inter</span> <span class="o">=</span> <span class="n">spec</span><span class="o">.</span><span class="n">interaction</span><span class="p">(</span><span class="n">gender</span><span class="p">,</span> <span class="n">spec</span><span class="o">.</span><span class="n">genotypes</span><span class="o">.</span><span class="n">snp1</span><span class="p">)</span>
+
+        <span class="c1"># Creating the model specification</span>
+        <span class="n">modelspec</span> <span class="o">=</span> <span class="n">spec</span><span class="o">.</span><span class="n">ModelSpec</span><span class="p">(</span>
+            <span class="n">outcome</span><span class="o">=</span><span class="nb">dict</span><span class="p">(</span><span class="n">tte</span><span class="o">=</span><span class="n">spec</span><span class="o">.</span><span class="n">phenotypes</span><span class="o">.</span><span class="n">tte</span><span class="p">,</span> <span class="n">event</span><span class="o">=</span><span class="n">spec</span><span class="o">.</span><span class="n">phenotypes</span><span class="o">.</span><span class="n">event</span><span class="p">),</span>
+            <span class="n">predictors</span><span class="o">=</span><span class="p">[</span><span class="n">spec</span><span class="o">.</span><span class="n">genotypes</span><span class="o">.</span><span class="n">snp1</span><span class="p">,</span> <span class="n">spec</span><span class="o">.</span><span class="n">phenotypes</span><span class="o">.</span><span class="n">age</span><span class="p">,</span>
+                        <span class="n">spec</span><span class="o">.</span><span class="n">phenotypes</span><span class="o">.</span><span class="n">var1</span><span class="p">,</span> <span class="n">gender</span><span class="p">,</span> <span class="n">inter</span><span class="p">],</span>
+            <span class="n">test</span><span class="o">=</span><span class="s2">&quot;coxph&quot;</span><span class="p">,</span>
+        <span class="p">)</span>
+
+        <span class="c1"># Performing the analysis and retrieving the results</span>
+        <span class="n">subscriber</span> <span class="o">=</span> <span class="n">subscribers</span><span class="o">.</span><span class="n">ResultsMemory</span><span class="p">()</span>
+        <span class="n">analysis</span><span class="o">.</span><span class="n">execute</span><span class="p">(</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">phenotypes</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">genotypes</span><span class="p">,</span> <span class="n">modelspec</span><span class="p">,</span>
+            <span class="n">subscribers</span><span class="o">=</span><span class="p">[</span><span class="n">subscriber</span><span class="p">],</span>
+        <span class="p">)</span>
+        <span class="n">results</span> <span class="o">=</span> <span class="n">subscriber</span><span class="o">.</span><span class="n">results</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+
+        <span class="c1"># Checking the marker information (it&#39;s a flip)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">assertEqual</span><span class="p">(</span><span class="s2">&quot;snp1&quot;</span><span class="p">,</span> <span class="n">results</span><span class="p">[</span><span class="s2">&quot;snp1&quot;</span><span class="p">][</span><span class="s2">&quot;name&quot;</span><span class="p">])</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">assertEqual</span><span class="p">(</span><span class="s2">&quot;3&quot;</span><span class="p">,</span> <span class="n">results</span><span class="p">[</span><span class="s2">&quot;snp1&quot;</span><span class="p">][</span><span class="s2">&quot;chrom&quot;</span><span class="p">])</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">assertEqual</span><span class="p">(</span><span class="mi">1234</span><span class="p">,</span> <span class="n">results</span><span class="p">[</span><span class="s2">&quot;snp1&quot;</span><span class="p">][</span><span class="s2">&quot;pos&quot;</span><span class="p">])</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">assertEqual</span><span class="p">(</span><span class="s2">&quot;C&quot;</span><span class="p">,</span> <span class="n">results</span><span class="p">[</span><span class="s2">&quot;snp1&quot;</span><span class="p">][</span><span class="s2">&quot;minor&quot;</span><span class="p">])</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">assertEqual</span><span class="p">(</span><span class="s2">&quot;T&quot;</span><span class="p">,</span> <span class="n">results</span><span class="p">[</span><span class="s2">&quot;snp1&quot;</span><span class="p">][</span><span class="s2">&quot;major&quot;</span><span class="p">])</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">assertAlmostEqual</span><span class="p">(</span><span class="mf">0.48162903225806442</span><span class="p">,</span> <span class="n">results</span><span class="p">[</span><span class="s2">&quot;snp1&quot;</span><span class="p">][</span><span class="s2">&quot;maf&quot;</span><span class="p">])</span>
+
+        <span class="c1"># Checking the results (according to R)</span>
+        <span class="n">col</span> <span class="o">=</span> <span class="n">inter</span><span class="o">.</span><span class="n">id</span> <span class="o">+</span> <span class="s2">&quot;:level.2&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">assertAlmostEqual</span><span class="p">(</span><span class="mf">1.34436505435604148</span><span class="p">,</span> <span class="n">results</span><span class="p">[</span><span class="n">col</span><span class="p">][</span><span class="s2">&quot;coef&quot;</span><span class="p">])</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">assertAlmostEqual</span><span class="p">(</span><span class="mf">1.77319747152157015</span><span class="p">,</span> <span class="n">results</span><span class="p">[</span><span class="n">col</span><span class="p">][</span><span class="s2">&quot;std_err&quot;</span><span class="p">])</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">assertAlmostEqual</span><span class="p">(</span><span class="mf">3.8357502743054757</span><span class="p">,</span> <span class="n">results</span><span class="p">[</span><span class="n">col</span><span class="p">][</span><span class="s2">&quot;hr&quot;</span><span class="p">])</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">assertAlmostEqual</span><span class="p">(</span><span class="mf">0.118713989626776345</span><span class="p">,</span>
+                               <span class="n">results</span><span class="p">[</span><span class="n">col</span><span class="p">][</span><span class="s2">&quot;hr_lower_ci&quot;</span><span class="p">])</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">assertAlmostEqual</span><span class="p">(</span><span class="mf">123.936363465590887</span><span class="p">,</span>
+                               <span class="n">results</span><span class="p">[</span><span class="n">col</span><span class="p">][</span><span class="s2">&quot;hr_upper_ci&quot;</span><span class="p">],</span> <span class="n">places</span><span class="o">=</span><span class="mi">6</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">assertAlmostEqual</span><span class="p">(</span><span class="mf">0.7581586799819029</span><span class="p">,</span> <span class="n">results</span><span class="p">[</span><span class="n">col</span><span class="p">][</span><span class="s2">&quot;z_value&quot;</span><span class="p">])</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">assertAlmostEqual</span><span class="p">(</span><span class="mf">0.448355994218403997</span><span class="p">,</span> <span class="n">results</span><span class="p">[</span><span class="n">col</span><span class="p">][</span><span class="s2">&quot;p_value&quot;</span><span class="p">])</span></div>
+
+        <span class="c1"># TODO: Check the other predictors</span>
+
+<div class="viewcode-block" id="TestStatsCoxPH.test_coxph_snp2"><a class="viewcode-back" href="../../../module_content/genetest.tests.html#genetest.tests.test_coxph.TestStatsCoxPH.test_coxph_snp2">[docs]</a>    <span class="k">def</span> <span class="nf">test_coxph_snp2</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Tests coxph regression with the second SNP.&quot;&quot;&quot;</span>
+        <span class="c1"># The variables which are factors</span>
+        <span class="n">gender</span> <span class="o">=</span> <span class="n">spec</span><span class="o">.</span><span class="n">factor</span><span class="p">(</span><span class="n">spec</span><span class="o">.</span><span class="n">phenotypes</span><span class="o">.</span><span class="n">gender</span><span class="p">)</span>
+
+        <span class="c1"># Creating the model specification</span>
+        <span class="n">modelspec</span> <span class="o">=</span> <span class="n">spec</span><span class="o">.</span><span class="n">ModelSpec</span><span class="p">(</span>
+            <span class="n">outcome</span><span class="o">=</span><span class="nb">dict</span><span class="p">(</span><span class="n">tte</span><span class="o">=</span><span class="n">spec</span><span class="o">.</span><span class="n">phenotypes</span><span class="o">.</span><span class="n">tte</span><span class="p">,</span> <span class="n">event</span><span class="o">=</span><span class="n">spec</span><span class="o">.</span><span class="n">phenotypes</span><span class="o">.</span><span class="n">event</span><span class="p">),</span>
+            <span class="n">predictors</span><span class="o">=</span><span class="p">[</span><span class="n">spec</span><span class="o">.</span><span class="n">genotypes</span><span class="o">.</span><span class="n">snp2</span><span class="p">,</span> <span class="n">spec</span><span class="o">.</span><span class="n">phenotypes</span><span class="o">.</span><span class="n">age</span><span class="p">,</span>
+                        <span class="n">spec</span><span class="o">.</span><span class="n">phenotypes</span><span class="o">.</span><span class="n">var1</span><span class="p">,</span> <span class="n">gender</span><span class="p">],</span>
+            <span class="n">test</span><span class="o">=</span><span class="s2">&quot;coxph&quot;</span><span class="p">,</span>
+        <span class="p">)</span>
+
+        <span class="c1"># Performing the analysis and retrieving the results</span>
+        <span class="n">subscriber</span> <span class="o">=</span> <span class="n">subscribers</span><span class="o">.</span><span class="n">ResultsMemory</span><span class="p">()</span>
+        <span class="n">analysis</span><span class="o">.</span><span class="n">execute</span><span class="p">(</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">phenotypes</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">genotypes</span><span class="p">,</span> <span class="n">modelspec</span><span class="p">,</span>
+            <span class="n">subscribers</span><span class="o">=</span><span class="p">[</span><span class="n">subscriber</span><span class="p">],</span>
+        <span class="p">)</span>
+        <span class="n">results</span> <span class="o">=</span> <span class="n">subscriber</span><span class="o">.</span><span class="n">results</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+
+        <span class="c1"># Checking the marker information</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">assertEqual</span><span class="p">(</span><span class="s2">&quot;snp2&quot;</span><span class="p">,</span> <span class="n">results</span><span class="p">[</span><span class="s2">&quot;snp2&quot;</span><span class="p">][</span><span class="s2">&quot;name&quot;</span><span class="p">])</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">assertEqual</span><span class="p">(</span><span class="s2">&quot;3&quot;</span><span class="p">,</span> <span class="n">results</span><span class="p">[</span><span class="s2">&quot;snp2&quot;</span><span class="p">][</span><span class="s2">&quot;chrom&quot;</span><span class="p">])</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">assertEqual</span><span class="p">(</span><span class="mi">9618</span><span class="p">,</span> <span class="n">results</span><span class="p">[</span><span class="s2">&quot;snp2&quot;</span><span class="p">][</span><span class="s2">&quot;pos&quot;</span><span class="p">])</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">assertEqual</span><span class="p">(</span><span class="s2">&quot;C&quot;</span><span class="p">,</span> <span class="n">results</span><span class="p">[</span><span class="s2">&quot;snp2&quot;</span><span class="p">][</span><span class="s2">&quot;minor&quot;</span><span class="p">])</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">assertEqual</span><span class="p">(</span><span class="s2">&quot;A&quot;</span><span class="p">,</span> <span class="n">results</span><span class="p">[</span><span class="s2">&quot;snp2&quot;</span><span class="p">][</span><span class="s2">&quot;major&quot;</span><span class="p">])</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">assertAlmostEqual</span><span class="p">(</span><span class="mf">0.40833333333333333</span><span class="p">,</span> <span class="n">results</span><span class="p">[</span><span class="s2">&quot;snp2&quot;</span><span class="p">][</span><span class="s2">&quot;maf&quot;</span><span class="p">])</span>
+
+        <span class="c1"># Checking the results (according to R)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">assertAlmostEqual</span><span class="p">(</span><span class="mf">1.13120383793364998</span><span class="p">,</span> <span class="n">results</span><span class="p">[</span><span class="s2">&quot;snp2&quot;</span><span class="p">][</span><span class="s2">&quot;coef&quot;</span><span class="p">])</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">assertAlmostEqual</span><span class="p">(</span><span class="mf">0.30473046375826845</span><span class="p">,</span> <span class="n">results</span><span class="p">[</span><span class="s2">&quot;snp2&quot;</span><span class="p">][</span><span class="s2">&quot;std_err&quot;</span><span class="p">])</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">assertAlmostEqual</span><span class="p">(</span><span class="mf">3.0993854129021017</span><span class="p">,</span> <span class="n">results</span><span class="p">[</span><span class="s2">&quot;snp2&quot;</span><span class="p">][</span><span class="s2">&quot;hr&quot;</span><span class="p">])</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">assertAlmostEqual</span><span class="p">(</span><span class="mf">1.7056446002934191</span><span class="p">,</span>
+                               <span class="n">results</span><span class="p">[</span><span class="s2">&quot;snp2&quot;</span><span class="p">][</span><span class="s2">&quot;hr_lower_ci&quot;</span><span class="p">])</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">assertAlmostEqual</span><span class="p">(</span><span class="mf">5.631999735500465</span><span class="p">,</span>
+                               <span class="n">results</span><span class="p">[</span><span class="s2">&quot;snp2&quot;</span><span class="p">][</span><span class="s2">&quot;hr_upper_ci&quot;</span><span class="p">])</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">assertAlmostEqual</span><span class="p">(</span><span class="mf">3.7121455596608572</span><span class="p">,</span> <span class="n">results</span><span class="p">[</span><span class="s2">&quot;snp2&quot;</span><span class="p">][</span><span class="s2">&quot;z_value&quot;</span><span class="p">])</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">assertAlmostEqual</span><span class="p">(</span><span class="o">-</span><span class="n">np</span><span class="o">.</span><span class="n">log10</span><span class="p">(</span><span class="mf">0.000205509736523446</span><span class="p">),</span>
+                               <span class="o">-</span><span class="n">np</span><span class="o">.</span><span class="n">log10</span><span class="p">(</span><span class="n">results</span><span class="p">[</span><span class="s2">&quot;snp2&quot;</span><span class="p">][</span><span class="s2">&quot;p_value&quot;</span><span class="p">]))</span></div>
+
+        <span class="c1"># TODO: Check the other predictors</span>
+
+<div class="viewcode-block" id="TestStatsCoxPH.test_coxph_snp2_inter"><a class="viewcode-back" href="../../../module_content/genetest.tests.html#genetest.tests.test_coxph.TestStatsCoxPH.test_coxph_snp2_inter">[docs]</a>    <span class="k">def</span> <span class="nf">test_coxph_snp2_inter</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Tests coxph regression with the second SNP (interaction).&quot;&quot;&quot;</span>
+        <span class="c1"># The variables which are factors</span>
+        <span class="n">gender</span> <span class="o">=</span> <span class="n">spec</span><span class="o">.</span><span class="n">factor</span><span class="p">(</span><span class="n">spec</span><span class="o">.</span><span class="n">phenotypes</span><span class="o">.</span><span class="n">gender</span><span class="p">)</span>
+
+        <span class="c1"># The interaction term</span>
+        <span class="n">inter</span> <span class="o">=</span> <span class="n">spec</span><span class="o">.</span><span class="n">interaction</span><span class="p">(</span><span class="n">spec</span><span class="o">.</span><span class="n">phenotypes</span><span class="o">.</span><span class="n">var1</span><span class="p">,</span> <span class="n">spec</span><span class="o">.</span><span class="n">genotypes</span><span class="o">.</span><span class="n">snp2</span><span class="p">)</span>
+
+        <span class="c1"># Creating the model specification</span>
+        <span class="n">modelspec</span> <span class="o">=</span> <span class="n">spec</span><span class="o">.</span><span class="n">ModelSpec</span><span class="p">(</span>
+            <span class="n">outcome</span><span class="o">=</span><span class="nb">dict</span><span class="p">(</span><span class="n">tte</span><span class="o">=</span><span class="n">spec</span><span class="o">.</span><span class="n">phenotypes</span><span class="o">.</span><span class="n">tte</span><span class="p">,</span> <span class="n">event</span><span class="o">=</span><span class="n">spec</span><span class="o">.</span><span class="n">phenotypes</span><span class="o">.</span><span class="n">event</span><span class="p">),</span>
+            <span class="n">predictors</span><span class="o">=</span><span class="p">[</span><span class="n">spec</span><span class="o">.</span><span class="n">genotypes</span><span class="o">.</span><span class="n">snp2</span><span class="p">,</span> <span class="n">spec</span><span class="o">.</span><span class="n">phenotypes</span><span class="o">.</span><span class="n">age</span><span class="p">,</span>
+                        <span class="n">spec</span><span class="o">.</span><span class="n">phenotypes</span><span class="o">.</span><span class="n">var1</span><span class="p">,</span> <span class="n">gender</span><span class="p">,</span> <span class="n">inter</span><span class="p">],</span>
+            <span class="n">test</span><span class="o">=</span><span class="s2">&quot;coxph&quot;</span><span class="p">,</span>
+        <span class="p">)</span>
+
+        <span class="c1"># Performing the analysis and retrieving the results</span>
+        <span class="n">subscriber</span> <span class="o">=</span> <span class="n">subscribers</span><span class="o">.</span><span class="n">ResultsMemory</span><span class="p">()</span>
+        <span class="n">analysis</span><span class="o">.</span><span class="n">execute</span><span class="p">(</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">phenotypes</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">genotypes</span><span class="p">,</span> <span class="n">modelspec</span><span class="p">,</span>
+            <span class="n">subscribers</span><span class="o">=</span><span class="p">[</span><span class="n">subscriber</span><span class="p">],</span>
+        <span class="p">)</span>
+        <span class="n">results</span> <span class="o">=</span> <span class="n">subscriber</span><span class="o">.</span><span class="n">results</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+
+        <span class="c1"># Checking the marker information</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">assertEqual</span><span class="p">(</span><span class="s2">&quot;snp2&quot;</span><span class="p">,</span> <span class="n">results</span><span class="p">[</span><span class="s2">&quot;snp2&quot;</span><span class="p">][</span><span class="s2">&quot;name&quot;</span><span class="p">])</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">assertEqual</span><span class="p">(</span><span class="s2">&quot;3&quot;</span><span class="p">,</span> <span class="n">results</span><span class="p">[</span><span class="s2">&quot;snp2&quot;</span><span class="p">][</span><span class="s2">&quot;chrom&quot;</span><span class="p">])</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">assertEqual</span><span class="p">(</span><span class="mi">9618</span><span class="p">,</span> <span class="n">results</span><span class="p">[</span><span class="s2">&quot;snp2&quot;</span><span class="p">][</span><span class="s2">&quot;pos&quot;</span><span class="p">])</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">assertEqual</span><span class="p">(</span><span class="s2">&quot;C&quot;</span><span class="p">,</span> <span class="n">results</span><span class="p">[</span><span class="s2">&quot;snp2&quot;</span><span class="p">][</span><span class="s2">&quot;minor&quot;</span><span class="p">])</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">assertEqual</span><span class="p">(</span><span class="s2">&quot;A&quot;</span><span class="p">,</span> <span class="n">results</span><span class="p">[</span><span class="s2">&quot;snp2&quot;</span><span class="p">][</span><span class="s2">&quot;major&quot;</span><span class="p">])</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">assertAlmostEqual</span><span class="p">(</span><span class="mf">0.40833333333333333</span><span class="p">,</span> <span class="n">results</span><span class="p">[</span><span class="s2">&quot;snp2&quot;</span><span class="p">][</span><span class="s2">&quot;maf&quot;</span><span class="p">])</span>
+
+        <span class="c1"># Checking the results (according to R)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">assertAlmostEqual</span><span class="p">(</span><span class="mf">0.01742308104178164</span><span class="p">,</span> <span class="n">results</span><span class="p">[</span><span class="n">inter</span><span class="o">.</span><span class="n">id</span><span class="p">][</span><span class="s2">&quot;coef&quot;</span><span class="p">])</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">assertAlmostEqual</span><span class="p">(</span><span class="mf">0.02219048572389944</span><span class="p">,</span>
+                               <span class="n">results</span><span class="p">[</span><span class="n">inter</span><span class="o">.</span><span class="n">id</span><span class="p">][</span><span class="s2">&quot;std_err&quot;</span><span class="p">])</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">assertAlmostEqual</span><span class="p">(</span><span class="mf">1.0175757482739625</span><span class="p">,</span> <span class="n">results</span><span class="p">[</span><span class="n">inter</span><span class="o">.</span><span class="n">id</span><span class="p">][</span><span class="s2">&quot;hr&quot;</span><span class="p">])</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">assertAlmostEqual</span><span class="p">(</span><span class="mf">0.9742674031703326</span><span class="p">,</span>
+                               <span class="n">results</span><span class="p">[</span><span class="n">inter</span><span class="o">.</span><span class="n">id</span><span class="p">][</span><span class="s2">&quot;hr_lower_ci&quot;</span><span class="p">])</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">assertAlmostEqual</span><span class="p">(</span><span class="mf">1.062809245291237</span><span class="p">,</span>
+                               <span class="n">results</span><span class="p">[</span><span class="n">inter</span><span class="o">.</span><span class="n">id</span><span class="p">][</span><span class="s2">&quot;hr_upper_ci&quot;</span><span class="p">])</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">assertAlmostEqual</span><span class="p">(</span><span class="mf">0.7851599671392845</span><span class="p">,</span>
+                               <span class="n">results</span><span class="p">[</span><span class="n">inter</span><span class="o">.</span><span class="n">id</span><span class="p">][</span><span class="s2">&quot;z_value&quot;</span><span class="p">])</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">assertAlmostEqual</span><span class="p">(</span><span class="mf">0.4323597838912484</span><span class="p">,</span>
+                               <span class="n">results</span><span class="p">[</span><span class="n">inter</span><span class="o">.</span><span class="n">id</span><span class="p">][</span><span class="s2">&quot;p_value&quot;</span><span class="p">])</span></div>
+
+        <span class="c1"># TODO: Check the other predictors</span>
+
+<div class="viewcode-block" id="TestStatsCoxPH.test_coxph_snp3"><a class="viewcode-back" href="../../../module_content/genetest.tests.html#genetest.tests.test_coxph.TestStatsCoxPH.test_coxph_snp3">[docs]</a>    <span class="k">def</span> <span class="nf">test_coxph_snp3</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Tests coxph regression with the third SNP.&quot;&quot;&quot;</span>
+        <span class="c1"># The variables which are factors</span>
+        <span class="n">gender</span> <span class="o">=</span> <span class="n">spec</span><span class="o">.</span><span class="n">factor</span><span class="p">(</span><span class="n">spec</span><span class="o">.</span><span class="n">phenotypes</span><span class="o">.</span><span class="n">gender</span><span class="p">)</span>
+
+        <span class="c1"># Creating the model specification</span>
+        <span class="n">modelspec</span> <span class="o">=</span> <span class="n">spec</span><span class="o">.</span><span class="n">ModelSpec</span><span class="p">(</span>
+            <span class="n">outcome</span><span class="o">=</span><span class="nb">dict</span><span class="p">(</span><span class="n">tte</span><span class="o">=</span><span class="n">spec</span><span class="o">.</span><span class="n">phenotypes</span><span class="o">.</span><span class="n">tte</span><span class="p">,</span> <span class="n">event</span><span class="o">=</span><span class="n">spec</span><span class="o">.</span><span class="n">phenotypes</span><span class="o">.</span><span class="n">event</span><span class="p">),</span>
+            <span class="n">predictors</span><span class="o">=</span><span class="p">[</span><span class="n">spec</span><span class="o">.</span><span class="n">genotypes</span><span class="o">.</span><span class="n">snp3</span><span class="p">,</span> <span class="n">spec</span><span class="o">.</span><span class="n">phenotypes</span><span class="o">.</span><span class="n">age</span><span class="p">,</span>
+                        <span class="n">spec</span><span class="o">.</span><span class="n">phenotypes</span><span class="o">.</span><span class="n">var1</span><span class="p">,</span> <span class="n">gender</span><span class="p">],</span>
+            <span class="n">test</span><span class="o">=</span><span class="s2">&quot;coxph&quot;</span><span class="p">,</span>
+        <span class="p">)</span>
+
+        <span class="c1"># Performing the analysis and retrieving the results</span>
+        <span class="n">subscriber</span> <span class="o">=</span> <span class="n">subscribers</span><span class="o">.</span><span class="n">ResultsMemory</span><span class="p">()</span>
+        <span class="n">analysis</span><span class="o">.</span><span class="n">execute</span><span class="p">(</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">phenotypes</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">genotypes</span><span class="p">,</span> <span class="n">modelspec</span><span class="p">,</span>
+            <span class="n">subscribers</span><span class="o">=</span><span class="p">[</span><span class="n">subscriber</span><span class="p">],</span>
+        <span class="p">)</span>
+        <span class="n">results</span> <span class="o">=</span> <span class="n">subscriber</span><span class="o">.</span><span class="n">results</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+
+        <span class="c1"># Checking the marker information</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">assertEqual</span><span class="p">(</span><span class="s2">&quot;snp3&quot;</span><span class="p">,</span> <span class="n">results</span><span class="p">[</span><span class="s2">&quot;snp3&quot;</span><span class="p">][</span><span class="s2">&quot;name&quot;</span><span class="p">])</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">assertEqual</span><span class="p">(</span><span class="s2">&quot;2&quot;</span><span class="p">,</span> <span class="n">results</span><span class="p">[</span><span class="s2">&quot;snp3&quot;</span><span class="p">][</span><span class="s2">&quot;chrom&quot;</span><span class="p">])</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">assertEqual</span><span class="p">(</span><span class="mi">1519</span><span class="p">,</span> <span class="n">results</span><span class="p">[</span><span class="s2">&quot;snp3&quot;</span><span class="p">][</span><span class="s2">&quot;pos&quot;</span><span class="p">])</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">assertEqual</span><span class="p">(</span><span class="s2">&quot;G&quot;</span><span class="p">,</span> <span class="n">results</span><span class="p">[</span><span class="s2">&quot;snp3&quot;</span><span class="p">][</span><span class="s2">&quot;minor&quot;</span><span class="p">])</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">assertEqual</span><span class="p">(</span><span class="s2">&quot;T&quot;</span><span class="p">,</span> <span class="n">results</span><span class="p">[</span><span class="s2">&quot;snp3&quot;</span><span class="p">][</span><span class="s2">&quot;major&quot;</span><span class="p">])</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">assertAlmostEqual</span><span class="p">(</span><span class="mf">0.20833333333333334</span><span class="p">,</span> <span class="n">results</span><span class="p">[</span><span class="s2">&quot;snp3&quot;</span><span class="p">][</span><span class="s2">&quot;maf&quot;</span><span class="p">])</span>
+
+        <span class="c1"># Checking the results (according to R)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">assertAlmostEqual</span><span class="p">(</span><span class="o">-</span><span class="mf">0.0069461317578822582</span><span class="p">,</span> <span class="n">results</span><span class="p">[</span><span class="s2">&quot;snp3&quot;</span><span class="p">][</span><span class="s2">&quot;coef&quot;</span><span class="p">])</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">assertAlmostEqual</span><span class="p">(</span><span class="mf">0.39831755948730113</span><span class="p">,</span> <span class="n">results</span><span class="p">[</span><span class="s2">&quot;snp3&quot;</span><span class="p">][</span><span class="s2">&quot;std_err&quot;</span><span class="p">])</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">assertAlmostEqual</span><span class="p">(</span><span class="mf">0.9930779368551547</span><span class="p">,</span> <span class="n">results</span><span class="p">[</span><span class="s2">&quot;snp3&quot;</span><span class="p">][</span><span class="s2">&quot;hr&quot;</span><span class="p">])</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">assertAlmostEqual</span><span class="p">(</span><span class="mf">0.4549197711311750</span><span class="p">,</span>
+                               <span class="n">results</span><span class="p">[</span><span class="s2">&quot;snp3&quot;</span><span class="p">][</span><span class="s2">&quot;hr_lower_ci&quot;</span><span class="p">])</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">assertAlmostEqual</span><span class="p">(</span><span class="mf">2.167863107413991</span><span class="p">,</span>
+                               <span class="n">results</span><span class="p">[</span><span class="s2">&quot;snp3&quot;</span><span class="p">][</span><span class="s2">&quot;hr_upper_ci&quot;</span><span class="p">])</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">assertAlmostEqual</span><span class="p">(</span><span class="o">-</span><span class="mf">0.01743867824160966</span><span class="p">,</span>
+                               <span class="n">results</span><span class="p">[</span><span class="s2">&quot;snp3&quot;</span><span class="p">][</span><span class="s2">&quot;z_value&quot;</span><span class="p">])</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">assertAlmostEqual</span><span class="p">(</span><span class="mf">0.9860866530659741</span><span class="p">,</span> <span class="n">results</span><span class="p">[</span><span class="s2">&quot;snp3&quot;</span><span class="p">][</span><span class="s2">&quot;p_value&quot;</span><span class="p">])</span></div>
+
+        <span class="c1"># TODO: Check the other predictors</span>
+
+<div class="viewcode-block" id="TestStatsCoxPH.test_coxph_snp3_inter"><a class="viewcode-back" href="../../../module_content/genetest.tests.html#genetest.tests.test_coxph.TestStatsCoxPH.test_coxph_snp3_inter">[docs]</a>    <span class="k">def</span> <span class="nf">test_coxph_snp3_inter</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Tests coxph regression with the third SNP (interaction).&quot;&quot;&quot;</span>
+        <span class="c1"># The variables which are factors</span>
+        <span class="n">gender</span> <span class="o">=</span> <span class="n">spec</span><span class="o">.</span><span class="n">factor</span><span class="p">(</span><span class="n">spec</span><span class="o">.</span><span class="n">phenotypes</span><span class="o">.</span><span class="n">gender</span><span class="p">)</span>
+
+        <span class="c1"># The interaction term</span>
+        <span class="n">inter</span> <span class="o">=</span> <span class="n">spec</span><span class="o">.</span><span class="n">interaction</span><span class="p">(</span><span class="n">spec</span><span class="o">.</span><span class="n">phenotypes</span><span class="o">.</span><span class="n">var1</span><span class="p">,</span> <span class="n">spec</span><span class="o">.</span><span class="n">genotypes</span><span class="o">.</span><span class="n">snp3</span><span class="p">)</span>
+
+        <span class="c1"># Creating the model specification</span>
+        <span class="n">modelspec</span> <span class="o">=</span> <span class="n">spec</span><span class="o">.</span><span class="n">ModelSpec</span><span class="p">(</span>
+            <span class="n">outcome</span><span class="o">=</span><span class="nb">dict</span><span class="p">(</span><span class="n">tte</span><span class="o">=</span><span class="n">spec</span><span class="o">.</span><span class="n">phenotypes</span><span class="o">.</span><span class="n">tte</span><span class="p">,</span> <span class="n">event</span><span class="o">=</span><span class="n">spec</span><span class="o">.</span><span class="n">phenotypes</span><span class="o">.</span><span class="n">event</span><span class="p">),</span>
+            <span class="n">predictors</span><span class="o">=</span><span class="p">[</span><span class="n">spec</span><span class="o">.</span><span class="n">genotypes</span><span class="o">.</span><span class="n">snp3</span><span class="p">,</span> <span class="n">spec</span><span class="o">.</span><span class="n">phenotypes</span><span class="o">.</span><span class="n">age</span><span class="p">,</span>
+                        <span class="n">spec</span><span class="o">.</span><span class="n">phenotypes</span><span class="o">.</span><span class="n">var1</span><span class="p">,</span> <span class="n">gender</span><span class="p">,</span> <span class="n">inter</span><span class="p">],</span>
+            <span class="n">test</span><span class="o">=</span><span class="s2">&quot;coxph&quot;</span><span class="p">,</span>
+        <span class="p">)</span>
+
+        <span class="c1"># Performing the analysis and retrieving the results</span>
+        <span class="n">subscriber</span> <span class="o">=</span> <span class="n">subscribers</span><span class="o">.</span><span class="n">ResultsMemory</span><span class="p">()</span>
+        <span class="n">analysis</span><span class="o">.</span><span class="n">execute</span><span class="p">(</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">phenotypes</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">genotypes</span><span class="p">,</span> <span class="n">modelspec</span><span class="p">,</span>
+            <span class="n">subscribers</span><span class="o">=</span><span class="p">[</span><span class="n">subscriber</span><span class="p">],</span>
+        <span class="p">)</span>
+        <span class="n">results</span> <span class="o">=</span> <span class="n">subscriber</span><span class="o">.</span><span class="n">results</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+
+        <span class="c1"># Checking the marker information</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">assertEqual</span><span class="p">(</span><span class="s2">&quot;snp3&quot;</span><span class="p">,</span> <span class="n">results</span><span class="p">[</span><span class="s2">&quot;snp3&quot;</span><span class="p">][</span><span class="s2">&quot;name&quot;</span><span class="p">])</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">assertEqual</span><span class="p">(</span><span class="s2">&quot;2&quot;</span><span class="p">,</span> <span class="n">results</span><span class="p">[</span><span class="s2">&quot;snp3&quot;</span><span class="p">][</span><span class="s2">&quot;chrom&quot;</span><span class="p">])</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">assertEqual</span><span class="p">(</span><span class="mi">1519</span><span class="p">,</span> <span class="n">results</span><span class="p">[</span><span class="s2">&quot;snp3&quot;</span><span class="p">][</span><span class="s2">&quot;pos&quot;</span><span class="p">])</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">assertEqual</span><span class="p">(</span><span class="s2">&quot;G&quot;</span><span class="p">,</span> <span class="n">results</span><span class="p">[</span><span class="s2">&quot;snp3&quot;</span><span class="p">][</span><span class="s2">&quot;minor&quot;</span><span class="p">])</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">assertEqual</span><span class="p">(</span><span class="s2">&quot;T&quot;</span><span class="p">,</span> <span class="n">results</span><span class="p">[</span><span class="s2">&quot;snp3&quot;</span><span class="p">][</span><span class="s2">&quot;major&quot;</span><span class="p">])</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">assertAlmostEqual</span><span class="p">(</span><span class="mf">0.20833333333333334</span><span class="p">,</span> <span class="n">results</span><span class="p">[</span><span class="s2">&quot;snp3&quot;</span><span class="p">][</span><span class="s2">&quot;maf&quot;</span><span class="p">])</span>
+
+        <span class="c1"># Checking the results (according to R)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">assertAlmostEqual</span><span class="p">(</span><span class="mf">0.005873556606557682</span><span class="p">,</span> <span class="n">results</span><span class="p">[</span><span class="n">inter</span><span class="o">.</span><span class="n">id</span><span class="p">][</span><span class="s2">&quot;coef&quot;</span><span class="p">])</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">assertAlmostEqual</span><span class="p">(</span><span class="mf">0.03350856673847168</span><span class="p">,</span>
+                               <span class="n">results</span><span class="p">[</span><span class="n">inter</span><span class="o">.</span><span class="n">id</span><span class="p">][</span><span class="s2">&quot;std_err&quot;</span><span class="p">])</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">assertAlmostEqual</span><span class="p">(</span><span class="mf">1.0058908397614570</span><span class="p">,</span> <span class="n">results</span><span class="p">[</span><span class="n">inter</span><span class="o">.</span><span class="n">id</span><span class="p">][</span><span class="s2">&quot;hr&quot;</span><span class="p">])</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">assertAlmostEqual</span><span class="p">(</span><span class="mf">0.94195099563823814</span><span class="p">,</span>
+                               <span class="n">results</span><span class="p">[</span><span class="n">inter</span><span class="o">.</span><span class="n">id</span><span class="p">][</span><span class="s2">&quot;hr_lower_ci&quot;</span><span class="p">])</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">assertAlmostEqual</span><span class="p">(</span><span class="mf">1.074170934795214</span><span class="p">,</span>
+                               <span class="n">results</span><span class="p">[</span><span class="n">inter</span><span class="o">.</span><span class="n">id</span><span class="p">][</span><span class="s2">&quot;hr_upper_ci&quot;</span><span class="p">])</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">assertAlmostEqual</span><span class="p">(</span><span class="mf">0.17528522339972738</span><span class="p">,</span>
+                               <span class="n">results</span><span class="p">[</span><span class="n">inter</span><span class="o">.</span><span class="n">id</span><span class="p">][</span><span class="s2">&quot;z_value&quot;</span><span class="p">])</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">assertAlmostEqual</span><span class="p">(</span><span class="mf">0.8608555220369414</span><span class="p">,</span>
+                               <span class="n">results</span><span class="p">[</span><span class="n">inter</span><span class="o">.</span><span class="n">id</span><span class="p">][</span><span class="s2">&quot;p_value&quot;</span><span class="p">])</span></div>
+
+        <span class="c1"># TODO: Check the other predictors</span>
+
+<div class="viewcode-block" id="TestStatsCoxPH.test_coxph_snp4"><a class="viewcode-back" href="../../../module_content/genetest.tests.html#genetest.tests.test_coxph.TestStatsCoxPH.test_coxph_snp4">[docs]</a>    <span class="k">def</span> <span class="nf">test_coxph_snp4</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Tests coxph regression with the third SNP.&quot;&quot;&quot;</span>
+        <span class="c1"># The variables which are factors</span>
+        <span class="n">gender</span> <span class="o">=</span> <span class="n">spec</span><span class="o">.</span><span class="n">factor</span><span class="p">(</span><span class="n">spec</span><span class="o">.</span><span class="n">phenotypes</span><span class="o">.</span><span class="n">gender</span><span class="p">)</span>
+
+        <span class="c1"># Creating the model specification</span>
+        <span class="n">modelspec</span> <span class="o">=</span> <span class="n">spec</span><span class="o">.</span><span class="n">ModelSpec</span><span class="p">(</span>
+            <span class="n">outcome</span><span class="o">=</span><span class="nb">dict</span><span class="p">(</span><span class="n">tte</span><span class="o">=</span><span class="n">spec</span><span class="o">.</span><span class="n">phenotypes</span><span class="o">.</span><span class="n">tte</span><span class="p">,</span> <span class="n">event</span><span class="o">=</span><span class="n">spec</span><span class="o">.</span><span class="n">phenotypes</span><span class="o">.</span><span class="n">event</span><span class="p">),</span>
+            <span class="n">predictors</span><span class="o">=</span><span class="p">[</span><span class="n">spec</span><span class="o">.</span><span class="n">genotypes</span><span class="o">.</span><span class="n">snp4</span><span class="p">,</span> <span class="n">spec</span><span class="o">.</span><span class="n">phenotypes</span><span class="o">.</span><span class="n">age</span><span class="p">,</span>
+                        <span class="n">spec</span><span class="o">.</span><span class="n">phenotypes</span><span class="o">.</span><span class="n">var1</span><span class="p">,</span> <span class="n">gender</span><span class="p">],</span>
+            <span class="n">test</span><span class="o">=</span><span class="s2">&quot;coxph&quot;</span><span class="p">,</span>
+        <span class="p">)</span>
+
+        <span class="c1"># Performing the analysis and retrieving the results</span>
+        <span class="k">with</span> <span class="bp">self</span><span class="o">.</span><span class="n">assertRaises</span><span class="p">(</span><span class="n">StatsError</span><span class="p">)</span> <span class="k">as</span> <span class="n">cm</span><span class="p">:</span>
+            <span class="n">analysis</span><span class="o">.</span><span class="n">execute</span><span class="p">(</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">phenotypes</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">genotypes</span><span class="p">,</span> <span class="n">modelspec</span><span class="p">,</span>
+                <span class="n">subscribers</span><span class="o">=</span><span class="p">[</span><span class="n">subscribers</span><span class="o">.</span><span class="n">ResultsMemory</span><span class="p">()],</span>
+            <span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">assertEqual</span><span class="p">(</span><span class="s2">&quot;Singular matrix&quot;</span><span class="p">,</span> <span class="nb">str</span><span class="p">(</span><span class="n">cm</span><span class="o">.</span><span class="n">exception</span><span class="p">))</span></div>
+
+<div class="viewcode-block" id="TestStatsCoxPH.test_coxph_snp4_inter"><a class="viewcode-back" href="../../../module_content/genetest.tests.html#genetest.tests.test_coxph.TestStatsCoxPH.test_coxph_snp4_inter">[docs]</a>    <span class="k">def</span> <span class="nf">test_coxph_snp4_inter</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Tests coxph regression with the third SNP (interaction).&quot;&quot;&quot;</span>
+        <span class="c1"># The variables which are factors</span>
+        <span class="n">gender</span> <span class="o">=</span> <span class="n">spec</span><span class="o">.</span><span class="n">factor</span><span class="p">(</span><span class="n">spec</span><span class="o">.</span><span class="n">phenotypes</span><span class="o">.</span><span class="n">gender</span><span class="p">)</span>
+
+        <span class="c1"># The interaction term</span>
+        <span class="n">inter</span> <span class="o">=</span> <span class="n">spec</span><span class="o">.</span><span class="n">interaction</span><span class="p">(</span><span class="n">spec</span><span class="o">.</span><span class="n">phenotypes</span><span class="o">.</span><span class="n">var1</span><span class="p">,</span> <span class="n">spec</span><span class="o">.</span><span class="n">genotypes</span><span class="o">.</span><span class="n">snp4</span><span class="p">)</span>
+
+        <span class="c1"># Creating the model specification</span>
+        <span class="n">modelspec</span> <span class="o">=</span> <span class="n">spec</span><span class="o">.</span><span class="n">ModelSpec</span><span class="p">(</span>
+            <span class="n">outcome</span><span class="o">=</span><span class="nb">dict</span><span class="p">(</span><span class="n">tte</span><span class="o">=</span><span class="n">spec</span><span class="o">.</span><span class="n">phenotypes</span><span class="o">.</span><span class="n">tte</span><span class="p">,</span> <span class="n">event</span><span class="o">=</span><span class="n">spec</span><span class="o">.</span><span class="n">phenotypes</span><span class="o">.</span><span class="n">event</span><span class="p">),</span>
+            <span class="n">predictors</span><span class="o">=</span><span class="p">[</span><span class="n">spec</span><span class="o">.</span><span class="n">genotypes</span><span class="o">.</span><span class="n">snp4</span><span class="p">,</span> <span class="n">spec</span><span class="o">.</span><span class="n">phenotypes</span><span class="o">.</span><span class="n">age</span><span class="p">,</span>
+                        <span class="n">spec</span><span class="o">.</span><span class="n">phenotypes</span><span class="o">.</span><span class="n">var1</span><span class="p">,</span> <span class="n">gender</span><span class="p">,</span> <span class="n">inter</span><span class="p">],</span>
+            <span class="n">test</span><span class="o">=</span><span class="s2">&quot;coxph&quot;</span><span class="p">,</span>
+        <span class="p">)</span>
+
+        <span class="c1"># Performing the analysis and retrieving the results</span>
+        <span class="k">with</span> <span class="bp">self</span><span class="o">.</span><span class="n">assertRaises</span><span class="p">(</span><span class="n">StatsError</span><span class="p">)</span> <span class="k">as</span> <span class="n">cm</span><span class="p">:</span>
+            <span class="n">analysis</span><span class="o">.</span><span class="n">execute</span><span class="p">(</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">phenotypes</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">genotypes</span><span class="p">,</span> <span class="n">modelspec</span><span class="p">,</span>
+                <span class="n">subscribers</span><span class="o">=</span><span class="p">[</span><span class="n">subscribers</span><span class="o">.</span><span class="n">ResultsMemory</span><span class="p">()],</span>
+            <span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">assertEqual</span><span class="p">(</span><span class="s2">&quot;Singular matrix&quot;</span><span class="p">,</span> <span class="nb">str</span><span class="p">(</span><span class="n">cm</span><span class="o">.</span><span class="n">exception</span><span class="p">))</span></div></div>
+</pre></div>
+
+           </div>
+           
+          </div>
+          <footer>
+  
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        &copy; Copyright 2016, Beaulieu-Saucier Pharmacogenomics Centre.
+
+    </p>
+  </div>
+  Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a <a href="https://github.com/rtfd/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+
+</footer>
+
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+
+  
+
+    <script type="text/javascript">
+        var DOCUMENTATION_OPTIONS = {
+            URL_ROOT:'../../../',
+            VERSION:'0.3.0',
+            LANGUAGE:'None',
+            COLLAPSE_INDEX:false,
+            FILE_SUFFIX:'.html',
+            HAS_SOURCE:  true,
+            SOURCELINK_SUFFIX: '.txt'
+        };
+    </script>
+      <script type="text/javascript" src="../../../_static/jquery.js"></script>
+      <script type="text/javascript" src="../../../_static/underscore.js"></script>
+      <script type="text/javascript" src="../../../_static/doctools.js"></script>
+      <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.1/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+
+  
+
+  
+  
+    <script type="text/javascript" src="../../../_static/js/theme.js"></script>
+  
+
+  <script type="text/javascript">
+      jQuery(function () {
+          
+          SphinxRtdTheme.Navigation.enableSticky();
+          
+      });
+  </script> 
+
+</body>
+</html>

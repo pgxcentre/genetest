@@ -1,0 +1,489 @@
+
+
+<!DOCTYPE html>
+<!--[if IE 8]><html class="no-js lt-ie9" lang="en" > <![endif]-->
+<!--[if gt IE 8]><!--> <html class="no-js" lang="en" > <!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <title>genetest.tests.test_configuration &mdash; genetest 0.3.0 documentation</title>
+  
+
+  
+  
+  
+  
+
+  
+
+  
+  
+    
+
+  
+
+  
+    <link rel="stylesheet" href="../../../_static/css/theme.css" type="text/css" />
+  <link rel="stylesheet" href="../../../_static/pygments.css" type="text/css" />
+  <link rel="stylesheet" href="../../../_static/theme_overrides.css" type="text/css" />
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" /> 
+
+  
+  <script src="../../../_static/js/modernizr.min.js"></script>
+
+</head>
+
+<body class="wy-body-for-nav">
+
+   
+  <div class="wy-grid-for-nav">
+
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search">
+          
+
+          
+            <a href="../../../index.html" class="icon icon-home"> genetest
+          
+
+          
+          </a>
+
+          
+            
+            
+              <div class="version">
+                0.3
+              </div>
+            
+          
+
+          
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          
+        </div>
+
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+              
+            
+            
+              <ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../installation.html">Installation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../analysis.html">Analysis</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../module_content/modules.html">genetest</a></li>
+</ul>
+
+            
+          
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" aria-label="top navigation">
+        
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../index.html">genetest</a>
+        
+      </nav>
+
+
+      <div class="wy-nav-content">
+        
+        <div class="rst-content">
+        
+          
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+
+  <ul class="wy-breadcrumbs">
+    
+      <li><a href="../../../index.html">Docs</a> &raquo;</li>
+        
+          <li><a href="../../index.html">Module code</a> &raquo;</li>
+        
+          <li><a href="../../genetest.html">genetest</a> &raquo;</li>
+        
+      <li>genetest.tests.test_configuration</li>
+    
+    
+      <li class="wy-breadcrumbs-aside">
+        
+      </li>
+    
+  </ul>
+
+  
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+            
+  <h1>Source code for genetest.tests.test_configuration</h1><div class="highlight"><pre>
+<span></span>
+
+<span class="c1"># This file is part of genetest.</span>
+<span class="c1">#</span>
+<span class="c1"># This work is licensed under the Creative Commons Attribution-NonCommercial</span>
+<span class="c1"># 4.0 International License. To view a copy of this license, visit</span>
+<span class="c1"># http://creativecommons.org/licenses/by-nc/4.0/ or send a letter to Creative</span>
+<span class="c1"># Commons, PO Box 1866, Mountain View, CA 94042, USA.</span>
+
+
+<span class="kn">import</span> <span class="nn">os</span>
+<span class="kn">import</span> <span class="nn">unittest</span>
+<span class="kn">from</span> <span class="nn">tempfile</span> <span class="k">import</span> <span class="n">TemporaryDirectory</span>
+
+<span class="kn">from</span> <span class="nn">..configuration</span> <span class="k">import</span> <span class="n">AnalysisConfiguration</span>
+
+
+<span class="n">__copyright__</span> <span class="o">=</span> <span class="s2">&quot;Copyright 2016, Beaulieu-Saucier Pharmacogenomics Centre&quot;</span>
+<span class="n">__license__</span> <span class="o">=</span> <span class="s2">&quot;Attribution-NonCommercial 4.0 International (CC BY-NC 4.0)&quot;</span>
+
+
+<div class="viewcode-block" id="TestAnalysisConfiguration"><a class="viewcode-back" href="../../../module_content/genetest.tests.html#genetest.tests.test_configuration.TestAnalysisConfiguration">[docs]</a><span class="k">class</span> <span class="nc">TestAnalysisConfiguration</span><span class="p">(</span><span class="n">unittest</span><span class="o">.</span><span class="n">TestCase</span><span class="p">):</span>
+<div class="viewcode-block" id="TestAnalysisConfiguration.setUpClass"><a class="viewcode-back" href="../../../module_content/genetest.tests.html#genetest.tests.test_configuration.TestAnalysisConfiguration.setUpClass">[docs]</a>    <span class="nd">@classmethod</span>
+    <span class="k">def</span> <span class="nf">setUpClass</span><span class="p">(</span><span class="bp">cls</span><span class="p">):</span>
+        <span class="bp">cls</span><span class="o">.</span><span class="n">tmpdir</span> <span class="o">=</span> <span class="n">TemporaryDirectory</span><span class="p">(</span><span class="n">prefix</span><span class="o">=</span><span class="s2">&quot;genetest_&quot;</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="TestAnalysisConfiguration.tearDownClass"><a class="viewcode-back" href="../../../module_content/genetest.tests.html#genetest.tests.test_configuration.TestAnalysisConfiguration.tearDownClass">[docs]</a>    <span class="nd">@classmethod</span>
+    <span class="k">def</span> <span class="nf">tearDownClass</span><span class="p">(</span><span class="bp">cls</span><span class="p">):</span>
+        <span class="bp">cls</span><span class="o">.</span><span class="n">tmpdir</span><span class="o">.</span><span class="n">cleanup</span><span class="p">()</span></div>
+
+    <span class="sd">&quot;&quot;&quot;Tests the &#39;AnalysisConfiguration&#39; module.&quot;&quot;&quot;</span>
+<div class="viewcode-block" id="TestAnalysisConfiguration.test_missing_section"><a class="viewcode-back" href="../../../module_content/genetest.tests.html#genetest.tests.test_configuration.TestAnalysisConfiguration.test_missing_section">[docs]</a>    <span class="k">def</span> <span class="nf">test_missing_section</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Tests when there is a missing section.&quot;&quot;&quot;</span>
+        <span class="n">conf</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">tmpdir</span><span class="o">.</span><span class="n">name</span><span class="p">,</span> <span class="s2">&quot;conf.yaml&quot;</span><span class="p">)</span>
+        <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">conf</span><span class="p">,</span> <span class="s2">&quot;w&quot;</span><span class="p">)</span> <span class="k">as</span> <span class="n">f</span><span class="p">:</span>
+            <span class="nb">print</span><span class="p">(</span>
+                <span class="s2">&quot;phenotypes:</span><span class="se">\n</span><span class="s2">&quot;</span>
+                <span class="s2">&quot;    format: text</span><span class="se">\n</span><span class="s2">&quot;</span>
+                <span class="s2">&quot;    filename: dummy_file</span><span class="se">\n</span><span class="s2">&quot;</span>
+                <span class="s2">&quot;genotypes:</span><span class="se">\n</span><span class="s2">&quot;</span>
+                <span class="s2">&quot;    format: plink</span><span class="se">\n</span><span class="s2">&quot;</span>
+                <span class="s2">&quot;    prefix: dummy_prefix&quot;</span><span class="p">,</span>
+                <span class="n">file</span><span class="o">=</span><span class="n">f</span><span class="p">,</span>
+            <span class="p">)</span>
+
+        <span class="k">with</span> <span class="bp">self</span><span class="o">.</span><span class="n">assertRaises</span><span class="p">(</span><span class="ne">ValueError</span><span class="p">)</span> <span class="k">as</span> <span class="n">cm</span><span class="p">:</span>
+            <span class="n">AnalysisConfiguration</span><span class="p">(</span><span class="n">conf</span><span class="p">)</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">assertTrue</span><span class="p">(</span><span class="nb">str</span><span class="p">(</span><span class="n">cm</span><span class="o">.</span><span class="n">exception</span><span class="p">)</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="s2">&quot;Missing section&quot;</span><span class="p">))</span></div>
+
+<div class="viewcode-block" id="TestAnalysisConfiguration.test_extra_section"><a class="viewcode-back" href="../../../module_content/genetest.tests.html#genetest.tests.test_configuration.TestAnalysisConfiguration.test_extra_section">[docs]</a>    <span class="k">def</span> <span class="nf">test_extra_section</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Tests when there is an extra section.&quot;&quot;&quot;</span>
+        <span class="n">conf</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">tmpdir</span><span class="o">.</span><span class="n">name</span><span class="p">,</span> <span class="s2">&quot;conf.yaml&quot;</span><span class="p">)</span>
+        <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">conf</span><span class="p">,</span> <span class="s2">&quot;w&quot;</span><span class="p">)</span> <span class="k">as</span> <span class="n">f</span><span class="p">:</span>
+            <span class="nb">print</span><span class="p">(</span>
+                <span class="s2">&quot;phenotypes:</span><span class="se">\n</span><span class="s2">&quot;</span>
+                <span class="s2">&quot;    format: text</span><span class="se">\n</span><span class="s2">&quot;</span>
+                <span class="s2">&quot;    filename: dummy_file</span><span class="se">\n</span><span class="s2">&quot;</span>
+                <span class="s2">&quot;genotypes:</span><span class="se">\n</span><span class="s2">&quot;</span>
+                <span class="s2">&quot;    format: plink</span><span class="se">\n</span><span class="s2">&quot;</span>
+                <span class="s2">&quot;    prefix: dummy_prefix</span><span class="se">\n</span><span class="s2">&quot;</span>
+                <span class="s2">&quot;model:</span><span class="se">\n</span><span class="s2">&quot;</span>
+                <span class="s2">&quot;    test: linear</span><span class="se">\n</span><span class="s2">&quot;</span>
+                <span class="s2">&quot;    formula: pheno~age</span><span class="se">\n</span><span class="s2">&quot;</span>
+                <span class="s2">&quot;dummy:</span><span class="se">\n</span><span class="s2">&quot;</span>
+                <span class="s2">&quot;    format:none&quot;</span><span class="p">,</span>
+                <span class="n">file</span><span class="o">=</span><span class="n">f</span><span class="p">,</span>
+            <span class="p">)</span>
+
+        <span class="k">with</span> <span class="bp">self</span><span class="o">.</span><span class="n">assertRaises</span><span class="p">(</span><span class="ne">ValueError</span><span class="p">)</span> <span class="k">as</span> <span class="n">cm</span><span class="p">:</span>
+            <span class="n">AnalysisConfiguration</span><span class="p">(</span><span class="n">conf</span><span class="p">)</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">assertTrue</span><span class="p">(</span><span class="nb">str</span><span class="p">(</span><span class="n">cm</span><span class="o">.</span><span class="n">exception</span><span class="p">)</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="s2">&quot;Invalid section&quot;</span><span class="p">))</span></div>
+
+<div class="viewcode-block" id="TestAnalysisConfiguration.test_missing_phenotype_format"><a class="viewcode-back" href="../../../module_content/genetest.tests.html#genetest.tests.test_configuration.TestAnalysisConfiguration.test_missing_phenotype_format">[docs]</a>    <span class="k">def</span> <span class="nf">test_missing_phenotype_format</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Tests when the phenotype format is missing.&quot;&quot;&quot;</span>
+        <span class="n">conf</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">tmpdir</span><span class="o">.</span><span class="n">name</span><span class="p">,</span> <span class="s2">&quot;conf.yaml&quot;</span><span class="p">)</span>
+        <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">conf</span><span class="p">,</span> <span class="s2">&quot;w&quot;</span><span class="p">)</span> <span class="k">as</span> <span class="n">f</span><span class="p">:</span>
+            <span class="nb">print</span><span class="p">(</span>
+                <span class="s2">&quot;phenotypes:</span><span class="se">\n</span><span class="s2">&quot;</span>
+                <span class="s2">&quot;    filename: dummy_file</span><span class="se">\n</span><span class="s2">&quot;</span>
+                <span class="s2">&quot;genotypes:</span><span class="se">\n</span><span class="s2">&quot;</span>
+                <span class="s2">&quot;    format: plink</span><span class="se">\n</span><span class="s2">&quot;</span>
+                <span class="s2">&quot;    prefix: dummy_prefix</span><span class="se">\n</span><span class="s2">&quot;</span>
+                <span class="s2">&quot;model:</span><span class="se">\n</span><span class="s2">&quot;</span>
+                <span class="s2">&quot;    test: linear</span><span class="se">\n</span><span class="s2">&quot;</span>
+                <span class="s2">&quot;    formula: pheno~age&quot;</span><span class="p">,</span>
+                <span class="n">file</span><span class="o">=</span><span class="n">f</span><span class="p">,</span>
+            <span class="p">)</span>
+
+        <span class="k">with</span> <span class="bp">self</span><span class="o">.</span><span class="n">assertRaises</span><span class="p">(</span><span class="ne">ValueError</span><span class="p">)</span> <span class="k">as</span> <span class="n">cm</span><span class="p">:</span>
+            <span class="n">AnalysisConfiguration</span><span class="p">(</span><span class="n">conf</span><span class="p">)</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">assertTrue</span><span class="p">(</span>
+            <span class="s2">&quot;the &#39;phenotypes&#39; section should contain the &quot;</span>
+            <span class="s2">&quot;&#39;format&#39;&quot;</span> <span class="ow">in</span> <span class="nb">str</span><span class="p">(</span><span class="n">cm</span><span class="o">.</span><span class="n">exception</span><span class="p">)</span>
+        <span class="p">)</span></div>
+
+<div class="viewcode-block" id="TestAnalysisConfiguration.test_invalid_phenotype_format"><a class="viewcode-back" href="../../../module_content/genetest.tests.html#genetest.tests.test_configuration.TestAnalysisConfiguration.test_invalid_phenotype_format">[docs]</a>    <span class="k">def</span> <span class="nf">test_invalid_phenotype_format</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Tests when an invalid format for phenotypes is asked.&quot;&quot;&quot;</span>
+        <span class="n">conf</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">tmpdir</span><span class="o">.</span><span class="n">name</span><span class="p">,</span> <span class="s2">&quot;conf.yaml&quot;</span><span class="p">)</span>
+        <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">conf</span><span class="p">,</span> <span class="s2">&quot;w&quot;</span><span class="p">)</span> <span class="k">as</span> <span class="n">f</span><span class="p">:</span>
+            <span class="nb">print</span><span class="p">(</span>
+                <span class="s2">&quot;phenotypes:</span><span class="se">\n</span><span class="s2">&quot;</span>
+                <span class="s2">&quot;    format: nope</span><span class="se">\n</span><span class="s2">&quot;</span>
+                <span class="s2">&quot;    filename: dummy_file</span><span class="se">\n</span><span class="s2">&quot;</span>
+                <span class="s2">&quot;genotypes:</span><span class="se">\n</span><span class="s2">&quot;</span>
+                <span class="s2">&quot;    format: plink</span><span class="se">\n</span><span class="s2">&quot;</span>
+                <span class="s2">&quot;    prefix: dummy_prefix</span><span class="se">\n</span><span class="s2">&quot;</span>
+                <span class="s2">&quot;model:</span><span class="se">\n</span><span class="s2">&quot;</span>
+                <span class="s2">&quot;    test: linear</span><span class="se">\n</span><span class="s2">&quot;</span>
+                <span class="s2">&quot;    formula: pheno~age&quot;</span><span class="p">,</span>
+                <span class="n">file</span><span class="o">=</span><span class="n">f</span><span class="p">,</span>
+            <span class="p">)</span>
+
+        <span class="k">with</span> <span class="bp">self</span><span class="o">.</span><span class="n">assertRaises</span><span class="p">(</span><span class="ne">ValueError</span><span class="p">)</span> <span class="k">as</span> <span class="n">cm</span><span class="p">:</span>
+            <span class="n">AnalysisConfiguration</span><span class="p">(</span><span class="n">conf</span><span class="p">)</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">assertTrue</span><span class="p">(</span><span class="nb">str</span><span class="p">(</span><span class="n">cm</span><span class="o">.</span><span class="n">exception</span><span class="p">)</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span>
+            <span class="s2">&quot;Invalid &#39;format&#39; (nope) for the &#39;phenotypes&#39; section&quot;</span>
+        <span class="p">))</span></div>
+
+<div class="viewcode-block" id="TestAnalysisConfiguration.test_missing_genotype_format"><a class="viewcode-back" href="../../../module_content/genetest.tests.html#genetest.tests.test_configuration.TestAnalysisConfiguration.test_missing_genotype_format">[docs]</a>    <span class="k">def</span> <span class="nf">test_missing_genotype_format</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Tests when the genotype format is missing.&quot;&quot;&quot;</span>
+        <span class="n">conf</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">tmpdir</span><span class="o">.</span><span class="n">name</span><span class="p">,</span> <span class="s2">&quot;conf.yaml&quot;</span><span class="p">)</span>
+        <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">conf</span><span class="p">,</span> <span class="s2">&quot;w&quot;</span><span class="p">)</span> <span class="k">as</span> <span class="n">f</span><span class="p">:</span>
+            <span class="nb">print</span><span class="p">(</span>
+                <span class="s2">&quot;phenotypes:</span><span class="se">\n</span><span class="s2">&quot;</span>
+                <span class="s2">&quot;    format: text</span><span class="se">\n</span><span class="s2">&quot;</span>
+                <span class="s2">&quot;    filename: dummy_file</span><span class="se">\n</span><span class="s2">&quot;</span>
+                <span class="s2">&quot;genotypes:</span><span class="se">\n</span><span class="s2">&quot;</span>
+                <span class="s2">&quot;    prefix: dummy_prefix</span><span class="se">\n</span><span class="s2">&quot;</span>
+                <span class="s2">&quot;model:</span><span class="se">\n</span><span class="s2">&quot;</span>
+                <span class="s2">&quot;    test: linear</span><span class="se">\n</span><span class="s2">&quot;</span>
+                <span class="s2">&quot;    formula: pheno~age&quot;</span><span class="p">,</span>
+                <span class="n">file</span><span class="o">=</span><span class="n">f</span><span class="p">,</span>
+            <span class="p">)</span>
+
+        <span class="k">with</span> <span class="bp">self</span><span class="o">.</span><span class="n">assertRaises</span><span class="p">(</span><span class="ne">ValueError</span><span class="p">)</span> <span class="k">as</span> <span class="n">cm</span><span class="p">:</span>
+            <span class="n">AnalysisConfiguration</span><span class="p">(</span><span class="n">conf</span><span class="p">)</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">assertTrue</span><span class="p">(</span>
+            <span class="s2">&quot;the &#39;genotypes&#39; section should contain the &quot;</span>
+            <span class="s2">&quot;&#39;format&#39;&quot;</span> <span class="ow">in</span> <span class="nb">str</span><span class="p">(</span><span class="n">cm</span><span class="o">.</span><span class="n">exception</span><span class="p">)</span>
+        <span class="p">)</span></div>
+
+<div class="viewcode-block" id="TestAnalysisConfiguration.test_invalid_genotype_format"><a class="viewcode-back" href="../../../module_content/genetest.tests.html#genetest.tests.test_configuration.TestAnalysisConfiguration.test_invalid_genotype_format">[docs]</a>    <span class="k">def</span> <span class="nf">test_invalid_genotype_format</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Tests when an invalid format for genotypes is asked.&quot;&quot;&quot;</span>
+        <span class="n">conf</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">tmpdir</span><span class="o">.</span><span class="n">name</span><span class="p">,</span> <span class="s2">&quot;conf.yaml&quot;</span><span class="p">)</span>
+        <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">conf</span><span class="p">,</span> <span class="s2">&quot;w&quot;</span><span class="p">)</span> <span class="k">as</span> <span class="n">f</span><span class="p">:</span>
+            <span class="nb">print</span><span class="p">(</span>
+                <span class="s2">&quot;phenotypes:</span><span class="se">\n</span><span class="s2">&quot;</span>
+                <span class="s2">&quot;    format: text</span><span class="se">\n</span><span class="s2">&quot;</span>
+                <span class="s2">&quot;    filename: dummy_file</span><span class="se">\n</span><span class="s2">&quot;</span>
+                <span class="s2">&quot;genotypes:</span><span class="se">\n</span><span class="s2">&quot;</span>
+                <span class="s2">&quot;    format: nope</span><span class="se">\n</span><span class="s2">&quot;</span>
+                <span class="s2">&quot;    prefix: dummy_prefix</span><span class="se">\n</span><span class="s2">&quot;</span>
+                <span class="s2">&quot;model:</span><span class="se">\n</span><span class="s2">&quot;</span>
+                <span class="s2">&quot;    test: linear</span><span class="se">\n</span><span class="s2">&quot;</span>
+                <span class="s2">&quot;    formula: pheno~age&quot;</span><span class="p">,</span>
+                <span class="n">file</span><span class="o">=</span><span class="n">f</span><span class="p">,</span>
+            <span class="p">)</span>
+
+        <span class="k">with</span> <span class="bp">self</span><span class="o">.</span><span class="n">assertRaises</span><span class="p">(</span><span class="ne">ValueError</span><span class="p">)</span> <span class="k">as</span> <span class="n">cm</span><span class="p">:</span>
+            <span class="n">AnalysisConfiguration</span><span class="p">(</span><span class="n">conf</span><span class="p">)</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">assertTrue</span><span class="p">(</span><span class="nb">str</span><span class="p">(</span><span class="n">cm</span><span class="o">.</span><span class="n">exception</span><span class="p">)</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span>
+            <span class="s2">&quot;Invalid &#39;format&#39; (nope) for the &#39;genotypes&#39; section&quot;</span>
+        <span class="p">))</span></div>
+
+<div class="viewcode-block" id="TestAnalysisConfiguration.test_missing_test"><a class="viewcode-back" href="../../../module_content/genetest.tests.html#genetest.tests.test_configuration.TestAnalysisConfiguration.test_missing_test">[docs]</a>    <span class="k">def</span> <span class="nf">test_missing_test</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Tests when the statistics test is missing.&quot;&quot;&quot;</span>
+        <span class="n">conf</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">tmpdir</span><span class="o">.</span><span class="n">name</span><span class="p">,</span> <span class="s2">&quot;conf.yaml&quot;</span><span class="p">)</span>
+        <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">conf</span><span class="p">,</span> <span class="s2">&quot;w&quot;</span><span class="p">)</span> <span class="k">as</span> <span class="n">f</span><span class="p">:</span>
+            <span class="nb">print</span><span class="p">(</span>
+                <span class="s2">&quot;phenotypes:</span><span class="se">\n</span><span class="s2">&quot;</span>
+                <span class="s2">&quot;    format: text</span><span class="se">\n</span><span class="s2">&quot;</span>
+                <span class="s2">&quot;    filename: dummy_file</span><span class="se">\n</span><span class="s2">&quot;</span>
+                <span class="s2">&quot;genotypes:</span><span class="se">\n</span><span class="s2">&quot;</span>
+                <span class="s2">&quot;    format: plink</span><span class="se">\n</span><span class="s2">&quot;</span>
+                <span class="s2">&quot;    prefix: dummy_prefix</span><span class="se">\n</span><span class="s2">&quot;</span>
+                <span class="s2">&quot;model:</span><span class="se">\n</span><span class="s2">&quot;</span>
+                <span class="s2">&quot;    formula: pheno~age&quot;</span><span class="p">,</span>
+                <span class="n">file</span><span class="o">=</span><span class="n">f</span><span class="p">,</span>
+            <span class="p">)</span>
+
+        <span class="k">with</span> <span class="bp">self</span><span class="o">.</span><span class="n">assertRaises</span><span class="p">(</span><span class="ne">ValueError</span><span class="p">)</span> <span class="k">as</span> <span class="n">cm</span><span class="p">:</span>
+            <span class="n">AnalysisConfiguration</span><span class="p">(</span><span class="n">conf</span><span class="p">)</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">assertTrue</span><span class="p">(</span>
+            <span class="s2">&quot;the &#39;model&#39; section should contain the &quot;</span>
+            <span class="s2">&quot;&#39;test&#39;&quot;</span> <span class="ow">in</span> <span class="nb">str</span><span class="p">(</span><span class="n">cm</span><span class="o">.</span><span class="n">exception</span><span class="p">)</span>
+        <span class="p">)</span></div>
+
+<div class="viewcode-block" id="TestAnalysisConfiguration.test_invalid_test"><a class="viewcode-back" href="../../../module_content/genetest.tests.html#genetest.tests.test_configuration.TestAnalysisConfiguration.test_invalid_test">[docs]</a>    <span class="k">def</span> <span class="nf">test_invalid_test</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Tests when an invalid model for statistics is asked.&quot;&quot;&quot;</span>
+        <span class="n">conf</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">tmpdir</span><span class="o">.</span><span class="n">name</span><span class="p">,</span> <span class="s2">&quot;conf.yaml&quot;</span><span class="p">)</span>
+        <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">conf</span><span class="p">,</span> <span class="s2">&quot;w&quot;</span><span class="p">)</span> <span class="k">as</span> <span class="n">f</span><span class="p">:</span>
+            <span class="nb">print</span><span class="p">(</span>
+                <span class="s2">&quot;phenotypes:</span><span class="se">\n</span><span class="s2">&quot;</span>
+                <span class="s2">&quot;    format: text</span><span class="se">\n</span><span class="s2">&quot;</span>
+                <span class="s2">&quot;    filename: dummy_file</span><span class="se">\n</span><span class="s2">&quot;</span>
+                <span class="s2">&quot;genotypes:</span><span class="se">\n</span><span class="s2">&quot;</span>
+                <span class="s2">&quot;    format: plink</span><span class="se">\n</span><span class="s2">&quot;</span>
+                <span class="s2">&quot;    prefix: dummy_prefix</span><span class="se">\n</span><span class="s2">&quot;</span>
+                <span class="s2">&quot;model:</span><span class="se">\n</span><span class="s2">&quot;</span>
+                <span class="s2">&quot;    test: nope</span><span class="se">\n</span><span class="s2">&quot;</span>
+                <span class="s2">&quot;    formula: pheno~age&quot;</span><span class="p">,</span>
+                <span class="n">file</span><span class="o">=</span><span class="n">f</span><span class="p">,</span>
+            <span class="p">)</span>
+
+        <span class="k">with</span> <span class="bp">self</span><span class="o">.</span><span class="n">assertRaises</span><span class="p">(</span><span class="ne">ValueError</span><span class="p">)</span> <span class="k">as</span> <span class="n">cm</span><span class="p">:</span>
+            <span class="n">AnalysisConfiguration</span><span class="p">(</span><span class="n">conf</span><span class="p">)</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">assertTrue</span><span class="p">(</span><span class="nb">str</span><span class="p">(</span><span class="n">cm</span><span class="o">.</span><span class="n">exception</span><span class="p">)</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span>
+            <span class="s2">&quot;Invalid &#39;test&#39; for the &#39;model&#39; section&quot;</span>
+        <span class="p">))</span></div>
+
+<div class="viewcode-block" id="TestAnalysisConfiguration.test_normal_functionality"><a class="viewcode-back" href="../../../module_content/genetest.tests.html#genetest.tests.test_configuration.TestAnalysisConfiguration.test_normal_functionality">[docs]</a>    <span class="k">def</span> <span class="nf">test_normal_functionality</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Tests the normal functionality.&quot;&quot;&quot;</span>
+        <span class="n">conf</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">tmpdir</span><span class="o">.</span><span class="n">name</span><span class="p">,</span> <span class="s2">&quot;conf.yaml&quot;</span><span class="p">)</span>
+        <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">conf</span><span class="p">,</span> <span class="s2">&quot;w&quot;</span><span class="p">)</span> <span class="k">as</span> <span class="n">f</span><span class="p">:</span>
+            <span class="nb">print</span><span class="p">(</span>
+                <span class="s2">&quot;phenotypes:</span><span class="se">\n</span><span class="s2">&quot;</span>
+                <span class="s2">&quot;    format: text</span><span class="se">\n</span><span class="s2">&quot;</span>
+                <span class="s2">&quot;    filename: dummy_file</span><span class="se">\n</span><span class="s2">&quot;</span>
+                <span class="s2">&quot;    options:</span><span class="se">\n</span><span class="s2">&quot;</span>
+                <span class="s2">&quot;        field_separator: </span><span class="se">\\</span><span class="s2">t</span><span class="se">\n</span><span class="s2">&quot;</span>
+                <span class="s2">&quot;        repeated_measurements: No</span><span class="se">\n</span><span class="s2">&quot;</span>
+                <span class="s2">&quot;        sample_column: sample_id</span><span class="se">\n</span><span class="s2">&quot;</span>
+                <span class="s2">&quot;        missing_values: [&#39;-9&#39;, &#39;-999&#39;]</span><span class="se">\n</span><span class="s2">&quot;</span>
+                <span class="s2">&quot;genotypes:</span><span class="se">\n</span><span class="s2">&quot;</span>
+                <span class="s2">&quot;    format: impute2</span><span class="se">\n</span><span class="s2">&quot;</span>
+                <span class="s2">&quot;    filename: fn</span><span class="se">\n</span><span class="s2">&quot;</span>
+                <span class="s2">&quot;    sample_filename: sample_fn</span><span class="se">\n</span><span class="s2">&quot;</span>
+                <span class="s2">&quot;    options:</span><span class="se">\n</span><span class="s2">&quot;</span>
+                <span class="s2">&quot;        probability_threshold: 0.95</span><span class="se">\n</span><span class="s2">&quot;</span>
+                <span class="s2">&quot;model:</span><span class="se">\n</span><span class="s2">&quot;</span>
+                <span class="s2">&quot;    test: linear</span><span class="se">\n</span><span class="s2">&quot;</span>
+                <span class="s2">&quot;    formula: y~x+z</span><span class="se">\n</span><span class="s2">&quot;</span>
+                <span class="s2">&quot;    options:</span><span class="se">\n</span><span class="s2">&quot;</span>
+                <span class="s2">&quot;        condition_value_t: 3000&quot;</span><span class="p">,</span>
+                <span class="n">file</span><span class="o">=</span><span class="n">f</span><span class="p">,</span>
+            <span class="p">)</span>
+
+        <span class="c1"># Getting the configuration</span>
+        <span class="n">conf</span> <span class="o">=</span> <span class="n">AnalysisConfiguration</span><span class="p">(</span><span class="n">conf</span><span class="p">)</span>
+
+        <span class="c1"># Checking the genotypes</span>
+        <span class="n">observed_geno_args</span> <span class="o">=</span> <span class="n">conf</span><span class="o">.</span><span class="n">get_genotypes_args</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">assertEqual</span><span class="p">(</span><span class="mi">3</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="n">observed_geno_args</span><span class="p">))</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">assertEqual</span><span class="p">(</span><span class="s2">&quot;fn&quot;</span><span class="p">,</span> <span class="n">observed_geno_args</span><span class="p">[</span><span class="s2">&quot;filename&quot;</span><span class="p">])</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">assertEqual</span><span class="p">(</span><span class="s2">&quot;sample_fn&quot;</span><span class="p">,</span> <span class="n">observed_geno_args</span><span class="p">[</span><span class="s2">&quot;sample_filename&quot;</span><span class="p">])</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">assertEqual</span><span class="p">(</span><span class="mf">0.95</span><span class="p">,</span> <span class="n">observed_geno_args</span><span class="p">[</span><span class="s2">&quot;probability_threshold&quot;</span><span class="p">])</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">assertEqual</span><span class="p">(</span><span class="s2">&quot;impute2&quot;</span><span class="p">,</span> <span class="n">conf</span><span class="o">.</span><span class="n">get_genotypes_format</span><span class="p">())</span>
+
+        <span class="c1"># Checking the phenotypes</span>
+        <span class="n">observed_pheno_args</span> <span class="o">=</span> <span class="n">conf</span><span class="o">.</span><span class="n">get_phenotypes_args</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">assertEqual</span><span class="p">(</span><span class="mi">5</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="n">observed_pheno_args</span><span class="p">))</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">assertEqual</span><span class="p">(</span><span class="s2">&quot;dummy_file&quot;</span><span class="p">,</span> <span class="n">observed_pheno_args</span><span class="p">[</span><span class="s2">&quot;filename&quot;</span><span class="p">])</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">assertEqual</span><span class="p">(</span><span class="s2">&quot;sample_id&quot;</span><span class="p">,</span> <span class="n">observed_pheno_args</span><span class="p">[</span><span class="s2">&quot;sample_column&quot;</span><span class="p">])</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">assertEqual</span><span class="p">(</span><span class="s2">&quot;</span><span class="se">\t</span><span class="s2">&quot;</span><span class="p">,</span> <span class="n">observed_pheno_args</span><span class="p">[</span><span class="s2">&quot;field_separator&quot;</span><span class="p">])</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">assertEqual</span><span class="p">([</span><span class="s2">&quot;-9&quot;</span><span class="p">,</span> <span class="s2">&quot;-999&quot;</span><span class="p">],</span> <span class="n">observed_pheno_args</span><span class="p">[</span><span class="s2">&quot;missing_values&quot;</span><span class="p">])</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">assertFalse</span><span class="p">(</span><span class="n">observed_pheno_args</span><span class="p">[</span><span class="s2">&quot;repeated_measurements&quot;</span><span class="p">])</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">assertEqual</span><span class="p">(</span><span class="s2">&quot;text&quot;</span><span class="p">,</span> <span class="n">conf</span><span class="o">.</span><span class="n">get_phenotypes_format</span><span class="p">())</span>
+
+        <span class="c1"># Checking the statistics</span>
+        <span class="n">observed_stats_args</span> <span class="o">=</span> <span class="n">conf</span><span class="o">.</span><span class="n">get_model_args</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">assertEqual</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="n">observed_stats_args</span><span class="p">))</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">assertEqual</span><span class="p">(</span><span class="mi">3000</span><span class="p">,</span> <span class="n">observed_stats_args</span><span class="p">[</span><span class="s2">&quot;condition_value_t&quot;</span><span class="p">])</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">assertEqual</span><span class="p">(</span><span class="s2">&quot;y~x+z&quot;</span><span class="p">,</span> <span class="n">conf</span><span class="o">.</span><span class="n">get_model_formula</span><span class="p">())</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">assertEqual</span><span class="p">(</span><span class="s2">&quot;linear&quot;</span><span class="p">,</span> <span class="n">conf</span><span class="o">.</span><span class="n">get_model_test</span><span class="p">())</span></div></div>
+</pre></div>
+
+           </div>
+           
+          </div>
+          <footer>
+  
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        &copy; Copyright 2016, Beaulieu-Saucier Pharmacogenomics Centre.
+
+    </p>
+  </div>
+  Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a <a href="https://github.com/rtfd/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+
+</footer>
+
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+
+  
+
+    <script type="text/javascript">
+        var DOCUMENTATION_OPTIONS = {
+            URL_ROOT:'../../../',
+            VERSION:'0.3.0',
+            LANGUAGE:'None',
+            COLLAPSE_INDEX:false,
+            FILE_SUFFIX:'.html',
+            HAS_SOURCE:  true,
+            SOURCELINK_SUFFIX: '.txt'
+        };
+    </script>
+      <script type="text/javascript" src="../../../_static/jquery.js"></script>
+      <script type="text/javascript" src="../../../_static/underscore.js"></script>
+      <script type="text/javascript" src="../../../_static/doctools.js"></script>
+      <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.1/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+
+  
+
+  
+  
+    <script type="text/javascript" src="../../../_static/js/theme.js"></script>
+  
+
+  <script type="text/javascript">
+      jQuery(function () {
+          
+          SphinxRtdTheme.Navigation.enableSticky();
+          
+      });
+  </script> 
+
+</body>
+</html>

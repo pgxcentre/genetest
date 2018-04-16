@@ -1,0 +1,736 @@
+
+
+<!DOCTYPE html>
+<!--[if IE 8]><html class="no-js lt-ie9" lang="en" > <![endif]-->
+<!--[if gt IE 8]><!--> <html class="no-js" lang="en" > <!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <title>Analysis &mdash; genetest 0.3.0 documentation</title>
+  
+
+  
+  
+  
+  
+
+  
+
+  
+  
+    
+
+  
+
+  
+    <link rel="stylesheet" href="_static/css/theme.css" type="text/css" />
+  <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+  <link rel="stylesheet" href="_static/theme_overrides.css" type="text/css" />
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="next" title="genetest" href="module_content/modules.html" />
+    <link rel="prev" title="Installation" href="installation.html" /> 
+
+  
+  <script src="_static/js/modernizr.min.js"></script>
+
+</head>
+
+<body class="wy-body-for-nav">
+
+   
+  <div class="wy-grid-for-nav">
+
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search">
+          
+
+          
+            <a href="index.html" class="icon icon-home"> genetest
+          
+
+          
+          </a>
+
+          
+            
+            
+              <div class="version">
+                0.3
+              </div>
+            
+          
+
+          
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          
+        </div>
+
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+              
+            
+            
+              <ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="installation.html">Installation</a></li>
+<li class="toctree-l1 current"><a class="current reference internal" href="#">Analysis</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#genotypes">Genotypes</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#impute2">impute2</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#bed-bim-fam">bed/bim/fam</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#bgen">bgen</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#vcf">vcf</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="#phenotypes">Phenotypes</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#text">text</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="#statistical-model">Statistical model</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#linear-regression">Linear regression</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#logistic-regression">Logistic regression</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#repeated-measurements">Repeated measurements</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#survival-analysis">Survival analysis</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="module_content/modules.html">genetest</a></li>
+</ul>
+
+            
+          
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" aria-label="top navigation">
+        
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="index.html">genetest</a>
+        
+      </nav>
+
+
+      <div class="wy-nav-content">
+        
+        <div class="rst-content">
+        
+          
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+
+  <ul class="wy-breadcrumbs">
+    
+      <li><a href="index.html">Docs</a> &raquo;</li>
+        
+      <li>Analysis</li>
+    
+    
+      <li class="wy-breadcrumbs-aside">
+        
+            
+            <a href="_sources/analysis.rst.txt" rel="nofollow"> View page source</a>
+          
+        
+      </li>
+    
+  </ul>
+
+  
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+            
+  <div class="section" id="analysis">
+<h1>Analysis<a class="headerlink" href="#analysis" title="Permalink to this headline">¶</a></h1>
+<p>Multiple statistic models exist. To execute a genome-wide study, you can use
+the <code class="docutils literal notranslate"><span class="pre">geneparse</span></code> tool.</p>
+<div class="highlight-console notranslate"><div class="highlight"><pre><span></span><span class="gp">$</span> genetest --help
+<span class="go">usage: genetest [-h] [-v] [--test] [--nb-cpus NB] --configuration YAML</span>
+<span class="go">                [--output FILE] [--extract FILE] [--keep FILE] [--maf MAF]</span>
+
+<span class="go">Performs statistical analysis on genotypic data (version 0.3.0).</span>
+
+<span class="go">optional arguments:</span>
+<span class="go">  -h, --help            show this help message and exit</span>
+<span class="go">  -v, --version         show program&#39;s version number and exit</span>
+<span class="go">  --test                Execute the test suite and exit.</span>
+<span class="go">  --nb-cpus NB          The number of processes to use for the analysis. [1]</span>
+
+<span class="go">Input Options:</span>
+<span class="go">  --configuration YAML  The configuration file that describe the phenotypes,</span>
+<span class="go">                        genotypes, and model.</span>
+
+<span class="go">Output Options:</span>
+<span class="go">  --output FILE         The output file prefix that will contain the results</span>
+<span class="go">                        and other information. [genetest_results]</span>
+
+<span class="go">Other Options:</span>
+<span class="go">  --extract FILE        A file containing a list of marker to extract prior to</span>
+<span class="go">                        the statistical analysis (one marker per line).</span>
+<span class="go">  --keep FILE           A file containing a list of samples to keep prior to</span>
+<span class="go">                        the statistical analysis (one sample per line).</span>
+<span class="go">  --maf MAF             The MAF threshold to include a marker in the analysis.</span>
+<span class="go">                        [0.01]</span>
+</pre></div>
+</div>
+<p>A single configuration file (using the <em>YAML</em> format) describes the genetic and
+phenotypic files and the statistical model to perform. The following describe
+the different sections.</p>
+<p>In all the cases, when values are optional, it needs to be inserted into a
+<code class="docutils literal notranslate"><span class="pre">options</span></code> subsection, otherwise, the default values will be used.</p>
+<div class="section" id="genotypes">
+<h2>Genotypes<a class="headerlink" href="#genotypes" title="Permalink to this headline">¶</a></h2>
+<p>The <code class="docutils literal notranslate"><span class="pre">genotypes</span></code> section describes the genetic part of the analysis. Multiple
+file formats are available (see below). The required keyword <code class="docutils literal notranslate"><span class="pre">format</span></code>
+describes the file format for the genotypes.</p>
+<p>Each of the formats have their own required arguments and options.</p>
+<div class="section" id="impute2">
+<h3>impute2<a class="headerlink" href="#impute2" title="Permalink to this headline">¶</a></h3>
+<p>The following arguments and options are available for this format.</p>
+<table border="1" class="colwidths-given docutils">
+<colgroup>
+<col width="20%" />
+<col width="70%" />
+<col width="10%" />
+</colgroup>
+<thead valign="bottom">
+<tr class="row-odd"><th class="head">Argument</th>
+<th class="head">Description</th>
+<th class="head">Required</th>
+</tr>
+</thead>
+<tbody valign="top">
+<tr class="row-even"><td><code class="docutils literal notranslate"><span class="pre">filename</span></code></td>
+<td>The name of the <em>impute2</em> file.</td>
+<td>Yes</td>
+</tr>
+<tr class="row-odd"><td><code class="docutils literal notranslate"><span class="pre">sample_filename</span></code></td>
+<td>The name of the <em>sample</em> file.</td>
+<td>Yes</td>
+</tr>
+<tr class="row-even"><td><code class="docutils literal notranslate"><span class="pre">probability_threshold</span></code></td>
+<td>The probability threshold. Genotypes
+with the maximal probability lower
+to this value will be set as missing.
+[Default: 0.9]</td>
+<td>&#160;</td>
+</tr>
+</tbody>
+</table>
+<p>Below is an example of a <code class="docutils literal notranslate"><span class="pre">genotypes</span></code> section of the <em>YAML</em> configuration
+file for an IMPUTE2 format.</p>
+<div class="highlight-yaml notranslate"><div class="highlight"><pre><span></span><span class="l l-Scalar l-Scalar-Plain">genotypes</span><span class="p p-Indicator">:</span>
+    <span class="l l-Scalar l-Scalar-Plain">format</span><span class="p p-Indicator">:</span> <span class="l l-Scalar l-Scalar-Plain">impute2</span>
+    <span class="l l-Scalar l-Scalar-Plain">filename</span><span class="p p-Indicator">:</span> <span class="l l-Scalar l-Scalar-Plain">cohort.impute2</span>
+    <span class="l l-Scalar l-Scalar-Plain">sample_filename</span><span class="p p-Indicator">:</span> <span class="l l-Scalar l-Scalar-Plain">cohort.sample</span>
+    <span class="l l-Scalar l-Scalar-Plain">options</span><span class="p p-Indicator">:</span>
+        <span class="l l-Scalar l-Scalar-Plain">probability_threshold</span><span class="p p-Indicator">:</span> <span class="l l-Scalar l-Scalar-Plain">0.9</span>
+</pre></div>
+</div>
+</div>
+<div class="section" id="bed-bim-fam">
+<h3>bed/bim/fam<a class="headerlink" href="#bed-bim-fam" title="Permalink to this headline">¶</a></h3>
+<p>Only one argument is required.</p>
+<table border="1" class="colwidths-given docutils">
+<colgroup>
+<col width="20%" />
+<col width="70%" />
+<col width="10%" />
+</colgroup>
+<thead valign="bottom">
+<tr class="row-odd"><th class="head">Argument</th>
+<th class="head">Description</th>
+<th class="head">Required</th>
+</tr>
+</thead>
+<tbody valign="top">
+<tr class="row-even"><td><code class="docutils literal notranslate"><span class="pre">prefix</span></code></td>
+<td>The prefix of the BED/BIM/FAM files</td>
+<td>Yes</td>
+</tr>
+</tbody>
+</table>
+<p>Below is an example of a <code class="docutils literal notranslate"><span class="pre">genotypes</span></code> section of the <em>YAML</em> configuration file
+for a binary Plink format.</p>
+<div class="highlight-yaml notranslate"><div class="highlight"><pre><span></span><span class="l l-Scalar l-Scalar-Plain">genotypes</span><span class="p p-Indicator">:</span>
+    <span class="l l-Scalar l-Scalar-Plain">format</span><span class="p p-Indicator">:</span> <span class="l l-Scalar l-Scalar-Plain">plink</span>
+    <span class="l l-Scalar l-Scalar-Plain">prefix</span><span class="p p-Indicator">:</span> <span class="l l-Scalar l-Scalar-Plain">cohort</span>
+</pre></div>
+</div>
+</div>
+<div class="section" id="bgen">
+<h3>bgen<a class="headerlink" href="#bgen" title="Permalink to this headline">¶</a></h3>
+<p>The following arguments and options are available for this format.</p>
+<table border="1" class="colwidths-given docutils">
+<colgroup>
+<col width="20%" />
+<col width="70%" />
+<col width="10%" />
+</colgroup>
+<thead valign="bottom">
+<tr class="row-odd"><th class="head">Argument</th>
+<th class="head">Description</th>
+<th class="head">Required</th>
+</tr>
+</thead>
+<tbody valign="top">
+<tr class="row-even"><td><code class="docutils literal notranslate"><span class="pre">filename</span></code></td>
+<td>The name of the <em>bgen</em> file.</td>
+<td>Yes</td>
+</tr>
+<tr class="row-odd"><td><code class="docutils literal notranslate"><span class="pre">sample_filename</span></code></td>
+<td>The name of the <em>sample</em> file.</td>
+<td>Yes</td>
+</tr>
+<tr class="row-even"><td><code class="docutils literal notranslate"><span class="pre">probability_threshold</span></code></td>
+<td>The probability threshold. Genotypes
+with the maximal probability lower
+to this value will be set as missing.
+[Default: 0.9]</td>
+<td>&#160;</td>
+</tr>
+<tr class="row-odd"><td><code class="docutils literal notranslate"><span class="pre">cpus</span></code></td>
+<td>The number of CPUs to use while
+reading the <em>bgen</em> file. [Default: 1]</td>
+<td>&#160;</td>
+</tr>
+</tbody>
+</table>
+<p>Below is an example of a <code class="docutils literal notranslate"><span class="pre">genotypes</span></code> section of the <em>YAML</em> configuration file
+for a <em>bgen</em> file.</p>
+<div class="highlight-yaml notranslate"><div class="highlight"><pre><span></span><span class="l l-Scalar l-Scalar-Plain">genotypes</span><span class="p p-Indicator">:</span>
+    <span class="l l-Scalar l-Scalar-Plain">format</span><span class="p p-Indicator">:</span> <span class="l l-Scalar l-Scalar-Plain">bgen</span>
+    <span class="l l-Scalar l-Scalar-Plain">filename</span><span class="p p-Indicator">:</span> <span class="l l-Scalar l-Scalar-Plain">cohort.bgen</span>
+    <span class="l l-Scalar l-Scalar-Plain">sample_filename</span><span class="p p-Indicator">:</span> <span class="l l-Scalar l-Scalar-Plain">cohort.sample</span>
+    <span class="l l-Scalar l-Scalar-Plain">options</span><span class="p p-Indicator">:</span>
+        <span class="l l-Scalar l-Scalar-Plain">probability_threshold</span><span class="p p-Indicator">:</span> <span class="l l-Scalar l-Scalar-Plain">0.9</span>
+        <span class="l l-Scalar l-Scalar-Plain">cpus</span><span class="p p-Indicator">:</span> <span class="l l-Scalar l-Scalar-Plain">1</span>
+</pre></div>
+</div>
+</div>
+<div class="section" id="vcf">
+<h3>vcf<a class="headerlink" href="#vcf" title="Permalink to this headline">¶</a></h3>
+<p>Only one argument is required.</p>
+<table border="1" class="colwidths-given docutils">
+<colgroup>
+<col width="20%" />
+<col width="70%" />
+<col width="10%" />
+</colgroup>
+<thead valign="bottom">
+<tr class="row-odd"><th class="head">Argument</th>
+<th class="head">Description</th>
+<th class="head">Required</th>
+</tr>
+</thead>
+<tbody valign="top">
+<tr class="row-even"><td><code class="docutils literal notranslate"><span class="pre">filename</span></code></td>
+<td>The name of the VCF file.</td>
+<td>Yes</td>
+</tr>
+</tbody>
+</table>
+<p>Below is an example of a <code class="docutils literal notranslate"><span class="pre">genotypes</span></code> section of the <em>YAML</em> configuration file
+for the VCF format.</p>
+<div class="highlight-yaml notranslate"><div class="highlight"><pre><span></span><span class="l l-Scalar l-Scalar-Plain">genotypes</span><span class="p p-Indicator">:</span>
+    <span class="l l-Scalar l-Scalar-Plain">format</span><span class="p p-Indicator">:</span> <span class="l l-Scalar l-Scalar-Plain">vcf</span>
+    <span class="l l-Scalar l-Scalar-Plain">filename</span><span class="p p-Indicator">:</span> <span class="l l-Scalar l-Scalar-Plain">cohort.vcf</span>
+</pre></div>
+</div>
+</div>
+</div>
+<div class="section" id="phenotypes">
+<h2>Phenotypes<a class="headerlink" href="#phenotypes" title="Permalink to this headline">¶</a></h2>
+<p>The <code class="docutils literal notranslate"><span class="pre">phenotypes</span></code> section describes the phenotypes and variables that will be
+used in the statistical model. At the moment, only one format is available.</p>
+<div class="section" id="text">
+<h3>text<a class="headerlink" href="#text" title="Permalink to this headline">¶</a></h3>
+<p>The following arguments and options are available for this format.</p>
+<table border="1" class="colwidths-given docutils">
+<colgroup>
+<col width="20%" />
+<col width="70%" />
+<col width="10%" />
+</colgroup>
+<thead valign="bottom">
+<tr class="row-odd"><th class="head">Argument</th>
+<th class="head">Description</th>
+<th class="head">Required</th>
+</tr>
+</thead>
+<tbody valign="top">
+<tr class="row-even"><td><code class="docutils literal notranslate"><span class="pre">filename</span></code></td>
+<td>The name of the <em>bgen</em> file.</td>
+<td>Yes</td>
+</tr>
+<tr class="row-odd"><td><code class="docutils literal notranslate"><span class="pre">sample_column</span></code></td>
+<td><dl class="first last docutils">
+<dt>The name of the column containing the</dt>
+<dd>sample ID. This column will be used
+to match the phenotypes with the
+genotypes. [Default: sample]</dd>
+</dl>
+</td>
+<td>&#160;</td>
+</tr>
+<tr class="row-even"><td><code class="docutils literal notranslate"><span class="pre">field_separator</span></code></td>
+<td>The character that separate a field
+in the file. [Default: ‘\t’]</td>
+<td>&#160;</td>
+</tr>
+<tr class="row-odd"><td><code class="docutils literal notranslate"><span class="pre">missing_values</span></code></td>
+<td>The values that are considered as
+missing. An empty field is
+automaticaly considered as missing.</td>
+<td>&#160;</td>
+</tr>
+<tr class="row-even"><td><code class="docutils literal notranslate"><span class="pre">repeated_measurements</span></code></td>
+<td>Enter ‘Yes’ if the file containes
+repeated measurements.</td>
+<td>&#160;</td>
+</tr>
+<tr class="row-odd"><td><code class="docutils literal notranslate"><span class="pre">keep_sample_column</span></code></td>
+<td>For now, if repeated measurements are
+used (<em>i.e.</em> Yes at the previous
+option), enter ‘Yes’ to tell the
+parser to keep the sample column for
+the statistical analysis (will be
+used for groups in the MixedLM
+analysis).</td>
+<td>&#160;</td>
+</tr>
+</tbody>
+</table>
+<p>Below is an example of a <code class="docutils literal notranslate"><span class="pre">phenotypes</span></code> section of the <em>YAML</em> configuration file
+for a <em>text</em> file containing repeated measurements. The string <code class="docutils literal notranslate"><span class="pre">-99999</span></code> is
+considered as a missing value.</p>
+<div class="highlight-yaml notranslate"><div class="highlight"><pre><span></span><span class="l l-Scalar l-Scalar-Plain">phenotypes</span><span class="p p-Indicator">:</span>
+    <span class="l l-Scalar l-Scalar-Plain">format</span><span class="p p-Indicator">:</span> <span class="l l-Scalar l-Scalar-Plain">text</span>
+    <span class="l l-Scalar l-Scalar-Plain">filename</span><span class="p p-Indicator">:</span> <span class="l l-Scalar l-Scalar-Plain">phenotypes.txt</span>
+    <span class="l l-Scalar l-Scalar-Plain">options</span><span class="p p-Indicator">:</span>
+        <span class="l l-Scalar l-Scalar-Plain">sample_column</span><span class="p p-Indicator">:</span> <span class="l l-Scalar l-Scalar-Plain">sample_id</span>
+        <span class="l l-Scalar l-Scalar-Plain">missing_values</span><span class="p p-Indicator">:</span> <span class="s">&quot;-99999&quot;</span>
+        <span class="l l-Scalar l-Scalar-Plain">repeated_measurements</span><span class="p p-Indicator">:</span> <span class="l l-Scalar l-Scalar-Plain">Yes</span>
+        <span class="l l-Scalar l-Scalar-Plain">keep_sample_column</span><span class="p p-Indicator">:</span> <span class="l l-Scalar l-Scalar-Plain">Yes</span>
+</pre></div>
+</div>
+</div>
+</div>
+<div class="section" id="statistical-model">
+<h2>Statistical model<a class="headerlink" href="#statistical-model" title="Permalink to this headline">¶</a></h2>
+<p>For now, a total of 4 different analysis is possible: linear and logistic
+regressions, repeated measurements analysis using a mixed linear model, and
+survival analysis using the Cox proportional hazard regression. Each of those
+models (with their configuration) are described below.</p>
+<p>The model is described in the <code class="docutils literal notranslate"><span class="pre">model</span></code> section of the <em>YAML</em> configuration
+file and using the <code class="docutils literal notranslate"><span class="pre">test</span></code> argument.</p>
+<div class="section" id="linear-regression">
+<h3>Linear regression<a class="headerlink" href="#linear-regression" title="Permalink to this headline">¶</a></h3>
+<p>The following arguments and options are available for the linear regression.</p>
+<table border="1" class="colwidths-given docutils">
+<colgroup>
+<col width="20%" />
+<col width="70%" />
+<col width="10%" />
+</colgroup>
+<thead valign="bottom">
+<tr class="row-odd"><th class="head">Argument</th>
+<th class="head">Description</th>
+<th class="head">Required</th>
+</tr>
+</thead>
+<tbody valign="top">
+<tr class="row-even"><td><code class="docutils literal notranslate"><span class="pre">formula</span></code></td>
+<td>The formula describing the analysis
+to be perfomed. Note that the formula
+is similar to the one used in R. The
+names of the variables need to be
+the same as the columns in the
+phenotype file. The keyword <code class="docutils literal notranslate"><span class="pre">SNPs</span></code>
+is used to perform a GWAS.</td>
+<td>Yes</td>
+</tr>
+<tr class="row-odd"><td><code class="docutils literal notranslate"><span class="pre">condition_value_t</span></code></td>
+<td>The condition value threshold (for
+multicollinearity). Usually, values
+higher than 1000 indicate strong
+multicollinearity or other numerical
+problems. [Default: 1000]</td>
+<td>&#160;</td>
+</tr>
+<tr class="row-even"><td><code class="docutils literal notranslate"><span class="pre">eigenvals_t</span></code></td>
+<td>The Eigen value threshold (for
+multicollinearity). Usually, values
+lower than 1e-10 might indicate
+strong multicollinearity or singular
+design matrix. [Default: 1e-10]</td>
+<td>&#160;</td>
+</tr>
+</tbody>
+</table>
+<p>Below is an example of a <code class="docutils literal notranslate"><span class="pre">model</span></code> section of the <em>YAML</em> configuration file
+for a linear regression analysis of the phenotype <em>Pheno</em> over the variables
+<em>SNPs</em> (meaning a GWAS), <em>Age</em> and <em>Sex</em>. It also increase the conditional
+value threshold from the default value of 1000 to 5000.</p>
+<div class="highlight-yaml notranslate"><div class="highlight"><pre><span></span><span class="l l-Scalar l-Scalar-Plain">model</span><span class="p p-Indicator">:</span>
+    <span class="l l-Scalar l-Scalar-Plain">test</span><span class="p p-Indicator">:</span> <span class="l l-Scalar l-Scalar-Plain">linear</span>
+    <span class="l l-Scalar l-Scalar-Plain">formula</span><span class="p p-Indicator">:</span> <span class="s">&quot;Pheno</span><span class="nv"> </span><span class="s">~</span><span class="nv"> </span><span class="s">SNPs</span><span class="nv"> </span><span class="s">+</span><span class="nv"> </span><span class="s">Age</span><span class="nv"> </span><span class="s">+</span><span class="nv"> </span><span class="s">Sex&quot;</span>
+    <span class="l l-Scalar l-Scalar-Plain">options</span><span class="p p-Indicator">:</span>
+        <span class="l l-Scalar l-Scalar-Plain">condition_value_t</span><span class="p p-Indicator">:</span> <span class="l l-Scalar l-Scalar-Plain">5000</span>
+</pre></div>
+</div>
+<p>See <a class="reference internal" href="module_content/genetest.statistics.models.html#genetest.statistics.models.linear.StatsLinear" title="genetest.statistics.models.linear.StatsLinear"><code class="xref py py-class docutils literal notranslate"><span class="pre">genetest.statistics.models.linear.StatsLinear</span></code></a> for more
+information about the class.</p>
+</div>
+<div class="section" id="logistic-regression">
+<h3>Logistic regression<a class="headerlink" href="#logistic-regression" title="Permalink to this headline">¶</a></h3>
+<p>The logistic regression only requires the formula describing the model.</p>
+<table border="1" class="colwidths-given docutils">
+<colgroup>
+<col width="20%" />
+<col width="70%" />
+<col width="10%" />
+</colgroup>
+<thead valign="bottom">
+<tr class="row-odd"><th class="head">Argument</th>
+<th class="head">Description</th>
+<th class="head">Required</th>
+</tr>
+</thead>
+<tbody valign="top">
+<tr class="row-even"><td><code class="docutils literal notranslate"><span class="pre">formula</span></code></td>
+<td>The formula describing the analysis
+to be perfomed. Note that the formula
+is similar to the one used in R. The
+names of the variables needs to be
+the same as the columns in the
+phenotype file. The keyword <code class="docutils literal notranslate"><span class="pre">SNPs</span></code>
+is used to perform a GWAS.</td>
+<td>Yes</td>
+</tr>
+</tbody>
+</table>
+<p>Below is an example of a <code class="docutils literal notranslate"><span class="pre">model</span></code> section of the <em>YAML</em> configuration file
+for a logistic regression analysis of the phenotype <em>Status</em> over the variables
+<em>SNPs</em> (meaning a GWAS), <em>Age</em> and <em>Sex</em>.</p>
+<div class="highlight-yaml notranslate"><div class="highlight"><pre><span></span><span class="l l-Scalar l-Scalar-Plain">model</span><span class="p p-Indicator">:</span>
+    <span class="l l-Scalar l-Scalar-Plain">test</span><span class="p p-Indicator">:</span> <span class="l l-Scalar l-Scalar-Plain">logistic</span>
+    <span class="l l-Scalar l-Scalar-Plain">formula</span><span class="p p-Indicator">:</span> <span class="s">&quot;Status</span><span class="nv"> </span><span class="s">~</span><span class="nv"> </span><span class="s">SNPs</span><span class="nv"> </span><span class="s">+</span><span class="nv"> </span><span class="s">Age</span><span class="nv"> </span><span class="s">+</span><span class="nv"> </span><span class="s">Sex&quot;</span>
+</pre></div>
+</div>
+<p>See <a class="reference internal" href="module_content/genetest.statistics.models.html#genetest.statistics.models.logistic.StatsLogistic" title="genetest.statistics.models.logistic.StatsLogistic"><code class="xref py py-class docutils literal notranslate"><span class="pre">genetest.statistics.models.logistic.StatsLogistic</span></code></a> for more
+information about the class.</p>
+</div>
+<div class="section" id="repeated-measurements">
+<h3>Repeated measurements<a class="headerlink" href="#repeated-measurements" title="Permalink to this headline">¶</a></h3>
+<p>The repeated measurements analysis requires the following arguments and
+options.</p>
+<table border="1" class="colwidths-given docutils">
+<colgroup>
+<col width="20%" />
+<col width="70%" />
+<col width="10%" />
+</colgroup>
+<thead valign="bottom">
+<tr class="row-odd"><th class="head">Argument</th>
+<th class="head">Description</th>
+<th class="head">Required</th>
+</tr>
+</thead>
+<tbody valign="top">
+<tr class="row-even"><td><code class="docutils literal notranslate"><span class="pre">formula</span></code></td>
+<td>The formula describing the analysis
+to be perfomed. Note that the formula
+is similar to the one used in R. The
+names of the variables needs to be
+the same as the columns in the
+phenotype file. The keyword <code class="docutils literal notranslate"><span class="pre">SNPs</span></code>
+is used to perform a GWAS.</td>
+<td>Yes</td>
+</tr>
+<tr class="row-odd"><td><code class="docutils literal notranslate"><span class="pre">optimize</span></code></td>
+<td>Should an optimization be performed
+by using a two-step approach by
+fitting one LMM in the first step
+without the genetic component and, in
+the second step, fitting a simple
+regression model, for each SNP at a
+time. Then, if the p-value is lower
+than a user defined threshold, a
+complete LMM is fitted for this
+marker. Note that this optimization
+is invalid when using an
+genetic/environment interaction.
+[Default: True]</td>
+<td>&#160;</td>
+</tr>
+<tr class="row-even"><td><code class="docutils literal notranslate"><span class="pre">p_threshold</span></code></td>
+<td>The p-value threshold used for the
+MixedLM optimization (see above).
+[Default: 1e-4]</td>
+<td>&#160;</td>
+</tr>
+</tbody>
+</table>
+<p>Below is an example of a <code class="docutils literal notranslate"><span class="pre">model</span></code> section of the <em>YAML</em> configuration file
+for a repeated measurements analysis of the phenotype <em>Pheno</em> over the
+variables <em>SNPs</em> (meaning a GWAS), <em>Age</em>, <em>Sex</em> and <em>Visit</em> using the sample
+IDs (<em>SampleID</em>) as the grouping variable.</p>
+<div class="highlight-yaml notranslate"><div class="highlight"><pre><span></span><span class="l l-Scalar l-Scalar-Plain">model</span><span class="p p-Indicator">:</span>
+    <span class="l l-Scalar l-Scalar-Plain">test</span><span class="p p-Indicator">:</span> <span class="l l-Scalar l-Scalar-Plain">mixedlm</span>
+    <span class="l l-Scalar l-Scalar-Plain">formula</span><span class="p p-Indicator">:</span> <span class="s">&quot;[outcome=Pheno,</span><span class="nv"> </span><span class="s">groups=SampleID]</span><span class="nv"> </span><span class="s">~</span><span class="nv"> </span><span class="s">SNPs</span><span class="nv"> </span><span class="s">+</span><span class="nv"> </span><span class="s">Age</span><span class="nv"> </span><span class="s">+</span><span class="nv"> </span><span class="s">Sex</span><span class="nv"> </span><span class="s">+</span><span class="nv"> </span><span class="s">Visit&quot;</span>
+    <span class="l l-Scalar l-Scalar-Plain">options</span><span class="p p-Indicator">:</span>
+        <span class="l l-Scalar l-Scalar-Plain">optimize</span><span class="p p-Indicator">:</span> <span class="l l-Scalar l-Scalar-Plain">Yes</span>
+</pre></div>
+</div>
+<p>See <a class="reference internal" href="module_content/genetest.statistics.models.html#genetest.statistics.models.mixedlm.StatsMixedLM" title="genetest.statistics.models.mixedlm.StatsMixedLM"><code class="xref py py-class docutils literal notranslate"><span class="pre">genetest.statistics.models.mixedlm.StatsMixedLM</span></code></a> for more
+information about the class.</p>
+</div>
+<div class="section" id="survival-analysis">
+<h3>Survival analysis<a class="headerlink" href="#survival-analysis" title="Permalink to this headline">¶</a></h3>
+<p>The Cox proportional hazard regression only requires the formula describing
+the model.</p>
+<table border="1" class="colwidths-given docutils">
+<colgroup>
+<col width="20%" />
+<col width="70%" />
+<col width="10%" />
+</colgroup>
+<thead valign="bottom">
+<tr class="row-odd"><th class="head">Argument</th>
+<th class="head">Description</th>
+<th class="head">Required</th>
+</tr>
+</thead>
+<tbody valign="top">
+<tr class="row-even"><td><code class="docutils literal notranslate"><span class="pre">formula</span></code></td>
+<td>The formula describing the analysis
+to be perfomed. Note that the formula
+is similar to the one used in R. The
+names of the variables needs to be
+the same as the columns in the
+phenotype file. The keyword <code class="docutils literal notranslate"><span class="pre">SNPs</span></code>
+is used to perform a GWAS.</td>
+<td>Yes</td>
+</tr>
+</tbody>
+</table>
+<p>Below is an example of a <code class="docutils literal notranslate"><span class="pre">model</span></code> section of the <em>YAML</em> configuration file
+for a survival analysis (Cox proportional hazard regression) of the event
+<em>Event</em> and time to event <em>TTE</em> over the variables <em>SNPs</em> (meaning a GWAS),
+<em>Age</em> and <em>Sex</em>.</p>
+<div class="highlight-yaml notranslate"><div class="highlight"><pre><span></span><span class="l l-Scalar l-Scalar-Plain">model</span><span class="p p-Indicator">:</span>
+    <span class="l l-Scalar l-Scalar-Plain">test</span><span class="p p-Indicator">:</span> <span class="l l-Scalar l-Scalar-Plain">coxph</span>
+    <span class="l l-Scalar l-Scalar-Plain">formula</span><span class="p p-Indicator">:</span> <span class="s">&quot;[tte=TTE,</span><span class="nv"> </span><span class="s">event=Event]</span><span class="nv"> </span><span class="s">~</span><span class="nv"> </span><span class="s">SNPs</span><span class="nv"> </span><span class="s">+</span><span class="nv"> </span><span class="s">Age</span><span class="nv"> </span><span class="s">+</span><span class="nv"> </span><span class="s">Sex&quot;</span>
+</pre></div>
+</div>
+<p>See <a class="reference internal" href="module_content/genetest.statistics.models.html#genetest.statistics.models.survival.StatsCoxPH" title="genetest.statistics.models.survival.StatsCoxPH"><code class="xref py py-class docutils literal notranslate"><span class="pre">genetest.statistics.models.survival.StatsCoxPH</span></code></a> for more
+information about the class.</p>
+</div>
+</div>
+</div>
+
+
+           </div>
+           
+          </div>
+          <footer>
+  
+    <div class="rst-footer-buttons" role="navigation" aria-label="footer navigation">
+      
+        <a href="module_content/modules.html" class="btn btn-neutral float-right" title="genetest" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right"></span></a>
+      
+      
+        <a href="installation.html" class="btn btn-neutral" title="Installation" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left"></span> Previous</a>
+      
+    </div>
+  
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        &copy; Copyright 2016, Beaulieu-Saucier Pharmacogenomics Centre.
+
+    </p>
+  </div>
+  Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a <a href="https://github.com/rtfd/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+
+</footer>
+
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+
+  
+
+    <script type="text/javascript">
+        var DOCUMENTATION_OPTIONS = {
+            URL_ROOT:'./',
+            VERSION:'0.3.0',
+            LANGUAGE:'None',
+            COLLAPSE_INDEX:false,
+            FILE_SUFFIX:'.html',
+            HAS_SOURCE:  true,
+            SOURCELINK_SUFFIX: '.txt'
+        };
+    </script>
+      <script type="text/javascript" src="_static/jquery.js"></script>
+      <script type="text/javascript" src="_static/underscore.js"></script>
+      <script type="text/javascript" src="_static/doctools.js"></script>
+      <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.1/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+
+  
+
+  
+  
+    <script type="text/javascript" src="_static/js/theme.js"></script>
+  
+
+  <script type="text/javascript">
+      jQuery(function () {
+          
+          SphinxRtdTheme.Navigation.enableSticky();
+          
+      });
+  </script> 
+
+</body>
+</html>

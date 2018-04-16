@@ -1,0 +1,472 @@
+
+
+<!DOCTYPE html>
+<!--[if IE 8]><html class="no-js lt-ie9" lang="en" > <![endif]-->
+<!--[if gt IE 8]><!--> <html class="no-js" lang="en" > <!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <title>genetest.phenotypes package &mdash; genetest 0.3.0 documentation</title>
+  
+
+  
+  
+  
+  
+
+  
+
+  
+  
+    
+
+  
+
+  
+    <link rel="stylesheet" href="../_static/css/theme.css" type="text/css" />
+  <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+  <link rel="stylesheet" href="../_static/theme_overrides.css" type="text/css" />
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="genetest.statistics package" href="genetest.statistics.html" />
+    <link rel="prev" title="genetest package" href="genetest.html" /> 
+
+  
+  <script src="../_static/js/modernizr.min.js"></script>
+
+</head>
+
+<body class="wy-body-for-nav">
+
+   
+  <div class="wy-grid-for-nav">
+
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search">
+          
+
+          
+            <a href="../index.html" class="icon icon-home"> genetest
+          
+
+          
+          </a>
+
+          
+            
+            
+              <div class="version">
+                0.3
+              </div>
+            
+          
+
+          
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          
+        </div>
+
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+              
+            
+            
+              <ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="../installation.html">Installation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../analysis.html">Analysis</a></li>
+<li class="toctree-l1 current"><a class="reference internal" href="modules.html">genetest</a><ul class="current">
+<li class="toctree-l2 current"><a class="reference internal" href="genetest.html">genetest package</a><ul class="current">
+<li class="toctree-l3 current"><a class="reference internal" href="genetest.html#subpackages">Subpackages</a><ul class="current">
+<li class="toctree-l4 current"><a class="current reference internal" href="#">genetest.phenotypes package</a></li>
+<li class="toctree-l4"><a class="reference internal" href="genetest.statistics.html">genetest.statistics package</a></li>
+<li class="toctree-l4"><a class="reference internal" href="genetest.tests.html">genetest.tests package</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="genetest.html#submodules">Submodules</a></li>
+<li class="toctree-l3"><a class="reference internal" href="genetest.html#module-genetest.configuration">genetest.configuration module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="genetest.html#module-genetest.version">genetest.version module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="genetest.html#module-genetest">Module contents</a></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+
+            
+          
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" aria-label="top navigation">
+        
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../index.html">genetest</a>
+        
+      </nav>
+
+
+      <div class="wy-nav-content">
+        
+        <div class="rst-content">
+        
+          
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+
+  <ul class="wy-breadcrumbs">
+    
+      <li><a href="../index.html">Docs</a> &raquo;</li>
+        
+          <li><a href="modules.html">genetest</a> &raquo;</li>
+        
+          <li><a href="genetest.html">genetest package</a> &raquo;</li>
+        
+      <li>genetest.phenotypes package</li>
+    
+    
+      <li class="wy-breadcrumbs-aside">
+        
+            
+            <a href="../_sources/module_content/genetest.phenotypes.rst.txt" rel="nofollow"> View page source</a>
+          
+        
+      </li>
+    
+  </ul>
+
+  
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+            
+  <div class="section" id="genetest-phenotypes-package">
+<h1>genetest.phenotypes package<a class="headerlink" href="#genetest-phenotypes-package" title="Permalink to this headline">¶</a></h1>
+<div class="section" id="submodules">
+<h2>Submodules<a class="headerlink" href="#submodules" title="Permalink to this headline">¶</a></h2>
+</div>
+<div class="section" id="module-genetest.phenotypes.core">
+<span id="genetest-phenotypes-core-module"></span><h2>genetest.phenotypes.core module<a class="headerlink" href="#module-genetest.phenotypes.core" title="Permalink to this headline">¶</a></h2>
+<dl class="class">
+<dt id="genetest.phenotypes.core.PhenotypesContainer">
+<em class="property">class </em><code class="descclassname">genetest.phenotypes.core.</code><code class="descname">PhenotypesContainer</code><a class="reference internal" href="../_modules/genetest/phenotypes/core.html#PhenotypesContainer"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#genetest.phenotypes.core.PhenotypesContainer" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference external" href="https://docs.python.org/3/library/functions.html#object" title="(in Python v3.6)"><code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></a></p>
+<dl class="method">
+<dt id="genetest.phenotypes.core.PhenotypesContainer.close">
+<code class="descname">close</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/genetest/phenotypes/core.html#PhenotypesContainer.close"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#genetest.phenotypes.core.PhenotypesContainer.close" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="genetest.phenotypes.core.PhenotypesContainer.get_nb_samples">
+<code class="descname">get_nb_samples</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/genetest/phenotypes/core.html#PhenotypesContainer.get_nb_samples"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#genetest.phenotypes.core.PhenotypesContainer.get_nb_samples" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns the number of samples.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Returns:</th><td class="field-body">The number of samples.</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Return type:</th><td class="field-body"><a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.6)">int</a></td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="genetest.phenotypes.core.PhenotypesContainer.get_nb_variables">
+<code class="descname">get_nb_variables</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/genetest/phenotypes/core.html#PhenotypesContainer.get_nb_variables"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#genetest.phenotypes.core.PhenotypesContainer.get_nb_variables" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns the number of variables.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Returns:</th><td class="field-body">The number of variables.</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Return type:</th><td class="field-body"><a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.6)">int</a></td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="genetest.phenotypes.core.PhenotypesContainer.get_phenotypes">
+<code class="descname">get_phenotypes</code><span class="sig-paren">(</span><em>li=None</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/genetest/phenotypes/core.html#PhenotypesContainer.get_phenotypes"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#genetest.phenotypes.core.PhenotypesContainer.get_phenotypes" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns a dataframe of phenotypes.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>li</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#list" title="(in Python v3.6)"><em>list</em></a>) – A list of phenotypes to extract (default: None means
+all phenotypes).</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body">A dataframe containing the phenotypes (with the
+sample IDs as index).</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body"><a class="reference external" href="http://pandas.pydata.org/pandas-docs/stable/generated/pandas.DataFrame.html#pandas.DataFrame" title="(in pandas v0.22.0)">pandas.DataFrame</a></td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="genetest.phenotypes.core.PhenotypesContainer.is_repeated">
+<code class="descname">is_repeated</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/genetest/phenotypes/core.html#PhenotypesContainer.is_repeated"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#genetest.phenotypes.core.PhenotypesContainer.is_repeated" title="Permalink to this definition">¶</a></dt>
+<dd><p>Check if the phenotypes contain repeated measurements.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Returns:</th><td class="field-body"><code class="docutils literal notranslate"><span class="pre">True</span></code> if the data contains repeated measurements,
+<code class="docutils literal notranslate"><span class="pre">False</span></code> otherwise.</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Return type:</th><td class="field-body"><a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.6)">bool</a></td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="genetest.phenotypes.core.PhenotypesContainer.keep_samples">
+<code class="descname">keep_samples</code><span class="sig-paren">(</span><em>keep</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/genetest/phenotypes/core.html#PhenotypesContainer.keep_samples"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#genetest.phenotypes.core.PhenotypesContainer.keep_samples" title="Permalink to this definition">¶</a></dt>
+<dd><p>Keeps only a subset of samples.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>keep</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#list" title="(in Python v3.6)"><em>list</em></a>) – The list of samples to keep.</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+</dd></dl>
+
+</div>
+<div class="section" id="module-genetest.phenotypes.text">
+<span id="genetest-phenotypes-text-module"></span><h2>genetest.phenotypes.text module<a class="headerlink" href="#module-genetest.phenotypes.text" title="Permalink to this headline">¶</a></h2>
+<dl class="class">
+<dt id="genetest.phenotypes.text.TextPhenotypes">
+<em class="property">class </em><code class="descclassname">genetest.phenotypes.text.</code><code class="descname">TextPhenotypes</code><span class="sig-paren">(</span><em>filename</em>, <em>sample_column='sample'</em>, <em>field_separator='t'</em>, <em>missing_values=None</em>, <em>repeated_measurements=False</em>, <em>keep_sample_column=False</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/genetest/phenotypes/text.html#TextPhenotypes"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#genetest.phenotypes.text.TextPhenotypes" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#genetest.phenotypes.core.PhenotypesContainer" title="genetest.phenotypes.core.PhenotypesContainer"><code class="xref py py-class docutils literal notranslate"><span class="pre">genetest.phenotypes.core.PhenotypesContainer</span></code></a></p>
+<p>Instantiate a new TextPhenotypes object.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<li><strong>filename</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.6)"><em>str</em></a>) – The name of the text file containing the
+phenotypes.</li>
+<li><strong>sample_column</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.6)"><em>str</em></a>) – The name of the column containing the sample
+identification number (to fit with the
+genotypes).</li>
+<li><strong>field_separator</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.6)"><em>str</em></a>) – The field separator (default is tabulation).</li>
+<li><strong>missing_values</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.6)"><em>str</em></a><em> or </em><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#list" title="(in Python v3.6)"><em>list</em></a><em> or </em><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#dict" title="(in Python v3.6)"><em>dict</em></a>) – The missing value(s).</li>
+<li><strong>repeated_measurements</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.6)"><em>bool</em></a>) – Are the data containing repeated
+measurements (e.g. for MixedLM).</li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+<dl class="method">
+<dt id="genetest.phenotypes.text.TextPhenotypes.close">
+<code class="descname">close</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/genetest/phenotypes/text.html#TextPhenotypes.close"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#genetest.phenotypes.text.TextPhenotypes.close" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="genetest.phenotypes.text.TextPhenotypes.get_nb_samples">
+<code class="descname">get_nb_samples</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/genetest/phenotypes/text.html#TextPhenotypes.get_nb_samples"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#genetest.phenotypes.text.TextPhenotypes.get_nb_samples" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns the number of samples.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Returns:</th><td class="field-body">The number of samples.</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Return type:</th><td class="field-body"><a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.6)">int</a></td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="genetest.phenotypes.text.TextPhenotypes.get_nb_variables">
+<code class="descname">get_nb_variables</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/genetest/phenotypes/text.html#TextPhenotypes.get_nb_variables"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#genetest.phenotypes.text.TextPhenotypes.get_nb_variables" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns the number of variables.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Returns:</th><td class="field-body">The number of variables.</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Return type:</th><td class="field-body"><a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.6)">int</a></td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="genetest.phenotypes.text.TextPhenotypes.get_phenotypes">
+<code class="descname">get_phenotypes</code><span class="sig-paren">(</span><em>li=None</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/genetest/phenotypes/text.html#TextPhenotypes.get_phenotypes"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#genetest.phenotypes.text.TextPhenotypes.get_phenotypes" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns a dataframe of phenotypes.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Returns:</th><td class="field-body">A dataframe containing the phenotypes (with the
+sample IDs as index).</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Return type:</th><td class="field-body"><a class="reference external" href="http://pandas.pydata.org/pandas-docs/stable/generated/pandas.DataFrame.html#pandas.DataFrame" title="(in pandas v0.22.0)">pandas.DataFrame</a></td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="genetest.phenotypes.text.TextPhenotypes.is_repeated">
+<code class="descname">is_repeated</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/genetest/phenotypes/text.html#TextPhenotypes.is_repeated"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#genetest.phenotypes.text.TextPhenotypes.is_repeated" title="Permalink to this definition">¶</a></dt>
+<dd><p>Check if the phenotypes contain repeated measurements.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Returns:</th><td class="field-body"><code class="docutils literal notranslate"><span class="pre">True</span></code> if the data contains repeated measurements,
+<code class="docutils literal notranslate"><span class="pre">False</span></code> otherwise.</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Return type:</th><td class="field-body"><a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.6)">bool</a></td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="genetest.phenotypes.text.TextPhenotypes.keep_samples">
+<code class="descname">keep_samples</code><span class="sig-paren">(</span><em>keep</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/genetest/phenotypes/text.html#TextPhenotypes.keep_samples"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#genetest.phenotypes.text.TextPhenotypes.keep_samples" title="Permalink to this definition">¶</a></dt>
+<dd><p>Keeps only a subset of samples.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>keep</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#set" title="(in Python v3.6)"><em>set</em></a>) – The list of samples to keep.</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="genetest.phenotypes.text.TextPhenotypes.merge">
+<code class="descname">merge</code><span class="sig-paren">(</span><em>other</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/genetest/phenotypes/text.html#TextPhenotypes.merge"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#genetest.phenotypes.text.TextPhenotypes.merge" title="Permalink to this definition">¶</a></dt>
+<dd><p>Merge this instance with another.</p>
+</dd></dl>
+
+</dd></dl>
+
+</div>
+<div class="section" id="module-genetest.phenotypes">
+<span id="module-contents"></span><h2>Module contents<a class="headerlink" href="#module-genetest.phenotypes" title="Permalink to this headline">¶</a></h2>
+</div>
+</div>
+
+
+           </div>
+           
+          </div>
+          <footer>
+  
+    <div class="rst-footer-buttons" role="navigation" aria-label="footer navigation">
+      
+        <a href="genetest.statistics.html" class="btn btn-neutral float-right" title="genetest.statistics package" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right"></span></a>
+      
+      
+        <a href="genetest.html" class="btn btn-neutral" title="genetest package" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left"></span> Previous</a>
+      
+    </div>
+  
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        &copy; Copyright 2016, Beaulieu-Saucier Pharmacogenomics Centre.
+
+    </p>
+  </div>
+  Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a <a href="https://github.com/rtfd/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+
+</footer>
+
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+
+  
+
+    <script type="text/javascript">
+        var DOCUMENTATION_OPTIONS = {
+            URL_ROOT:'../',
+            VERSION:'0.3.0',
+            LANGUAGE:'None',
+            COLLAPSE_INDEX:false,
+            FILE_SUFFIX:'.html',
+            HAS_SOURCE:  true,
+            SOURCELINK_SUFFIX: '.txt'
+        };
+    </script>
+      <script type="text/javascript" src="../_static/jquery.js"></script>
+      <script type="text/javascript" src="../_static/underscore.js"></script>
+      <script type="text/javascript" src="../_static/doctools.js"></script>
+      <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.1/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+
+  
+
+  
+  
+    <script type="text/javascript" src="../_static/js/theme.js"></script>
+  
+
+  <script type="text/javascript">
+      jQuery(function () {
+          
+          SphinxRtdTheme.Navigation.enableSticky();
+          
+      });
+  </script> 
+
+</body>
+</html>

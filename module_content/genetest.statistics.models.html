@@ -1,0 +1,399 @@
+
+
+<!DOCTYPE html>
+<!--[if IE 8]><html class="no-js lt-ie9" lang="en" > <![endif]-->
+<!--[if gt IE 8]><!--> <html class="no-js" lang="en" > <!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <title>genetest.statistics.models package &mdash; genetest 0.3.0 documentation</title>
+  
+
+  
+  
+  
+  
+
+  
+
+  
+  
+    
+
+  
+
+  
+    <link rel="stylesheet" href="../_static/css/theme.css" type="text/css" />
+  <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+  <link rel="stylesheet" href="../_static/theme_overrides.css" type="text/css" />
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="genetest.tests package" href="genetest.tests.html" />
+    <link rel="prev" title="genetest.statistics package" href="genetest.statistics.html" /> 
+
+  
+  <script src="../_static/js/modernizr.min.js"></script>
+
+</head>
+
+<body class="wy-body-for-nav">
+
+   
+  <div class="wy-grid-for-nav">
+
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search">
+          
+
+          
+            <a href="../index.html" class="icon icon-home"> genetest
+          
+
+          
+          </a>
+
+          
+            
+            
+              <div class="version">
+                0.3
+              </div>
+            
+          
+
+          
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          
+        </div>
+
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+              
+            
+            
+              <ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="../installation.html">Installation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../analysis.html">Analysis</a></li>
+<li class="toctree-l1 current"><a class="reference internal" href="modules.html">genetest</a><ul class="current">
+<li class="toctree-l2 current"><a class="reference internal" href="genetest.html">genetest package</a><ul class="current">
+<li class="toctree-l3 current"><a class="reference internal" href="genetest.html#subpackages">Subpackages</a><ul class="current">
+<li class="toctree-l4"><a class="reference internal" href="genetest.phenotypes.html">genetest.phenotypes package</a></li>
+<li class="toctree-l4 current"><a class="reference internal" href="genetest.statistics.html">genetest.statistics package</a></li>
+<li class="toctree-l4"><a class="reference internal" href="genetest.tests.html">genetest.tests package</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="genetest.html#submodules">Submodules</a></li>
+<li class="toctree-l3"><a class="reference internal" href="genetest.html#module-genetest.configuration">genetest.configuration module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="genetest.html#module-genetest.version">genetest.version module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="genetest.html#module-genetest">Module contents</a></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+
+            
+          
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" aria-label="top navigation">
+        
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../index.html">genetest</a>
+        
+      </nav>
+
+
+      <div class="wy-nav-content">
+        
+        <div class="rst-content">
+        
+          
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+
+  <ul class="wy-breadcrumbs">
+    
+      <li><a href="../index.html">Docs</a> &raquo;</li>
+        
+          <li><a href="modules.html">genetest</a> &raquo;</li>
+        
+          <li><a href="genetest.html">genetest package</a> &raquo;</li>
+        
+          <li><a href="genetest.statistics.html">genetest.statistics package</a> &raquo;</li>
+        
+      <li>genetest.statistics.models package</li>
+    
+    
+      <li class="wy-breadcrumbs-aside">
+        
+            
+            <a href="../_sources/module_content/genetest.statistics.models.rst.txt" rel="nofollow"> View page source</a>
+          
+        
+      </li>
+    
+  </ul>
+
+  
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+            
+  <div class="section" id="genetest-statistics-models-package">
+<h1>genetest.statistics.models package<a class="headerlink" href="#genetest-statistics-models-package" title="Permalink to this headline">¶</a></h1>
+<div class="section" id="submodules">
+<h2>Submodules<a class="headerlink" href="#submodules" title="Permalink to this headline">¶</a></h2>
+</div>
+<div class="section" id="module-genetest.statistics.models.linear">
+<span id="genetest-statistics-models-linear-module"></span><h2>genetest.statistics.models.linear module<a class="headerlink" href="#module-genetest.statistics.models.linear" title="Permalink to this headline">¶</a></h2>
+<dl class="class">
+<dt id="genetest.statistics.models.linear.StatsLinear">
+<em class="property">class </em><code class="descclassname">genetest.statistics.models.linear.</code><code class="descname">StatsLinear</code><span class="sig-paren">(</span><em>condition_value_t=1000</em>, <em>eigenvals_t=1e-10</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/genetest/statistics/models/linear.html#StatsLinear"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#genetest.statistics.models.linear.StatsLinear" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="genetest.statistics.html#genetest.statistics.core.StatsModels" title="genetest.statistics.core.StatsModels"><code class="xref py py-class docutils literal notranslate"><span class="pre">genetest.statistics.core.StatsModels</span></code></a></p>
+<p>Initializes a ‘StatsLinear’ instance.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<li><strong>condition_value_t</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.6)"><em>int</em></a>) – The condition value threshold (for
+multicollinearity). Usually, values higher
+than 1000 indicate strong
+multicollinearity or other numerical
+problems.</li>
+<li><strong>eigenvals_t</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.6)"><em>float</em></a>) – The Eigen value threshold (for
+multicollinearity). Usually, values lower than
+1e-10 might indicate strong multicollinearity
+or singular design matrix.</li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+<dl class="method">
+<dt id="genetest.statistics.models.linear.StatsLinear.fit">
+<code class="descname">fit</code><span class="sig-paren">(</span><em>y</em>, <em>X</em>, <em>handler=None</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/genetest/statistics/models/linear.html#StatsLinear.fit"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#genetest.statistics.models.linear.StatsLinear.fit" title="Permalink to this definition">¶</a></dt>
+<dd><p>Fit the model.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<li><strong>y</strong> (<a class="reference external" href="http://pandas.pydata.org/pandas-docs/stable/generated/pandas.DataFrame.html#pandas.DataFrame" title="(in pandas v0.22.0)"><em>pandas.DataFrame</em></a>) – The vector of endogenous variable.</li>
+<li><strong>X</strong> (<a class="reference external" href="http://pandas.pydata.org/pandas-docs/stable/generated/pandas.DataFrame.html#pandas.DataFrame" title="(in pandas v0.22.0)"><em>pandas.DataFrame</em></a>) – The matrix of exogenous variables.</li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+</dd></dl>
+
+</div>
+<div class="section" id="module-genetest.statistics.models.logistic">
+<span id="genetest-statistics-models-logistic-module"></span><h2>genetest.statistics.models.logistic module<a class="headerlink" href="#module-genetest.statistics.models.logistic" title="Permalink to this headline">¶</a></h2>
+<dl class="class">
+<dt id="genetest.statistics.models.logistic.StatsLogistic">
+<em class="property">class </em><code class="descclassname">genetest.statistics.models.logistic.</code><code class="descname">StatsLogistic</code><a class="reference internal" href="../_modules/genetest/statistics/models/logistic.html#StatsLogistic"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#genetest.statistics.models.logistic.StatsLogistic" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="genetest.statistics.html#genetest.statistics.core.StatsModels" title="genetest.statistics.core.StatsModels"><code class="xref py py-class docutils literal notranslate"><span class="pre">genetest.statistics.core.StatsModels</span></code></a></p>
+<dl class="method">
+<dt id="genetest.statistics.models.logistic.StatsLogistic.fit">
+<code class="descname">fit</code><span class="sig-paren">(</span><em>y</em>, <em>X</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/genetest/statistics/models/logistic.html#StatsLogistic.fit"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#genetest.statistics.models.logistic.StatsLogistic.fit" title="Permalink to this definition">¶</a></dt>
+<dd><p>Fit the model.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<li><strong>y</strong> (<a class="reference external" href="http://pandas.pydata.org/pandas-docs/stable/generated/pandas.DataFrame.html#pandas.DataFrame" title="(in pandas v0.22.0)"><em>pandas.DataFrame</em></a>) – The vector of endogenous variable.</li>
+<li><strong>X</strong> (<a class="reference external" href="http://pandas.pydata.org/pandas-docs/stable/generated/pandas.DataFrame.html#pandas.DataFrame" title="(in pandas v0.22.0)"><em>pandas.DataFrame</em></a>) – The matrix of exogenous variables.</li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+</dd></dl>
+
+</div>
+<div class="section" id="module-genetest.statistics.models.mixedlm">
+<span id="genetest-statistics-models-mixedlm-module"></span><h2>genetest.statistics.models.mixedlm module<a class="headerlink" href="#module-genetest.statistics.models.mixedlm" title="Permalink to this headline">¶</a></h2>
+<dl class="class">
+<dt id="genetest.statistics.models.mixedlm.StatsMixedLM">
+<em class="property">class </em><code class="descclassname">genetest.statistics.models.mixedlm.</code><code class="descname">StatsMixedLM</code><span class="sig-paren">(</span><em>reml=True</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/genetest/statistics/models/mixedlm.html#StatsMixedLM"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#genetest.statistics.models.mixedlm.StatsMixedLM" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="genetest.statistics.html#genetest.statistics.core.StatsModels" title="genetest.statistics.core.StatsModels"><code class="xref py py-class docutils literal notranslate"><span class="pre">genetest.statistics.core.StatsModels</span></code></a></p>
+<p>Initializes a ‘StatsMixedLM’ instance.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>reml</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.6)"><em>bool</em></a>) – Whether to use REML or ML for the test.</td>
+</tr>
+</tbody>
+</table>
+<dl class="method">
+<dt id="genetest.statistics.models.mixedlm.StatsMixedLM.fit">
+<code class="descname">fit</code><span class="sig-paren">(</span><em>y</em>, <em>X</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/genetest/statistics/models/mixedlm.html#StatsMixedLM.fit"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#genetest.statistics.models.mixedlm.StatsMixedLM.fit" title="Permalink to this definition">¶</a></dt>
+<dd><p>Fit the model.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<li><strong>y</strong> (<a class="reference external" href="http://pandas.pydata.org/pandas-docs/stable/generated/pandas.DataFrame.html#pandas.DataFrame" title="(in pandas v0.22.0)"><em>pandas.DataFrame</em></a>) – The vector of endogenous variable.</li>
+<li><strong>X</strong> (<a class="reference external" href="http://pandas.pydata.org/pandas-docs/stable/generated/pandas.DataFrame.html#pandas.DataFrame" title="(in pandas v0.22.0)"><em>pandas.DataFrame</em></a>) – The matrix of exogenous variables.</li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+</dd></dl>
+
+</div>
+<div class="section" id="module-genetest.statistics.models.survival">
+<span id="genetest-statistics-models-survival-module"></span><h2>genetest.statistics.models.survival module<a class="headerlink" href="#module-genetest.statistics.models.survival" title="Permalink to this headline">¶</a></h2>
+<dl class="class">
+<dt id="genetest.statistics.models.survival.StatsCoxPH">
+<em class="property">class </em><code class="descclassname">genetest.statistics.models.survival.</code><code class="descname">StatsCoxPH</code><a class="reference internal" href="../_modules/genetest/statistics/models/survival.html#StatsCoxPH"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#genetest.statistics.models.survival.StatsCoxPH" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="genetest.statistics.html#genetest.statistics.core.StatsModels" title="genetest.statistics.core.StatsModels"><code class="xref py py-class docutils literal notranslate"><span class="pre">genetest.statistics.core.StatsModels</span></code></a></p>
+<dl class="method">
+<dt id="genetest.statistics.models.survival.StatsCoxPH.fit">
+<code class="descname">fit</code><span class="sig-paren">(</span><em>y</em>, <em>X</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/genetest/statistics/models/survival.html#StatsCoxPH.fit"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#genetest.statistics.models.survival.StatsCoxPH.fit" title="Permalink to this definition">¶</a></dt>
+<dd><p>Fit the model.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<li><strong>y</strong> (<a class="reference external" href="http://pandas.pydata.org/pandas-docs/stable/generated/pandas.DataFrame.html#pandas.DataFrame" title="(in pandas v0.22.0)"><em>pandas.DataFrame</em></a>) – The vector of endogenous variable.</li>
+<li><strong>X</strong> (<a class="reference external" href="http://pandas.pydata.org/pandas-docs/stable/generated/pandas.DataFrame.html#pandas.DataFrame" title="(in pandas v0.22.0)"><em>pandas.DataFrame</em></a>) – The matrix of exogenous variables.</li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+<div class="admonition warning">
+<p class="first admonition-title">Warning</p>
+<p class="last">The y dataframe (outcome) should contain two columns: tte and
+event.</p>
+</div>
+</dd></dl>
+
+</dd></dl>
+
+</div>
+<div class="section" id="module-genetest.statistics.models">
+<span id="module-contents"></span><h2>Module contents<a class="headerlink" href="#module-genetest.statistics.models" title="Permalink to this headline">¶</a></h2>
+</div>
+</div>
+
+
+           </div>
+           
+          </div>
+          <footer>
+  
+    <div class="rst-footer-buttons" role="navigation" aria-label="footer navigation">
+      
+        <a href="genetest.tests.html" class="btn btn-neutral float-right" title="genetest.tests package" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right"></span></a>
+      
+      
+        <a href="genetest.statistics.html" class="btn btn-neutral" title="genetest.statistics package" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left"></span> Previous</a>
+      
+    </div>
+  
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        &copy; Copyright 2016, Beaulieu-Saucier Pharmacogenomics Centre.
+
+    </p>
+  </div>
+  Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a <a href="https://github.com/rtfd/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+
+</footer>
+
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+
+  
+
+    <script type="text/javascript">
+        var DOCUMENTATION_OPTIONS = {
+            URL_ROOT:'../',
+            VERSION:'0.3.0',
+            LANGUAGE:'None',
+            COLLAPSE_INDEX:false,
+            FILE_SUFFIX:'.html',
+            HAS_SOURCE:  true,
+            SOURCELINK_SUFFIX: '.txt'
+        };
+    </script>
+      <script type="text/javascript" src="../_static/jquery.js"></script>
+      <script type="text/javascript" src="../_static/underscore.js"></script>
+      <script type="text/javascript" src="../_static/doctools.js"></script>
+      <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.1/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+
+  
+
+  
+  
+    <script type="text/javascript" src="../_static/js/theme.js"></script>
+  
+
+  <script type="text/javascript">
+      jQuery(function () {
+          
+          SphinxRtdTheme.Navigation.enableSticky();
+          
+      });
+  </script> 
+
+</body>
+</html>

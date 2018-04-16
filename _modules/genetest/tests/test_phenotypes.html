@@ -1,0 +1,414 @@
+
+
+<!DOCTYPE html>
+<!--[if IE 8]><html class="no-js lt-ie9" lang="en" > <![endif]-->
+<!--[if gt IE 8]><!--> <html class="no-js" lang="en" > <!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <title>genetest.tests.test_phenotypes &mdash; genetest 0.3.0 documentation</title>
+  
+
+  
+  
+  
+  
+
+  
+
+  
+  
+    
+
+  
+
+  
+    <link rel="stylesheet" href="../../../_static/css/theme.css" type="text/css" />
+  <link rel="stylesheet" href="../../../_static/pygments.css" type="text/css" />
+  <link rel="stylesheet" href="../../../_static/theme_overrides.css" type="text/css" />
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" /> 
+
+  
+  <script src="../../../_static/js/modernizr.min.js"></script>
+
+</head>
+
+<body class="wy-body-for-nav">
+
+   
+  <div class="wy-grid-for-nav">
+
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search">
+          
+
+          
+            <a href="../../../index.html" class="icon icon-home"> genetest
+          
+
+          
+          </a>
+
+          
+            
+            
+              <div class="version">
+                0.3
+              </div>
+            
+          
+
+          
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          
+        </div>
+
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+              
+            
+            
+              <ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../installation.html">Installation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../analysis.html">Analysis</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../module_content/modules.html">genetest</a></li>
+</ul>
+
+            
+          
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" aria-label="top navigation">
+        
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../index.html">genetest</a>
+        
+      </nav>
+
+
+      <div class="wy-nav-content">
+        
+        <div class="rst-content">
+        
+          
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+
+  <ul class="wy-breadcrumbs">
+    
+      <li><a href="../../../index.html">Docs</a> &raquo;</li>
+        
+          <li><a href="../../index.html">Module code</a> &raquo;</li>
+        
+          <li><a href="../../genetest.html">genetest</a> &raquo;</li>
+        
+      <li>genetest.tests.test_phenotypes</li>
+    
+    
+      <li class="wy-breadcrumbs-aside">
+        
+      </li>
+    
+  </ul>
+
+  
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+            
+  <h1>Source code for genetest.tests.test_phenotypes</h1><div class="highlight"><pre>
+<span></span>
+
+<span class="c1"># This file is part of genetest.</span>
+<span class="c1">#</span>
+<span class="c1"># This work is licensed under the Creative Commons Attribution-NonCommercial</span>
+<span class="c1"># 4.0 International License. To view a copy of this license, visit</span>
+<span class="c1"># http://creativecommons.org/licenses/by-nc/4.0/ or send a letter to Creative</span>
+<span class="c1"># Commons, PO Box 1866, Mountain View, CA 94042, USA.</span>
+
+
+<span class="kn">import</span> <span class="nn">os</span>
+<span class="kn">import</span> <span class="nn">unittest</span>
+<span class="kn">from</span> <span class="nn">tempfile</span> <span class="k">import</span> <span class="n">TemporaryDirectory</span>
+
+<span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+<span class="kn">import</span> <span class="nn">pandas</span> <span class="k">as</span> <span class="nn">pd</span>
+
+<span class="kn">from</span> <span class="nn">..phenotypes.core</span> <span class="k">import</span> <span class="n">PhenotypesContainer</span>
+<span class="kn">from</span> <span class="nn">..phenotypes.text</span> <span class="k">import</span> <span class="n">TextPhenotypes</span>
+
+
+<span class="n">__copyright__</span> <span class="o">=</span> <span class="s2">&quot;Copyright 2016, Beaulieu-Saucier Pharmacogenomics Centre&quot;</span>
+<span class="n">__license__</span> <span class="o">=</span> <span class="s2">&quot;Attribution-NonCommercial 4.0 International (CC BY-NC 4.0)&quot;</span>
+
+
+<div class="viewcode-block" id="TestCore"><a class="viewcode-back" href="../../../module_content/genetest.tests.html#genetest.tests.test_phenotypes.TestCore">[docs]</a><span class="k">class</span> <span class="nc">TestCore</span><span class="p">(</span><span class="n">unittest</span><span class="o">.</span><span class="n">TestCase</span><span class="p">):</span>
+<div class="viewcode-block" id="TestCore.test_get_phenotypes"><a class="viewcode-back" href="../../../module_content/genetest.tests.html#genetest.tests.test_phenotypes.TestCore.test_get_phenotypes">[docs]</a>    <span class="k">def</span> <span class="nf">test_get_phenotypes</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Tests that &#39;get_phenotypes&#39; raises a NotImplementedError.&quot;&quot;&quot;</span>
+        <span class="k">with</span> <span class="bp">self</span><span class="o">.</span><span class="n">assertRaises</span><span class="p">(</span><span class="ne">NotImplementedError</span><span class="p">):</span>
+            <span class="n">PhenotypesContainer</span><span class="p">()</span><span class="o">.</span><span class="n">get_phenotypes</span><span class="p">()</span></div>
+
+<div class="viewcode-block" id="TestCore.test_close"><a class="viewcode-back" href="../../../module_content/genetest.tests.html#genetest.tests.test_phenotypes.TestCore.test_close">[docs]</a>    <span class="k">def</span> <span class="nf">test_close</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Tests that &#39;close&#39; raises a NotImplementedError.&quot;&quot;&quot;</span>
+        <span class="k">with</span> <span class="bp">self</span><span class="o">.</span><span class="n">assertRaises</span><span class="p">(</span><span class="ne">NotImplementedError</span><span class="p">):</span>
+            <span class="n">PhenotypesContainer</span><span class="p">()</span><span class="o">.</span><span class="n">close</span><span class="p">()</span></div></div>
+
+
+<div class="viewcode-block" id="TestText"><a class="viewcode-back" href="../../../module_content/genetest.tests.html#genetest.tests.test_phenotypes.TestText">[docs]</a><span class="k">class</span> <span class="nc">TestText</span><span class="p">(</span><span class="n">unittest</span><span class="o">.</span><span class="n">TestCase</span><span class="p">):</span>
+<div class="viewcode-block" id="TestText.setUp"><a class="viewcode-back" href="../../../module_content/genetest.tests.html#genetest.tests.test_phenotypes.TestText.setUp">[docs]</a>    <span class="k">def</span> <span class="nf">setUp</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">tmpdir</span> <span class="o">=</span> <span class="n">TemporaryDirectory</span><span class="p">(</span><span class="n">prefix</span><span class="o">=</span><span class="s2">&quot;genetest_&quot;</span><span class="p">)</span>
+
+        <span class="c1"># The phenotype file</span>
+        <span class="n">pheno_file</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">tmpdir</span><span class="o">.</span><span class="n">name</span><span class="p">,</span> <span class="s2">&quot;pheno.txt&quot;</span><span class="p">)</span>
+        <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">pheno_file</span><span class="p">,</span> <span class="s2">&quot;w&quot;</span><span class="p">)</span> <span class="k">as</span> <span class="n">f</span><span class="p">:</span>
+            <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;sample&quot;</span><span class="p">,</span> <span class="s2">&quot;V1&quot;</span><span class="p">,</span> <span class="s2">&quot;V2&quot;</span><span class="p">,</span> <span class="s2">&quot;V3&quot;</span><span class="p">,</span> <span class="n">file</span><span class="o">=</span><span class="n">f</span><span class="p">)</span>
+            <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;s1&quot;</span><span class="p">,</span> <span class="s2">&quot;1&quot;</span><span class="p">,</span> <span class="s2">&quot;1.2&quot;</span><span class="p">,</span> <span class="s2">&quot;a&quot;</span><span class="p">,</span> <span class="n">file</span><span class="o">=</span><span class="n">f</span><span class="p">)</span>
+            <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;s2&quot;</span><span class="p">,</span> <span class="s2">&quot;234&quot;</span><span class="p">,</span> <span class="s2">&quot;34.3&quot;</span><span class="p">,</span> <span class="s2">&quot;sdc&quot;</span><span class="p">,</span> <span class="n">file</span><span class="o">=</span><span class="n">f</span><span class="p">)</span>
+            <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;s3&quot;</span><span class="p">,</span> <span class="s2">&quot;-999999&quot;</span><span class="p">,</span> <span class="s2">&quot;&quot;</span><span class="p">,</span> <span class="s2">&quot;csgb&quot;</span><span class="p">,</span> <span class="n">file</span><span class="o">=</span><span class="n">f</span><span class="p">)</span>
+            <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;s4&quot;</span><span class="p">,</span> <span class="s2">&quot;5463&quot;</span><span class="p">,</span> <span class="s2">&quot;16.8&quot;</span><span class="p">,</span> <span class="s2">&quot;999999&quot;</span><span class="p">,</span> <span class="n">file</span><span class="o">=</span><span class="n">f</span><span class="p">)</span>
+            <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;s5&quot;</span><span class="p">,</span> <span class="s2">&quot;2356&quot;</span><span class="p">,</span> <span class="s2">&quot;574.8&quot;</span><span class="p">,</span> <span class="s2">&quot;jyrhg&quot;</span><span class="p">,</span> <span class="n">file</span><span class="o">=</span><span class="n">f</span><span class="p">)</span>
+            <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;s6&quot;</span><span class="p">,</span> <span class="s2">&quot;&quot;</span><span class="p">,</span> <span class="s2">&quot;567.2&quot;</span><span class="p">,</span> <span class="s2">&quot;bvnchy&quot;</span><span class="p">,</span> <span class="n">file</span><span class="o">=</span><span class="n">f</span><span class="p">)</span>
+            <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;s7&quot;</span><span class="p">,</span> <span class="s2">&quot;57634&quot;</span><span class="p">,</span> <span class="s2">&quot;3134.3&quot;</span><span class="p">,</span> <span class="s2">&quot;&quot;</span><span class="p">,</span> <span class="n">file</span><span class="o">=</span><span class="n">f</span><span class="p">)</span>
+            <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;s8&quot;</span><span class="p">,</span> <span class="s2">&quot;346&quot;</span><span class="p">,</span> <span class="s2">&quot;999999&quot;</span><span class="p">,</span> <span class="s2">&quot;dfgfjgsd&quot;</span><span class="p">,</span> <span class="n">file</span><span class="o">=</span><span class="n">f</span><span class="p">)</span>
+            <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;s9&quot;</span><span class="p">,</span> <span class="s2">&quot;34626&quot;</span><span class="p">,</span> <span class="s2">&quot;3421.3&quot;</span><span class="p">,</span> <span class="s2">&quot;fhyrj&quot;</span><span class="p">,</span> <span class="n">file</span><span class="o">=</span><span class="n">f</span><span class="p">)</span>
+
+        <span class="c1"># The expected data frame</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">expected_pheno</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">(</span>
+            <span class="p">[(</span><span class="s2">&quot;s1&quot;</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mf">1.2</span><span class="p">,</span> <span class="s2">&quot;a&quot;</span><span class="p">),</span>
+             <span class="p">(</span><span class="s2">&quot;s2&quot;</span><span class="p">,</span> <span class="mi">234</span><span class="p">,</span> <span class="mf">34.3</span><span class="p">,</span> <span class="s2">&quot;sdc&quot;</span><span class="p">),</span>
+             <span class="p">(</span><span class="s2">&quot;s3&quot;</span><span class="p">,</span> <span class="o">-</span><span class="mi">999999</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">nan</span><span class="p">,</span> <span class="s2">&quot;csgb&quot;</span><span class="p">),</span>
+             <span class="p">(</span><span class="s2">&quot;s4&quot;</span><span class="p">,</span> <span class="mi">5463</span><span class="p">,</span> <span class="mf">16.8</span><span class="p">,</span> <span class="s2">&quot;999999&quot;</span><span class="p">),</span>
+             <span class="p">(</span><span class="s2">&quot;s5&quot;</span><span class="p">,</span> <span class="mi">2356</span><span class="p">,</span> <span class="mf">574.8</span><span class="p">,</span> <span class="s2">&quot;jyrhg&quot;</span><span class="p">),</span>
+             <span class="p">(</span><span class="s2">&quot;s6&quot;</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">nan</span><span class="p">,</span> <span class="mf">567.2</span><span class="p">,</span> <span class="s2">&quot;bvnchy&quot;</span><span class="p">),</span>
+             <span class="p">(</span><span class="s2">&quot;s7&quot;</span><span class="p">,</span> <span class="mi">57634</span><span class="p">,</span> <span class="mf">3134.3</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">nan</span><span class="p">),</span>
+             <span class="p">(</span><span class="s2">&quot;s8&quot;</span><span class="p">,</span> <span class="mi">346</span><span class="p">,</span> <span class="mi">999999</span><span class="p">,</span> <span class="s2">&quot;dfgfjgsd&quot;</span><span class="p">),</span>
+             <span class="p">(</span><span class="s2">&quot;s9&quot;</span><span class="p">,</span> <span class="mi">34626</span><span class="p">,</span> <span class="mf">3421.3</span><span class="p">,</span> <span class="s2">&quot;fhyrj&quot;</span><span class="p">)],</span>
+            <span class="n">columns</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;sample&quot;</span><span class="p">,</span> <span class="s2">&quot;V1&quot;</span><span class="p">,</span> <span class="s2">&quot;V2&quot;</span><span class="p">,</span> <span class="s2">&quot;V3&quot;</span><span class="p">],</span>
+        <span class="p">)</span><span class="o">.</span><span class="n">set_index</span><span class="p">(</span><span class="s2">&quot;sample&quot;</span><span class="p">)</span>
+
+        <span class="c1"># The TextPhenotypes parameters</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">parameters</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">(</span>
+            <span class="n">filename</span><span class="o">=</span><span class="n">pheno_file</span><span class="p">,</span>
+            <span class="n">sample_column</span><span class="o">=</span><span class="s2">&quot;sample&quot;</span><span class="p">,</span>
+            <span class="n">field_separator</span><span class="o">=</span><span class="s2">&quot; &quot;</span><span class="p">,</span>
+            <span class="n">missing_values</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+            <span class="n">repeated_measurements</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+        <span class="p">)</span></div>
+
+<div class="viewcode-block" id="TestText.tearDown"><a class="viewcode-back" href="../../../module_content/genetest.tests.html#genetest.tests.test_phenotypes.TestText.tearDown">[docs]</a>    <span class="k">def</span> <span class="nf">tearDown</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">tmpdir</span><span class="o">.</span><span class="n">cleanup</span><span class="p">()</span></div>
+
+<div class="viewcode-block" id="TestText.test_normal_functionality"><a class="viewcode-back" href="../../../module_content/genetest.tests.html#genetest.tests.test_phenotypes.TestText.test_normal_functionality">[docs]</a>    <span class="k">def</span> <span class="nf">test_normal_functionality</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Tests normal functionality.&quot;&quot;&quot;</span>
+        <span class="n">observed_pheno</span> <span class="o">=</span> <span class="n">TextPhenotypes</span><span class="p">(</span><span class="o">**</span><span class="bp">self</span><span class="o">.</span><span class="n">parameters</span><span class="p">)</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">assertTrue</span><span class="p">(</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">expected_pheno</span><span class="o">.</span><span class="n">equals</span><span class="p">(</span><span class="n">observed_pheno</span><span class="o">.</span><span class="n">get_phenotypes</span><span class="p">())</span>
+        <span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">assertEqual</span><span class="p">(</span><span class="mi">9</span><span class="p">,</span> <span class="n">observed_pheno</span><span class="o">.</span><span class="n">get_nb_samples</span><span class="p">())</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">assertFalse</span><span class="p">(</span><span class="n">observed_pheno</span><span class="o">.</span><span class="n">is_repeated</span><span class="p">())</span></div>
+
+<div class="viewcode-block" id="TestText.test_subset_phenotypes"><a class="viewcode-back" href="../../../module_content/genetest.tests.html#genetest.tests.test_phenotypes.TestText.test_subset_phenotypes">[docs]</a>    <span class="k">def</span> <span class="nf">test_subset_phenotypes</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Tests asking for a subset of phenotypes.&quot;&quot;&quot;</span>
+        <span class="n">container</span> <span class="o">=</span> <span class="n">TextPhenotypes</span><span class="p">(</span><span class="o">**</span><span class="bp">self</span><span class="o">.</span><span class="n">parameters</span><span class="p">)</span>
+
+        <span class="n">subset</span> <span class="o">=</span> <span class="p">(</span><span class="s2">&quot;V1&quot;</span><span class="p">,</span> <span class="s2">&quot;V3&quot;</span><span class="p">)</span>
+        <span class="n">expected</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">expected_pheno</span><span class="o">.</span><span class="n">loc</span><span class="p">[:,</span> <span class="p">[</span><span class="s2">&quot;V1&quot;</span><span class="p">,</span> <span class="s2">&quot;V3&quot;</span><span class="p">]]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">assertTrue</span><span class="p">(</span>
+            <span class="n">expected</span><span class="o">.</span><span class="n">equals</span><span class="p">(</span><span class="n">container</span><span class="o">.</span><span class="n">get_phenotypes</span><span class="p">(</span><span class="n">subset</span><span class="p">))</span>
+        <span class="p">)</span></div>
+
+<div class="viewcode-block" id="TestText.test_bad_subset_phenotypes"><a class="viewcode-back" href="../../../module_content/genetest.tests.html#genetest.tests.test_phenotypes.TestText.test_bad_subset_phenotypes">[docs]</a>    <span class="k">def</span> <span class="nf">test_bad_subset_phenotypes</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Tests asking for a subset with unavailable phenotypes.&quot;&quot;&quot;</span>
+        <span class="n">container</span> <span class="o">=</span> <span class="n">TextPhenotypes</span><span class="p">(</span><span class="o">**</span><span class="bp">self</span><span class="o">.</span><span class="n">parameters</span><span class="p">)</span>
+        <span class="k">with</span> <span class="bp">self</span><span class="o">.</span><span class="n">assertRaises</span><span class="p">(</span><span class="ne">KeyError</span><span class="p">):</span>
+            <span class="n">container</span><span class="o">.</span><span class="n">get_phenotypes</span><span class="p">((</span><span class="s2">&quot;V1&quot;</span><span class="p">,</span> <span class="s2">&quot;V3&quot;</span><span class="p">,</span> <span class="s2">&quot;VX&quot;</span><span class="p">))</span></div>
+
+<div class="viewcode-block" id="TestText.test_repeated_measurements"><a class="viewcode-back" href="../../../module_content/genetest.tests.html#genetest.tests.test_phenotypes.TestText.test_repeated_measurements">[docs]</a>    <span class="k">def</span> <span class="nf">test_repeated_measurements</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Tests when there are repeated measurements available.&quot;&quot;&quot;</span>
+        <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">parameters</span><span class="p">[</span><span class="s2">&quot;filename&quot;</span><span class="p">],</span> <span class="s2">&quot;w&quot;</span><span class="p">)</span> <span class="k">as</span> <span class="n">f</span><span class="p">:</span>
+            <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;sample&quot;</span><span class="p">,</span> <span class="s2">&quot;Time&quot;</span><span class="p">,</span> <span class="s2">&quot;V1&quot;</span><span class="p">,</span> <span class="s2">&quot;V2&quot;</span><span class="p">,</span> <span class="s2">&quot;V3&quot;</span><span class="p">,</span> <span class="n">file</span><span class="o">=</span><span class="n">f</span><span class="p">)</span>
+            <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;s1&quot;</span><span class="p">,</span> <span class="s2">&quot;13&quot;</span><span class="p">,</span> <span class="s2">&quot;1&quot;</span><span class="p">,</span> <span class="s2">&quot;1.2&quot;</span><span class="p">,</span> <span class="s2">&quot;a&quot;</span><span class="p">,</span> <span class="n">file</span><span class="o">=</span><span class="n">f</span><span class="p">)</span>
+            <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;s1&quot;</span><span class="p">,</span> <span class="s2">&quot;125&quot;</span><span class="p">,</span> <span class="s2">&quot;1&quot;</span><span class="p">,</span> <span class="s2">&quot;1.2&quot;</span><span class="p">,</span> <span class="s2">&quot;a&quot;</span><span class="p">,</span> <span class="n">file</span><span class="o">=</span><span class="n">f</span><span class="p">)</span>
+            <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;s1&quot;</span><span class="p">,</span> <span class="s2">&quot;356&quot;</span><span class="p">,</span> <span class="s2">&quot;1&quot;</span><span class="p">,</span> <span class="s2">&quot;1.2&quot;</span><span class="p">,</span> <span class="s2">&quot;a&quot;</span><span class="p">,</span> <span class="n">file</span><span class="o">=</span><span class="n">f</span><span class="p">)</span>
+            <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;s2&quot;</span><span class="p">,</span> <span class="s2">&quot;12&quot;</span><span class="p">,</span> <span class="s2">&quot;5463&quot;</span><span class="p">,</span> <span class="s2">&quot;16.8&quot;</span><span class="p">,</span> <span class="s2">&quot;b&quot;</span><span class="p">,</span> <span class="n">file</span><span class="o">=</span><span class="n">f</span><span class="p">)</span>
+            <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;s2&quot;</span><span class="p">,</span> <span class="s2">&quot;34&quot;</span><span class="p">,</span> <span class="s2">&quot;5463&quot;</span><span class="p">,</span> <span class="s2">&quot;16.8&quot;</span><span class="p">,</span> <span class="s2">&quot;b&quot;</span><span class="p">,</span> <span class="n">file</span><span class="o">=</span><span class="n">f</span><span class="p">)</span>
+            <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;s2&quot;</span><span class="p">,</span> <span class="s2">&quot;67&quot;</span><span class="p">,</span> <span class="s2">&quot;5463&quot;</span><span class="p">,</span> <span class="s2">&quot;16.8&quot;</span><span class="p">,</span> <span class="s2">&quot;b&quot;</span><span class="p">,</span> <span class="n">file</span><span class="o">=</span><span class="n">f</span><span class="p">)</span>
+            <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;s3&quot;</span><span class="p">,</span> <span class="s2">&quot;1&quot;</span><span class="p">,</span> <span class="s2">&quot;57634&quot;</span><span class="p">,</span> <span class="s2">&quot;3134.3&quot;</span><span class="p">,</span> <span class="s2">&quot;c&quot;</span><span class="p">,</span> <span class="n">file</span><span class="o">=</span><span class="n">f</span><span class="p">)</span>
+            <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;s3&quot;</span><span class="p">,</span> <span class="s2">&quot;5&quot;</span><span class="p">,</span> <span class="s2">&quot;57634&quot;</span><span class="p">,</span> <span class="s2">&quot;3134.3&quot;</span><span class="p">,</span> <span class="s2">&quot;c&quot;</span><span class="p">,</span> <span class="n">file</span><span class="o">=</span><span class="n">f</span><span class="p">)</span>
+            <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;s3&quot;</span><span class="p">,</span> <span class="s2">&quot;10&quot;</span><span class="p">,</span> <span class="s2">&quot;57634&quot;</span><span class="p">,</span> <span class="s2">&quot;3134.3&quot;</span><span class="p">,</span> <span class="s2">&quot;c&quot;</span><span class="p">,</span> <span class="n">file</span><span class="o">=</span><span class="n">f</span><span class="p">)</span>
+
+        <span class="n">expected_pheno</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">(</span>
+            <span class="p">[(</span><span class="s2">&quot;s1&quot;</span><span class="p">,</span> <span class="mi">13</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mf">1.2</span><span class="p">,</span> <span class="s2">&quot;a&quot;</span><span class="p">),</span>
+             <span class="p">(</span><span class="s2">&quot;s1&quot;</span><span class="p">,</span> <span class="mi">125</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mf">1.2</span><span class="p">,</span> <span class="s2">&quot;a&quot;</span><span class="p">),</span>
+             <span class="p">(</span><span class="s2">&quot;s1&quot;</span><span class="p">,</span> <span class="mi">356</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mf">1.2</span><span class="p">,</span> <span class="s2">&quot;a&quot;</span><span class="p">),</span>
+             <span class="p">(</span><span class="s2">&quot;s2&quot;</span><span class="p">,</span> <span class="mi">12</span><span class="p">,</span> <span class="mi">5463</span><span class="p">,</span> <span class="mf">16.8</span><span class="p">,</span> <span class="s2">&quot;b&quot;</span><span class="p">),</span>
+             <span class="p">(</span><span class="s2">&quot;s2&quot;</span><span class="p">,</span> <span class="mi">34</span><span class="p">,</span> <span class="mi">5463</span><span class="p">,</span> <span class="mf">16.8</span><span class="p">,</span> <span class="s2">&quot;b&quot;</span><span class="p">),</span>
+             <span class="p">(</span><span class="s2">&quot;s2&quot;</span><span class="p">,</span> <span class="mi">67</span><span class="p">,</span> <span class="mi">5463</span><span class="p">,</span> <span class="mf">16.8</span><span class="p">,</span> <span class="s2">&quot;b&quot;</span><span class="p">),</span>
+             <span class="p">(</span><span class="s2">&quot;s3&quot;</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">57634</span><span class="p">,</span> <span class="mf">3134.3</span><span class="p">,</span> <span class="s2">&quot;c&quot;</span><span class="p">),</span>
+             <span class="p">(</span><span class="s2">&quot;s3&quot;</span><span class="p">,</span> <span class="mi">5</span><span class="p">,</span> <span class="mi">57634</span><span class="p">,</span> <span class="mf">3134.3</span><span class="p">,</span> <span class="s2">&quot;c&quot;</span><span class="p">),</span>
+             <span class="p">(</span><span class="s2">&quot;s3&quot;</span><span class="p">,</span> <span class="mi">10</span><span class="p">,</span> <span class="mi">57634</span><span class="p">,</span> <span class="mf">3134.3</span><span class="p">,</span> <span class="s2">&quot;c&quot;</span><span class="p">)],</span>
+            <span class="n">columns</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;sample&quot;</span><span class="p">,</span> <span class="s2">&quot;Time&quot;</span><span class="p">,</span> <span class="s2">&quot;V1&quot;</span><span class="p">,</span> <span class="s2">&quot;V2&quot;</span><span class="p">,</span> <span class="s2">&quot;V3&quot;</span><span class="p">],</span>
+        <span class="p">)</span><span class="o">.</span><span class="n">set_index</span><span class="p">(</span><span class="s2">&quot;sample&quot;</span><span class="p">)</span>
+
+        <span class="c1"># Changing the parameters</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">parameters</span><span class="p">[</span><span class="s2">&quot;repeated_measurements&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="kc">True</span>
+
+        <span class="c1"># Getting the observed phenotypes</span>
+        <span class="n">observed_pheno</span> <span class="o">=</span> <span class="n">TextPhenotypes</span><span class="p">(</span><span class="o">**</span><span class="bp">self</span><span class="o">.</span><span class="n">parameters</span><span class="p">)</span>
+
+        <span class="c1"># Checking the values</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">assertTrue</span><span class="p">(</span><span class="n">expected_pheno</span><span class="o">.</span><span class="n">equals</span><span class="p">(</span><span class="n">observed_pheno</span><span class="o">.</span><span class="n">get_phenotypes</span><span class="p">()))</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">assertEqual</span><span class="p">(</span><span class="mi">3</span><span class="p">,</span> <span class="n">observed_pheno</span><span class="o">.</span><span class="n">get_nb_samples</span><span class="p">())</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">assertTrue</span><span class="p">(</span><span class="n">observed_pheno</span><span class="o">.</span><span class="n">is_repeated</span><span class="p">())</span></div>
+
+<div class="viewcode-block" id="TestText.test_one_other_missing_value"><a class="viewcode-back" href="../../../module_content/genetest.tests.html#genetest.tests.test_phenotypes.TestText.test_one_other_missing_value">[docs]</a>    <span class="k">def</span> <span class="nf">test_one_other_missing_value</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Tests when there are other missing values.&quot;&quot;&quot;</span>
+        <span class="c1"># Changing the parameters</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">parameters</span><span class="p">[</span><span class="s2">&quot;missing_values&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="s2">&quot;999999&quot;</span>
+
+        <span class="c1"># Getting the observed phenotypes</span>
+        <span class="n">observed_pheno</span> <span class="o">=</span> <span class="n">TextPhenotypes</span><span class="p">(</span><span class="o">**</span><span class="bp">self</span><span class="o">.</span><span class="n">parameters</span><span class="p">)</span><span class="o">.</span><span class="n">get_phenotypes</span><span class="p">()</span>
+
+        <span class="c1"># Changing the expected phenotypes</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">expected_pheno</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="s2">&quot;s4&quot;</span><span class="p">,</span> <span class="s2">&quot;V3&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">nan</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">expected_pheno</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="s2">&quot;s8&quot;</span><span class="p">,</span> <span class="s2">&quot;V2&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">nan</span>
+
+        <span class="c1"># Comparing</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">assertTrue</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">expected_pheno</span><span class="o">.</span><span class="n">equals</span><span class="p">(</span><span class="n">observed_pheno</span><span class="p">))</span></div>
+
+<div class="viewcode-block" id="TestText.test_multiple_missing_values"><a class="viewcode-back" href="../../../module_content/genetest.tests.html#genetest.tests.test_phenotypes.TestText.test_multiple_missing_values">[docs]</a>    <span class="k">def</span> <span class="nf">test_multiple_missing_values</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Tests when there are multiple missing values.&quot;&quot;&quot;</span>
+        <span class="c1"># Changing the parameters</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">parameters</span><span class="p">[</span><span class="s2">&quot;missing_values&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="p">[</span><span class="s2">&quot;-999999&quot;</span><span class="p">,</span> <span class="s2">&quot;999999&quot;</span><span class="p">]</span>
+
+        <span class="c1"># Getting the observed phenotypes</span>
+        <span class="n">observed_pheno</span> <span class="o">=</span> <span class="n">TextPhenotypes</span><span class="p">(</span><span class="o">**</span><span class="bp">self</span><span class="o">.</span><span class="n">parameters</span><span class="p">)</span><span class="o">.</span><span class="n">get_phenotypes</span><span class="p">()</span>
+
+        <span class="c1"># Changing the expected phenotypes</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">expected_pheno</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="s2">&quot;s3&quot;</span><span class="p">,</span> <span class="s2">&quot;V1&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">nan</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">expected_pheno</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="s2">&quot;s4&quot;</span><span class="p">,</span> <span class="s2">&quot;V3&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">nan</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">expected_pheno</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="s2">&quot;s8&quot;</span><span class="p">,</span> <span class="s2">&quot;V2&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">nan</span>
+
+        <span class="c1"># Comparing</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">assertTrue</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">expected_pheno</span><span class="o">.</span><span class="n">equals</span><span class="p">(</span><span class="n">observed_pheno</span><span class="p">))</span></div>
+
+<div class="viewcode-block" id="TestText.test_specific_column_missing_value"><a class="viewcode-back" href="../../../module_content/genetest.tests.html#genetest.tests.test_phenotypes.TestText.test_specific_column_missing_value">[docs]</a>    <span class="k">def</span> <span class="nf">test_specific_column_missing_value</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Tests when there are specific missing values for some columns.&quot;&quot;&quot;</span>
+        <span class="c1"># Changing the parameters</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">parameters</span><span class="p">[</span><span class="s2">&quot;missing_values&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="p">{</span><span class="s2">&quot;V3&quot;</span><span class="p">:</span> <span class="p">[</span><span class="s2">&quot;999999&quot;</span><span class="p">]}</span>
+
+        <span class="c1"># Getting the observed phenotypes</span>
+        <span class="n">observed_pheno</span> <span class="o">=</span> <span class="n">TextPhenotypes</span><span class="p">(</span><span class="o">**</span><span class="bp">self</span><span class="o">.</span><span class="n">parameters</span><span class="p">)</span><span class="o">.</span><span class="n">get_phenotypes</span><span class="p">()</span>
+
+        <span class="c1"># Changing the expected phenotypes</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">expected_pheno</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="s2">&quot;s4&quot;</span><span class="p">,</span> <span class="s2">&quot;V3&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">nan</span>
+
+        <span class="c1"># Comparing</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">assertTrue</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">expected_pheno</span><span class="o">.</span><span class="n">equals</span><span class="p">(</span><span class="n">observed_pheno</span><span class="p">))</span></div>
+
+<div class="viewcode-block" id="TestText.test_string_representation"><a class="viewcode-back" href="../../../module_content/genetest.tests.html#genetest.tests.test_phenotypes.TestText.test_string_representation">[docs]</a>    <span class="k">def</span> <span class="nf">test_string_representation</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Checks the string representation.&quot;&quot;&quot;</span>
+        <span class="k">with</span> <span class="n">TextPhenotypes</span><span class="p">(</span><span class="o">**</span><span class="bp">self</span><span class="o">.</span><span class="n">parameters</span><span class="p">)</span> <span class="k">as</span> <span class="n">text_pheno</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">assertEqual</span><span class="p">(</span>
+                <span class="s2">&quot;TextPhenotypes(9 samples, 3 variables)&quot;</span><span class="p">,</span>
+                <span class="nb">str</span><span class="p">(</span><span class="n">text_pheno</span><span class="p">),</span>
+            <span class="p">)</span></div></div>
+</pre></div>
+
+           </div>
+           
+          </div>
+          <footer>
+  
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        &copy; Copyright 2016, Beaulieu-Saucier Pharmacogenomics Centre.
+
+    </p>
+  </div>
+  Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a <a href="https://github.com/rtfd/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+
+</footer>
+
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+
+  
+
+    <script type="text/javascript">
+        var DOCUMENTATION_OPTIONS = {
+            URL_ROOT:'../../../',
+            VERSION:'0.3.0',
+            LANGUAGE:'None',
+            COLLAPSE_INDEX:false,
+            FILE_SUFFIX:'.html',
+            HAS_SOURCE:  true,
+            SOURCELINK_SUFFIX: '.txt'
+        };
+    </script>
+      <script type="text/javascript" src="../../../_static/jquery.js"></script>
+      <script type="text/javascript" src="../../../_static/underscore.js"></script>
+      <script type="text/javascript" src="../../../_static/doctools.js"></script>
+      <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.1/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+
+  
+
+  
+  
+    <script type="text/javascript" src="../../../_static/js/theme.js"></script>
+  
+
+  <script type="text/javascript">
+      jQuery(function () {
+          
+          SphinxRtdTheme.Navigation.enableSticky();
+          
+      });
+  </script> 
+
+</body>
+</html>

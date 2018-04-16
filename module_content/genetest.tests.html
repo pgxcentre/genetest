@@ -1,0 +1,963 @@
+
+
+<!DOCTYPE html>
+<!--[if IE 8]><html class="no-js lt-ie9" lang="en" > <![endif]-->
+<!--[if gt IE 8]><!--> <html class="no-js" lang="en" > <!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <title>genetest.tests package &mdash; genetest 0.3.0 documentation</title>
+  
+
+  
+  
+  
+  
+
+  
+
+  
+  
+    
+
+  
+
+  
+    <link rel="stylesheet" href="../_static/css/theme.css" type="text/css" />
+  <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+  <link rel="stylesheet" href="../_static/theme_overrides.css" type="text/css" />
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="prev" title="genetest.statistics.models package" href="genetest.statistics.models.html" /> 
+
+  
+  <script src="../_static/js/modernizr.min.js"></script>
+
+</head>
+
+<body class="wy-body-for-nav">
+
+   
+  <div class="wy-grid-for-nav">
+
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search">
+          
+
+          
+            <a href="../index.html" class="icon icon-home"> genetest
+          
+
+          
+          </a>
+
+          
+            
+            
+              <div class="version">
+                0.3
+              </div>
+            
+          
+
+          
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          
+        </div>
+
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+              
+            
+            
+              <ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="../installation.html">Installation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../analysis.html">Analysis</a></li>
+<li class="toctree-l1 current"><a class="reference internal" href="modules.html">genetest</a><ul class="current">
+<li class="toctree-l2 current"><a class="reference internal" href="genetest.html">genetest package</a><ul class="current">
+<li class="toctree-l3 current"><a class="reference internal" href="genetest.html#subpackages">Subpackages</a><ul class="current">
+<li class="toctree-l4"><a class="reference internal" href="genetest.phenotypes.html">genetest.phenotypes package</a></li>
+<li class="toctree-l4"><a class="reference internal" href="genetest.statistics.html">genetest.statistics package</a></li>
+<li class="toctree-l4 current"><a class="current reference internal" href="#">genetest.tests package</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="genetest.html#submodules">Submodules</a></li>
+<li class="toctree-l3"><a class="reference internal" href="genetest.html#module-genetest.configuration">genetest.configuration module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="genetest.html#module-genetest.version">genetest.version module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="genetest.html#module-genetest">Module contents</a></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+
+            
+          
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" aria-label="top navigation">
+        
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../index.html">genetest</a>
+        
+      </nav>
+
+
+      <div class="wy-nav-content">
+        
+        <div class="rst-content">
+        
+          
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+
+  <ul class="wy-breadcrumbs">
+    
+      <li><a href="../index.html">Docs</a> &raquo;</li>
+        
+          <li><a href="modules.html">genetest</a> &raquo;</li>
+        
+          <li><a href="genetest.html">genetest package</a> &raquo;</li>
+        
+      <li>genetest.tests package</li>
+    
+    
+      <li class="wy-breadcrumbs-aside">
+        
+            
+            <a href="../_sources/module_content/genetest.tests.rst.txt" rel="nofollow"> View page source</a>
+          
+        
+      </li>
+    
+  </ul>
+
+  
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+            
+  <div class="section" id="genetest-tests-package">
+<h1>genetest.tests package<a class="headerlink" href="#genetest-tests-package" title="Permalink to this headline">¶</a></h1>
+<div class="section" id="submodules">
+<h2>Submodules<a class="headerlink" href="#submodules" title="Permalink to this headline">¶</a></h2>
+</div>
+<div class="section" id="module-genetest.tests.test_configuration">
+<span id="genetest-tests-test-configuration-module"></span><h2>genetest.tests.test_configuration module<a class="headerlink" href="#module-genetest.tests.test_configuration" title="Permalink to this headline">¶</a></h2>
+<dl class="class">
+<dt id="genetest.tests.test_configuration.TestAnalysisConfiguration">
+<em class="property">class </em><code class="descclassname">genetest.tests.test_configuration.</code><code class="descname">TestAnalysisConfiguration</code><span class="sig-paren">(</span><em>methodName='runTest'</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/genetest/tests/test_configuration.html#TestAnalysisConfiguration"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#genetest.tests.test_configuration.TestAnalysisConfiguration" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">unittest.case.TestCase</span></code></p>
+<p>Create an instance of the class that will use the named test
+method when executed. Raises a ValueError if the instance does
+not have a method with the specified name.</p>
+<dl class="classmethod">
+<dt id="genetest.tests.test_configuration.TestAnalysisConfiguration.setUpClass">
+<em class="property">classmethod </em><code class="descname">setUpClass</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/genetest/tests/test_configuration.html#TestAnalysisConfiguration.setUpClass"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#genetest.tests.test_configuration.TestAnalysisConfiguration.setUpClass" title="Permalink to this definition">¶</a></dt>
+<dd><p>Hook method for setting up class fixture before running tests in the class.</p>
+</dd></dl>
+
+<dl class="classmethod">
+<dt id="genetest.tests.test_configuration.TestAnalysisConfiguration.tearDownClass">
+<em class="property">classmethod </em><code class="descname">tearDownClass</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/genetest/tests/test_configuration.html#TestAnalysisConfiguration.tearDownClass"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#genetest.tests.test_configuration.TestAnalysisConfiguration.tearDownClass" title="Permalink to this definition">¶</a></dt>
+<dd><p>Hook method for deconstructing the class fixture after running all tests in the class.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="genetest.tests.test_configuration.TestAnalysisConfiguration.test_extra_section">
+<code class="descname">test_extra_section</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/genetest/tests/test_configuration.html#TestAnalysisConfiguration.test_extra_section"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#genetest.tests.test_configuration.TestAnalysisConfiguration.test_extra_section" title="Permalink to this definition">¶</a></dt>
+<dd><p>Tests when there is an extra section.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="genetest.tests.test_configuration.TestAnalysisConfiguration.test_invalid_genotype_format">
+<code class="descname">test_invalid_genotype_format</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/genetest/tests/test_configuration.html#TestAnalysisConfiguration.test_invalid_genotype_format"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#genetest.tests.test_configuration.TestAnalysisConfiguration.test_invalid_genotype_format" title="Permalink to this definition">¶</a></dt>
+<dd><p>Tests when an invalid format for genotypes is asked.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="genetest.tests.test_configuration.TestAnalysisConfiguration.test_invalid_phenotype_format">
+<code class="descname">test_invalid_phenotype_format</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/genetest/tests/test_configuration.html#TestAnalysisConfiguration.test_invalid_phenotype_format"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#genetest.tests.test_configuration.TestAnalysisConfiguration.test_invalid_phenotype_format" title="Permalink to this definition">¶</a></dt>
+<dd><p>Tests when an invalid format for phenotypes is asked.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="genetest.tests.test_configuration.TestAnalysisConfiguration.test_invalid_test">
+<code class="descname">test_invalid_test</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/genetest/tests/test_configuration.html#TestAnalysisConfiguration.test_invalid_test"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#genetest.tests.test_configuration.TestAnalysisConfiguration.test_invalid_test" title="Permalink to this definition">¶</a></dt>
+<dd><p>Tests when an invalid model for statistics is asked.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="genetest.tests.test_configuration.TestAnalysisConfiguration.test_missing_genotype_format">
+<code class="descname">test_missing_genotype_format</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/genetest/tests/test_configuration.html#TestAnalysisConfiguration.test_missing_genotype_format"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#genetest.tests.test_configuration.TestAnalysisConfiguration.test_missing_genotype_format" title="Permalink to this definition">¶</a></dt>
+<dd><p>Tests when the genotype format is missing.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="genetest.tests.test_configuration.TestAnalysisConfiguration.test_missing_phenotype_format">
+<code class="descname">test_missing_phenotype_format</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/genetest/tests/test_configuration.html#TestAnalysisConfiguration.test_missing_phenotype_format"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#genetest.tests.test_configuration.TestAnalysisConfiguration.test_missing_phenotype_format" title="Permalink to this definition">¶</a></dt>
+<dd><p>Tests when the phenotype format is missing.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="genetest.tests.test_configuration.TestAnalysisConfiguration.test_missing_section">
+<code class="descname">test_missing_section</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/genetest/tests/test_configuration.html#TestAnalysisConfiguration.test_missing_section"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#genetest.tests.test_configuration.TestAnalysisConfiguration.test_missing_section" title="Permalink to this definition">¶</a></dt>
+<dd><p>Tests when there is a missing section.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="genetest.tests.test_configuration.TestAnalysisConfiguration.test_missing_test">
+<code class="descname">test_missing_test</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/genetest/tests/test_configuration.html#TestAnalysisConfiguration.test_missing_test"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#genetest.tests.test_configuration.TestAnalysisConfiguration.test_missing_test" title="Permalink to this definition">¶</a></dt>
+<dd><p>Tests when the statistics test is missing.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="genetest.tests.test_configuration.TestAnalysisConfiguration.test_normal_functionality">
+<code class="descname">test_normal_functionality</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/genetest/tests/test_configuration.html#TestAnalysisConfiguration.test_normal_functionality"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#genetest.tests.test_configuration.TestAnalysisConfiguration.test_normal_functionality" title="Permalink to this definition">¶</a></dt>
+<dd><p>Tests the normal functionality.</p>
+</dd></dl>
+
+</dd></dl>
+
+</div>
+<div class="section" id="module-genetest.tests.test_coxph">
+<span id="genetest-tests-test-coxph-module"></span><h2>genetest.tests.test_coxph module<a class="headerlink" href="#module-genetest.tests.test_coxph" title="Permalink to this headline">¶</a></h2>
+<dl class="class">
+<dt id="genetest.tests.test_coxph.TestStatsCoxPH">
+<em class="property">class </em><code class="descclassname">genetest.tests.test_coxph.</code><code class="descname">TestStatsCoxPH</code><span class="sig-paren">(</span><em>methodName='runTest'</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/genetest/tests/test_coxph.html#TestStatsCoxPH"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#genetest.tests.test_coxph.TestStatsCoxPH" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">unittest.case.TestCase</span></code></p>
+<p>Tests the ‘StatsCoxPH’ class.</p>
+<p>Create an instance of the class that will use the named test
+method when executed. Raises a ValueError if the instance does
+not have a method with the specified name.</p>
+<dl class="method">
+<dt id="genetest.tests.test_coxph.TestStatsCoxPH.setUp">
+<code class="descname">setUp</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/genetest/tests/test_coxph.html#TestStatsCoxPH.setUp"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#genetest.tests.test_coxph.TestStatsCoxPH.setUp" title="Permalink to this definition">¶</a></dt>
+<dd><p>Hook method for setting up the test fixture before exercising it.</p>
+</dd></dl>
+
+<dl class="classmethod">
+<dt id="genetest.tests.test_coxph.TestStatsCoxPH.setUpClass">
+<em class="property">classmethod </em><code class="descname">setUpClass</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/genetest/tests/test_coxph.html#TestStatsCoxPH.setUpClass"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#genetest.tests.test_coxph.TestStatsCoxPH.setUpClass" title="Permalink to this definition">¶</a></dt>
+<dd><p>Hook method for setting up class fixture before running tests in the class.</p>
+</dd></dl>
+
+<dl class="classmethod">
+<dt id="genetest.tests.test_coxph.TestStatsCoxPH.tearDownClass">
+<em class="property">classmethod </em><code class="descname">tearDownClass</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/genetest/tests/test_coxph.html#TestStatsCoxPH.tearDownClass"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#genetest.tests.test_coxph.TestStatsCoxPH.tearDownClass" title="Permalink to this definition">¶</a></dt>
+<dd><p>Hook method for deconstructing the class fixture after running all tests in the class.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="genetest.tests.test_coxph.TestStatsCoxPH.test_coxph_gwas">
+<code class="descname">test_coxph_gwas</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/genetest/tests/test_coxph.html#TestStatsCoxPH.test_coxph_gwas"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#genetest.tests.test_coxph.TestStatsCoxPH.test_coxph_gwas" title="Permalink to this definition">¶</a></dt>
+<dd><p>Tests coxph regression for GWAS.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="genetest.tests.test_coxph.TestStatsCoxPH.test_coxph_gwas_inter">
+<code class="descname">test_coxph_gwas_inter</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/genetest/tests/test_coxph.html#TestStatsCoxPH.test_coxph_gwas_inter"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#genetest.tests.test_coxph.TestStatsCoxPH.test_coxph_gwas_inter" title="Permalink to this definition">¶</a></dt>
+<dd><p>Tests coxph regression for GWAS inter (failure: singular matrix).</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="genetest.tests.test_coxph.TestStatsCoxPH.test_coxph_snp1">
+<code class="descname">test_coxph_snp1</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/genetest/tests/test_coxph.html#TestStatsCoxPH.test_coxph_snp1"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#genetest.tests.test_coxph.TestStatsCoxPH.test_coxph_snp1" title="Permalink to this definition">¶</a></dt>
+<dd><p>Tests coxph regression with the first SNP.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="genetest.tests.test_coxph.TestStatsCoxPH.test_coxph_snp1_inter">
+<code class="descname">test_coxph_snp1_inter</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/genetest/tests/test_coxph.html#TestStatsCoxPH.test_coxph_snp1_inter"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#genetest.tests.test_coxph.TestStatsCoxPH.test_coxph_snp1_inter" title="Permalink to this definition">¶</a></dt>
+<dd><p>Tests coxph regression with the first SNP (interaction).</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="genetest.tests.test_coxph.TestStatsCoxPH.test_coxph_snp1_inter_categorical">
+<code class="descname">test_coxph_snp1_inter_categorical</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/genetest/tests/test_coxph.html#TestStatsCoxPH.test_coxph_snp1_inter_categorical"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#genetest.tests.test_coxph.TestStatsCoxPH.test_coxph_snp1_inter_categorical" title="Permalink to this definition">¶</a></dt>
+<dd><p>Tests coxph first SNP (interaction, category).</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="genetest.tests.test_coxph.TestStatsCoxPH.test_coxph_snp2">
+<code class="descname">test_coxph_snp2</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/genetest/tests/test_coxph.html#TestStatsCoxPH.test_coxph_snp2"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#genetest.tests.test_coxph.TestStatsCoxPH.test_coxph_snp2" title="Permalink to this definition">¶</a></dt>
+<dd><p>Tests coxph regression with the second SNP.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="genetest.tests.test_coxph.TestStatsCoxPH.test_coxph_snp2_inter">
+<code class="descname">test_coxph_snp2_inter</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/genetest/tests/test_coxph.html#TestStatsCoxPH.test_coxph_snp2_inter"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#genetest.tests.test_coxph.TestStatsCoxPH.test_coxph_snp2_inter" title="Permalink to this definition">¶</a></dt>
+<dd><p>Tests coxph regression with the second SNP (interaction).</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="genetest.tests.test_coxph.TestStatsCoxPH.test_coxph_snp3">
+<code class="descname">test_coxph_snp3</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/genetest/tests/test_coxph.html#TestStatsCoxPH.test_coxph_snp3"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#genetest.tests.test_coxph.TestStatsCoxPH.test_coxph_snp3" title="Permalink to this definition">¶</a></dt>
+<dd><p>Tests coxph regression with the third SNP.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="genetest.tests.test_coxph.TestStatsCoxPH.test_coxph_snp3_inter">
+<code class="descname">test_coxph_snp3_inter</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/genetest/tests/test_coxph.html#TestStatsCoxPH.test_coxph_snp3_inter"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#genetest.tests.test_coxph.TestStatsCoxPH.test_coxph_snp3_inter" title="Permalink to this definition">¶</a></dt>
+<dd><p>Tests coxph regression with the third SNP (interaction).</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="genetest.tests.test_coxph.TestStatsCoxPH.test_coxph_snp4">
+<code class="descname">test_coxph_snp4</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/genetest/tests/test_coxph.html#TestStatsCoxPH.test_coxph_snp4"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#genetest.tests.test_coxph.TestStatsCoxPH.test_coxph_snp4" title="Permalink to this definition">¶</a></dt>
+<dd><p>Tests coxph regression with the third SNP.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="genetest.tests.test_coxph.TestStatsCoxPH.test_coxph_snp4_inter">
+<code class="descname">test_coxph_snp4_inter</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/genetest/tests/test_coxph.html#TestStatsCoxPH.test_coxph_snp4_inter"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#genetest.tests.test_coxph.TestStatsCoxPH.test_coxph_snp4_inter" title="Permalink to this definition">¶</a></dt>
+<dd><p>Tests coxph regression with the third SNP (interaction).</p>
+</dd></dl>
+
+</dd></dl>
+
+</div>
+<div class="section" id="module-genetest.tests.test_descriptive_stats">
+<span id="genetest-tests-test-descriptive-stats-module"></span><h2>genetest.tests.test_descriptive_stats module<a class="headerlink" href="#module-genetest.tests.test_descriptive_stats" title="Permalink to this headline">¶</a></h2>
+<dl class="class">
+<dt id="genetest.tests.test_descriptive_stats.TestDescriptiveStats">
+<em class="property">class </em><code class="descclassname">genetest.tests.test_descriptive_stats.</code><code class="descname">TestDescriptiveStats</code><span class="sig-paren">(</span><em>methodName='runTest'</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/genetest/tests/test_descriptive_stats.html#TestDescriptiveStats"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#genetest.tests.test_descriptive_stats.TestDescriptiveStats" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">unittest.case.TestCase</span></code></p>
+<p>Tests the descriptive statistics module.</p>
+<p>Create an instance of the class that will use the named test
+method when executed. Raises a ValueError if the instance does
+not have a method with the specified name.</p>
+<dl class="method">
+<dt id="genetest.tests.test_descriptive_stats.TestDescriptiveStats.test_get_maf_flip">
+<code class="descname">test_get_maf_flip</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/genetest/tests/test_descriptive_stats.html#TestDescriptiveStats.test_get_maf_flip"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#genetest.tests.test_descriptive_stats.TestDescriptiveStats.test_get_maf_flip" title="Permalink to this definition">¶</a></dt>
+<dd><p>Tests when flip is required.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="genetest.tests.test_descriptive_stats.TestDescriptiveStats.test_get_maf_flip_sex">
+<code class="descname">test_get_maf_flip_sex</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/genetest/tests/test_descriptive_stats.html#TestDescriptiveStats.test_get_maf_flip_sex"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#genetest.tests.test_descriptive_stats.TestDescriptiveStats.test_get_maf_flip_sex" title="Permalink to this definition">¶</a></dt>
+<dd><p>Tests when flip is required (sex).</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="genetest.tests.test_descriptive_stats.TestDescriptiveStats.test_get_maf_no_valid_genotypes">
+<code class="descname">test_get_maf_no_valid_genotypes</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/genetest/tests/test_descriptive_stats.html#TestDescriptiveStats.test_get_maf_no_valid_genotypes"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#genetest.tests.test_descriptive_stats.TestDescriptiveStats.test_get_maf_no_valid_genotypes" title="Permalink to this definition">¶</a></dt>
+<dd><p>Tests when all genotypes are missing.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="genetest.tests.test_descriptive_stats.TestDescriptiveStats.test_get_maf_no_valid_genotypes_sex">
+<code class="descname">test_get_maf_no_valid_genotypes_sex</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/genetest/tests/test_descriptive_stats.html#TestDescriptiveStats.test_get_maf_no_valid_genotypes_sex"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#genetest.tests.test_descriptive_stats.TestDescriptiveStats.test_get_maf_no_valid_genotypes_sex" title="Permalink to this definition">¶</a></dt>
+<dd><p>Tests when all genotypes are missing (sex).</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="genetest.tests.test_descriptive_stats.TestDescriptiveStats.test_get_maf_with_null">
+<code class="descname">test_get_maf_with_null</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/genetest/tests/test_descriptive_stats.html#TestDescriptiveStats.test_get_maf_with_null"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#genetest.tests.test_descriptive_stats.TestDescriptiveStats.test_get_maf_with_null" title="Permalink to this definition">¶</a></dt>
+<dd><p>Tests when there are missing genotypes.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="genetest.tests.test_descriptive_stats.TestDescriptiveStats.test_get_maf_with_null_sex">
+<code class="descname">test_get_maf_with_null_sex</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/genetest/tests/test_descriptive_stats.html#TestDescriptiveStats.test_get_maf_with_null_sex"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#genetest.tests.test_descriptive_stats.TestDescriptiveStats.test_get_maf_with_null_sex" title="Permalink to this definition">¶</a></dt>
+<dd><p>Tests when there are missing genotypes (sex).</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="genetest.tests.test_descriptive_stats.TestDescriptiveStats.test_get_maf_without_null">
+<code class="descname">test_get_maf_without_null</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/genetest/tests/test_descriptive_stats.html#TestDescriptiveStats.test_get_maf_without_null"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#genetest.tests.test_descriptive_stats.TestDescriptiveStats.test_get_maf_without_null" title="Permalink to this definition">¶</a></dt>
+<dd><p>Tests when there are no missing genotypes.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="genetest.tests.test_descriptive_stats.TestDescriptiveStats.test_get_maf_without_null_sexes">
+<code class="descname">test_get_maf_without_null_sexes</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/genetest/tests/test_descriptive_stats.html#TestDescriptiveStats.test_get_maf_without_null_sexes"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#genetest.tests.test_descriptive_stats.TestDescriptiveStats.test_get_maf_without_null_sexes" title="Permalink to this definition">¶</a></dt>
+<dd><p>Tests when there are no missing genotypes (sex).</p>
+</dd></dl>
+
+</dd></dl>
+
+</div>
+<div class="section" id="module-genetest.tests.test_linear">
+<span id="genetest-tests-test-linear-module"></span><h2>genetest.tests.test_linear module<a class="headerlink" href="#module-genetest.tests.test_linear" title="Permalink to this headline">¶</a></h2>
+<dl class="class">
+<dt id="genetest.tests.test_linear.TestStatsLinear">
+<em class="property">class </em><code class="descclassname">genetest.tests.test_linear.</code><code class="descname">TestStatsLinear</code><span class="sig-paren">(</span><em>methodName='runTest'</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/genetest/tests/test_linear.html#TestStatsLinear"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#genetest.tests.test_linear.TestStatsLinear" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">unittest.case.TestCase</span></code></p>
+<p>Tests the ‘StatsLinear’ class.</p>
+<p>Create an instance of the class that will use the named test
+method when executed. Raises a ValueError if the instance does
+not have a method with the specified name.</p>
+<dl class="method">
+<dt id="genetest.tests.test_linear.TestStatsLinear.setUp">
+<code class="descname">setUp</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/genetest/tests/test_linear.html#TestStatsLinear.setUp"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#genetest.tests.test_linear.TestStatsLinear.setUp" title="Permalink to this definition">¶</a></dt>
+<dd><p>Hook method for setting up the test fixture before exercising it.</p>
+</dd></dl>
+
+<dl class="classmethod">
+<dt id="genetest.tests.test_linear.TestStatsLinear.setUpClass">
+<em class="property">classmethod </em><code class="descname">setUpClass</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/genetest/tests/test_linear.html#TestStatsLinear.setUpClass"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#genetest.tests.test_linear.TestStatsLinear.setUpClass" title="Permalink to this definition">¶</a></dt>
+<dd><p>Hook method for setting up class fixture before running tests in the class.</p>
+</dd></dl>
+
+<dl class="classmethod">
+<dt id="genetest.tests.test_linear.TestStatsLinear.tearDownClass">
+<em class="property">classmethod </em><code class="descname">tearDownClass</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/genetest/tests/test_linear.html#TestStatsLinear.tearDownClass"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#genetest.tests.test_linear.TestStatsLinear.tearDownClass" title="Permalink to this definition">¶</a></dt>
+<dd><p>Hook method for deconstructing the class fixture after running all tests in the class.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="genetest.tests.test_linear.TestStatsLinear.test_linear_gwas">
+<code class="descname">test_linear_gwas</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/genetest/tests/test_linear.html#TestStatsLinear.test_linear_gwas"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#genetest.tests.test_linear.TestStatsLinear.test_linear_gwas" title="Permalink to this definition">¶</a></dt>
+<dd><p>Tests linear regression for GWAS.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="genetest.tests.test_linear.TestStatsLinear.test_linear_gwas_inter">
+<code class="descname">test_linear_gwas_inter</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/genetest/tests/test_linear.html#TestStatsLinear.test_linear_gwas_inter"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#genetest.tests.test_linear.TestStatsLinear.test_linear_gwas_inter" title="Permalink to this definition">¶</a></dt>
+<dd><p>Tests linear regression for GWAS with interaction.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="genetest.tests.test_linear.TestStatsLinear.test_linear_snp1">
+<code class="descname">test_linear_snp1</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/genetest/tests/test_linear.html#TestStatsLinear.test_linear_snp1"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#genetest.tests.test_linear.TestStatsLinear.test_linear_snp1" title="Permalink to this definition">¶</a></dt>
+<dd><p>Tests linear regression with the first SNP.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="genetest.tests.test_linear.TestStatsLinear.test_linear_snp1_inter">
+<code class="descname">test_linear_snp1_inter</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/genetest/tests/test_linear.html#TestStatsLinear.test_linear_snp1_inter"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#genetest.tests.test_linear.TestStatsLinear.test_linear_snp1_inter" title="Permalink to this definition">¶</a></dt>
+<dd><p>Tests linear regression with the first SNP (interaction).</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="genetest.tests.test_linear.TestStatsLinear.test_linear_snp1_inter_categorical">
+<code class="descname">test_linear_snp1_inter_categorical</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/genetest/tests/test_linear.html#TestStatsLinear.test_linear_snp1_inter_categorical"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#genetest.tests.test_linear.TestStatsLinear.test_linear_snp1_inter_categorical" title="Permalink to this definition">¶</a></dt>
+<dd><p>Tests linear regression for first SNP (inter, category).</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="genetest.tests.test_linear.TestStatsLinear.test_linear_snp2">
+<code class="descname">test_linear_snp2</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/genetest/tests/test_linear.html#TestStatsLinear.test_linear_snp2"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#genetest.tests.test_linear.TestStatsLinear.test_linear_snp2" title="Permalink to this definition">¶</a></dt>
+<dd><p>Tests linear regression with the second SNP.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="genetest.tests.test_linear.TestStatsLinear.test_linear_snp2_inter">
+<code class="descname">test_linear_snp2_inter</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/genetest/tests/test_linear.html#TestStatsLinear.test_linear_snp2_inter"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#genetest.tests.test_linear.TestStatsLinear.test_linear_snp2_inter" title="Permalink to this definition">¶</a></dt>
+<dd><p>Tests linear regression with the second SNP (interaction).</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="genetest.tests.test_linear.TestStatsLinear.test_linear_snp3">
+<code class="descname">test_linear_snp3</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/genetest/tests/test_linear.html#TestStatsLinear.test_linear_snp3"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#genetest.tests.test_linear.TestStatsLinear.test_linear_snp3" title="Permalink to this definition">¶</a></dt>
+<dd><p>Tests linear regression with the third SNP.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="genetest.tests.test_linear.TestStatsLinear.test_linear_snp3_inter">
+<code class="descname">test_linear_snp3_inter</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/genetest/tests/test_linear.html#TestStatsLinear.test_linear_snp3_inter"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#genetest.tests.test_linear.TestStatsLinear.test_linear_snp3_inter" title="Permalink to this definition">¶</a></dt>
+<dd><p>Tests linear regression with the third SNP.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="genetest.tests.test_linear.TestStatsLinear.test_linear_snp4">
+<code class="descname">test_linear_snp4</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/genetest/tests/test_linear.html#TestStatsLinear.test_linear_snp4"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#genetest.tests.test_linear.TestStatsLinear.test_linear_snp4" title="Permalink to this definition">¶</a></dt>
+<dd><p>Tests linear regression with the fourth SNP.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="genetest.tests.test_linear.TestStatsLinear.test_linear_snp4_inter">
+<code class="descname">test_linear_snp4_inter</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/genetest/tests/test_linear.html#TestStatsLinear.test_linear_snp4_inter"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#genetest.tests.test_linear.TestStatsLinear.test_linear_snp4_inter" title="Permalink to this definition">¶</a></dt>
+<dd><p>Tests linear regression with the fourth SNP (interaction).</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="genetest.tests.test_linear.TestStatsLinear.test_linear_snp5">
+<code class="descname">test_linear_snp5</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/genetest/tests/test_linear.html#TestStatsLinear.test_linear_snp5"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#genetest.tests.test_linear.TestStatsLinear.test_linear_snp5" title="Permalink to this definition">¶</a></dt>
+<dd><p>Tests linear regression with the fifth SNP (raises StatsError).</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="genetest.tests.test_linear.TestStatsLinear.test_linear_snp5_inter">
+<code class="descname">test_linear_snp5_inter</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/genetest/tests/test_linear.html#TestStatsLinear.test_linear_snp5_inter"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#genetest.tests.test_linear.TestStatsLinear.test_linear_snp5_inter" title="Permalink to this definition">¶</a></dt>
+<dd><p>Tests linear regression fifth SNP (inter) (raises StatsError).</p>
+</dd></dl>
+
+</dd></dl>
+
+</div>
+<div class="section" id="module-genetest.tests.test_logistic">
+<span id="genetest-tests-test-logistic-module"></span><h2>genetest.tests.test_logistic module<a class="headerlink" href="#module-genetest.tests.test_logistic" title="Permalink to this headline">¶</a></h2>
+<dl class="class">
+<dt id="genetest.tests.test_logistic.TestStatsLogistic">
+<em class="property">class </em><code class="descclassname">genetest.tests.test_logistic.</code><code class="descname">TestStatsLogistic</code><span class="sig-paren">(</span><em>methodName='runTest'</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/genetest/tests/test_logistic.html#TestStatsLogistic"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#genetest.tests.test_logistic.TestStatsLogistic" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">unittest.case.TestCase</span></code></p>
+<p>Tests the ‘StatsLogistic’ class.</p>
+<p>Create an instance of the class that will use the named test
+method when executed. Raises a ValueError if the instance does
+not have a method with the specified name.</p>
+<dl class="method">
+<dt id="genetest.tests.test_logistic.TestStatsLogistic.setUp">
+<code class="descname">setUp</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/genetest/tests/test_logistic.html#TestStatsLogistic.setUp"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#genetest.tests.test_logistic.TestStatsLogistic.setUp" title="Permalink to this definition">¶</a></dt>
+<dd><p>Hook method for setting up the test fixture before exercising it.</p>
+</dd></dl>
+
+<dl class="classmethod">
+<dt id="genetest.tests.test_logistic.TestStatsLogistic.setUpClass">
+<em class="property">classmethod </em><code class="descname">setUpClass</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/genetest/tests/test_logistic.html#TestStatsLogistic.setUpClass"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#genetest.tests.test_logistic.TestStatsLogistic.setUpClass" title="Permalink to this definition">¶</a></dt>
+<dd><p>Hook method for setting up class fixture before running tests in the class.</p>
+</dd></dl>
+
+<dl class="classmethod">
+<dt id="genetest.tests.test_logistic.TestStatsLogistic.tearDownClass">
+<em class="property">classmethod </em><code class="descname">tearDownClass</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/genetest/tests/test_logistic.html#TestStatsLogistic.tearDownClass"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#genetest.tests.test_logistic.TestStatsLogistic.tearDownClass" title="Permalink to this definition">¶</a></dt>
+<dd><p>Hook method for deconstructing the class fixture after running all tests in the class.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="genetest.tests.test_logistic.TestStatsLogistic.test_logistic_gwas">
+<code class="descname">test_logistic_gwas</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/genetest/tests/test_logistic.html#TestStatsLogistic.test_logistic_gwas"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#genetest.tests.test_logistic.TestStatsLogistic.test_logistic_gwas" title="Permalink to this definition">¶</a></dt>
+<dd><p>Tests logistic regression for GWAS.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="genetest.tests.test_logistic.TestStatsLogistic.test_logistic_gwas_inter">
+<code class="descname">test_logistic_gwas_inter</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/genetest/tests/test_logistic.html#TestStatsLogistic.test_logistic_gwas_inter"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#genetest.tests.test_logistic.TestStatsLogistic.test_logistic_gwas_inter" title="Permalink to this definition">¶</a></dt>
+<dd><p>Tests logistic regression for GWAS with interaction.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="genetest.tests.test_logistic.TestStatsLogistic.test_logistic_snp1">
+<code class="descname">test_logistic_snp1</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/genetest/tests/test_logistic.html#TestStatsLogistic.test_logistic_snp1"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#genetest.tests.test_logistic.TestStatsLogistic.test_logistic_snp1" title="Permalink to this definition">¶</a></dt>
+<dd><p>Tests logistic regression with the first SNP.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="genetest.tests.test_logistic.TestStatsLogistic.test_logistic_snp1_inter">
+<code class="descname">test_logistic_snp1_inter</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/genetest/tests/test_logistic.html#TestStatsLogistic.test_logistic_snp1_inter"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#genetest.tests.test_logistic.TestStatsLogistic.test_logistic_snp1_inter" title="Permalink to this definition">¶</a></dt>
+<dd><p>Tests logistic regression with the first SNP (interaction).</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="genetest.tests.test_logistic.TestStatsLogistic.test_logistic_snp1_inter_categorical">
+<code class="descname">test_logistic_snp1_inter_categorical</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/genetest/tests/test_logistic.html#TestStatsLogistic.test_logistic_snp1_inter_categorical"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#genetest.tests.test_logistic.TestStatsLogistic.test_logistic_snp1_inter_categorical" title="Permalink to this definition">¶</a></dt>
+<dd><p>Tests logistic regression first SNP (inter, category).</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="genetest.tests.test_logistic.TestStatsLogistic.test_logistic_snp2">
+<code class="descname">test_logistic_snp2</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/genetest/tests/test_logistic.html#TestStatsLogistic.test_logistic_snp2"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#genetest.tests.test_logistic.TestStatsLogistic.test_logistic_snp2" title="Permalink to this definition">¶</a></dt>
+<dd><p>Tests logistic regression with the second SNP.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="genetest.tests.test_logistic.TestStatsLogistic.test_logistic_snp2_inter">
+<code class="descname">test_logistic_snp2_inter</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/genetest/tests/test_logistic.html#TestStatsLogistic.test_logistic_snp2_inter"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#genetest.tests.test_logistic.TestStatsLogistic.test_logistic_snp2_inter" title="Permalink to this definition">¶</a></dt>
+<dd><p>Tests logistic regression with the second SNP (interaction).</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="genetest.tests.test_logistic.TestStatsLogistic.test_logistic_snp3">
+<code class="descname">test_logistic_snp3</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/genetest/tests/test_logistic.html#TestStatsLogistic.test_logistic_snp3"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#genetest.tests.test_logistic.TestStatsLogistic.test_logistic_snp3" title="Permalink to this definition">¶</a></dt>
+<dd><p>Tests logistic regression with the third SNP (raises StatsError).</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="genetest.tests.test_logistic.TestStatsLogistic.test_logistic_snp3_inter">
+<code class="descname">test_logistic_snp3_inter</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/genetest/tests/test_logistic.html#TestStatsLogistic.test_logistic_snp3_inter"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#genetest.tests.test_logistic.TestStatsLogistic.test_logistic_snp3_inter" title="Permalink to this definition">¶</a></dt>
+<dd><p>Tests logistic regression third SNP (raises StatsError, inter).</p>
+</dd></dl>
+
+</dd></dl>
+
+</div>
+<div class="section" id="module-genetest.tests.test_mixedlm">
+<span id="genetest-tests-test-mixedlm-module"></span><h2>genetest.tests.test_mixedlm module<a class="headerlink" href="#module-genetest.tests.test_mixedlm" title="Permalink to this headline">¶</a></h2>
+<dl class="class">
+<dt id="genetest.tests.test_mixedlm.TestStatsMixedLM">
+<em class="property">class </em><code class="descclassname">genetest.tests.test_mixedlm.</code><code class="descname">TestStatsMixedLM</code><span class="sig-paren">(</span><em>methodName='runTest'</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/genetest/tests/test_mixedlm.html#TestStatsMixedLM"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#genetest.tests.test_mixedlm.TestStatsMixedLM" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">unittest.case.TestCase</span></code></p>
+<p>Tests the ‘StatsMixedLM’ class.</p>
+<p>Create an instance of the class that will use the named test
+method when executed. Raises a ValueError if the instance does
+not have a method with the specified name.</p>
+<dl class="method">
+<dt id="genetest.tests.test_mixedlm.TestStatsMixedLM.setUp">
+<code class="descname">setUp</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/genetest/tests/test_mixedlm.html#TestStatsMixedLM.setUp"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#genetest.tests.test_mixedlm.TestStatsMixedLM.setUp" title="Permalink to this definition">¶</a></dt>
+<dd><p>Hook method for setting up the test fixture before exercising it.</p>
+</dd></dl>
+
+<dl class="classmethod">
+<dt id="genetest.tests.test_mixedlm.TestStatsMixedLM.setUpClass">
+<em class="property">classmethod </em><code class="descname">setUpClass</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/genetest/tests/test_mixedlm.html#TestStatsMixedLM.setUpClass"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#genetest.tests.test_mixedlm.TestStatsMixedLM.setUpClass" title="Permalink to this definition">¶</a></dt>
+<dd><p>Hook method for setting up class fixture before running tests in the class.</p>
+</dd></dl>
+
+<dl class="classmethod">
+<dt id="genetest.tests.test_mixedlm.TestStatsMixedLM.tearDownClass">
+<em class="property">classmethod </em><code class="descname">tearDownClass</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/genetest/tests/test_mixedlm.html#TestStatsMixedLM.tearDownClass"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#genetest.tests.test_mixedlm.TestStatsMixedLM.tearDownClass" title="Permalink to this definition">¶</a></dt>
+<dd><p>Hook method for deconstructing the class fixture after running all tests in the class.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="genetest.tests.test_mixedlm.TestStatsMixedLM.test_mixedlm_gwas">
+<code class="descname">test_mixedlm_gwas</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/genetest/tests/test_mixedlm.html#TestStatsMixedLM.test_mixedlm_gwas"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#genetest.tests.test_mixedlm.TestStatsMixedLM.test_mixedlm_gwas" title="Permalink to this definition">¶</a></dt>
+<dd><p>Tests mixedlm regression for GWAS.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="genetest.tests.test_mixedlm.TestStatsMixedLM.test_mixedlm_gwas_inter">
+<code class="descname">test_mixedlm_gwas_inter</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/genetest/tests/test_mixedlm.html#TestStatsMixedLM.test_mixedlm_gwas_inter"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#genetest.tests.test_mixedlm.TestStatsMixedLM.test_mixedlm_gwas_inter" title="Permalink to this definition">¶</a></dt>
+<dd><p>Tests mixedlm regression for GWAS with interaction.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="genetest.tests.test_mixedlm.TestStatsMixedLM.test_mixedlm_snp1_inter_ml">
+<code class="descname">test_mixedlm_snp1_inter_ml</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/genetest/tests/test_mixedlm.html#TestStatsMixedLM.test_mixedlm_snp1_inter_ml"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#genetest.tests.test_mixedlm.TestStatsMixedLM.test_mixedlm_snp1_inter_ml" title="Permalink to this definition">¶</a></dt>
+<dd><p>Tests mixedlm regression with the first SNP (using ML, inter).</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="genetest.tests.test_mixedlm.TestStatsMixedLM.test_mixedlm_snp1_inter_reml">
+<code class="descname">test_mixedlm_snp1_inter_reml</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/genetest/tests/test_mixedlm.html#TestStatsMixedLM.test_mixedlm_snp1_inter_reml"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#genetest.tests.test_mixedlm.TestStatsMixedLM.test_mixedlm_snp1_inter_reml" title="Permalink to this definition">¶</a></dt>
+<dd><p>Tests mixedlm regression with the first SNP (using REML, inter).</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="genetest.tests.test_mixedlm.TestStatsMixedLM.test_mixedlm_snp1_ml">
+<code class="descname">test_mixedlm_snp1_ml</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/genetest/tests/test_mixedlm.html#TestStatsMixedLM.test_mixedlm_snp1_ml"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#genetest.tests.test_mixedlm.TestStatsMixedLM.test_mixedlm_snp1_ml" title="Permalink to this definition">¶</a></dt>
+<dd><p>Tests mixedlm regression with the first SNP (using ML).</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="genetest.tests.test_mixedlm.TestStatsMixedLM.test_mixedlm_snp1_reml">
+<code class="descname">test_mixedlm_snp1_reml</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/genetest/tests/test_mixedlm.html#TestStatsMixedLM.test_mixedlm_snp1_reml"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#genetest.tests.test_mixedlm.TestStatsMixedLM.test_mixedlm_snp1_reml" title="Permalink to this definition">¶</a></dt>
+<dd><p>Tests mixedlm regression with the first SNP (using REML).</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="genetest.tests.test_mixedlm.TestStatsMixedLM.test_mixedlm_snp2_inter_ml">
+<code class="descname">test_mixedlm_snp2_inter_ml</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/genetest/tests/test_mixedlm.html#TestStatsMixedLM.test_mixedlm_snp2_inter_ml"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#genetest.tests.test_mixedlm.TestStatsMixedLM.test_mixedlm_snp2_inter_ml" title="Permalink to this definition">¶</a></dt>
+<dd><p>Tests mixedlm regression with the second SNP (using ML, inter).</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="genetest.tests.test_mixedlm.TestStatsMixedLM.test_mixedlm_snp2_inter_reml">
+<code class="descname">test_mixedlm_snp2_inter_reml</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/genetest/tests/test_mixedlm.html#TestStatsMixedLM.test_mixedlm_snp2_inter_reml"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#genetest.tests.test_mixedlm.TestStatsMixedLM.test_mixedlm_snp2_inter_reml" title="Permalink to this definition">¶</a></dt>
+<dd><p>Tests mixedlm regression with the second SNP (using REML, inter).</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="genetest.tests.test_mixedlm.TestStatsMixedLM.test_mixedlm_snp2_ml">
+<code class="descname">test_mixedlm_snp2_ml</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/genetest/tests/test_mixedlm.html#TestStatsMixedLM.test_mixedlm_snp2_ml"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#genetest.tests.test_mixedlm.TestStatsMixedLM.test_mixedlm_snp2_ml" title="Permalink to this definition">¶</a></dt>
+<dd><p>Tests mixedlm regression with the second SNP (using ML).</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="genetest.tests.test_mixedlm.TestStatsMixedLM.test_mixedlm_snp2_reml">
+<code class="descname">test_mixedlm_snp2_reml</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/genetest/tests/test_mixedlm.html#TestStatsMixedLM.test_mixedlm_snp2_reml"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#genetest.tests.test_mixedlm.TestStatsMixedLM.test_mixedlm_snp2_reml" title="Permalink to this definition">¶</a></dt>
+<dd><p>Tests mixedlm regression with the second SNP (using REML).</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="genetest.tests.test_mixedlm.TestStatsMixedLM.test_mixedlm_snp3_inter_ml">
+<code class="descname">test_mixedlm_snp3_inter_ml</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/genetest/tests/test_mixedlm.html#TestStatsMixedLM.test_mixedlm_snp3_inter_ml"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#genetest.tests.test_mixedlm.TestStatsMixedLM.test_mixedlm_snp3_inter_ml" title="Permalink to this definition">¶</a></dt>
+<dd><p>Tests mixedlm regression with the third SNP (using ML, inter).</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="genetest.tests.test_mixedlm.TestStatsMixedLM.test_mixedlm_snp3_inter_reml">
+<code class="descname">test_mixedlm_snp3_inter_reml</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/genetest/tests/test_mixedlm.html#TestStatsMixedLM.test_mixedlm_snp3_inter_reml"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#genetest.tests.test_mixedlm.TestStatsMixedLM.test_mixedlm_snp3_inter_reml" title="Permalink to this definition">¶</a></dt>
+<dd><p>Tests mixedlm regression with the third SNP (using REML, inter).</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="genetest.tests.test_mixedlm.TestStatsMixedLM.test_mixedlm_snp3_ml">
+<code class="descname">test_mixedlm_snp3_ml</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/genetest/tests/test_mixedlm.html#TestStatsMixedLM.test_mixedlm_snp3_ml"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#genetest.tests.test_mixedlm.TestStatsMixedLM.test_mixedlm_snp3_ml" title="Permalink to this definition">¶</a></dt>
+<dd><p>Tests mixedlm regression with the third SNP (using ML).</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="genetest.tests.test_mixedlm.TestStatsMixedLM.test_mixedlm_snp3_reml">
+<code class="descname">test_mixedlm_snp3_reml</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/genetest/tests/test_mixedlm.html#TestStatsMixedLM.test_mixedlm_snp3_reml"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#genetest.tests.test_mixedlm.TestStatsMixedLM.test_mixedlm_snp3_reml" title="Permalink to this definition">¶</a></dt>
+<dd><p>Tests mixedlm regression with the third SNP (using REML).</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="genetest.tests.test_mixedlm.TestStatsMixedLM.test_mixedlm_snp4_inter_ml">
+<code class="descname">test_mixedlm_snp4_inter_ml</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/genetest/tests/test_mixedlm.html#TestStatsMixedLM.test_mixedlm_snp4_inter_ml"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#genetest.tests.test_mixedlm.TestStatsMixedLM.test_mixedlm_snp4_inter_ml" title="Permalink to this definition">¶</a></dt>
+<dd><p>Tests mixedlm regression with the fourth SNP (using ML, inter).</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="genetest.tests.test_mixedlm.TestStatsMixedLM.test_mixedlm_snp4_inter_reml">
+<code class="descname">test_mixedlm_snp4_inter_reml</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/genetest/tests/test_mixedlm.html#TestStatsMixedLM.test_mixedlm_snp4_inter_reml"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#genetest.tests.test_mixedlm.TestStatsMixedLM.test_mixedlm_snp4_inter_reml" title="Permalink to this definition">¶</a></dt>
+<dd><p>Tests mixedlm regression with the fourth SNP (using REML, inter).</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="genetest.tests.test_mixedlm.TestStatsMixedLM.test_mixedlm_snp4_ml">
+<code class="descname">test_mixedlm_snp4_ml</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/genetest/tests/test_mixedlm.html#TestStatsMixedLM.test_mixedlm_snp4_ml"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#genetest.tests.test_mixedlm.TestStatsMixedLM.test_mixedlm_snp4_ml" title="Permalink to this definition">¶</a></dt>
+<dd><p>Tests mixedlm regression with the fourth SNP (using ML).</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="genetest.tests.test_mixedlm.TestStatsMixedLM.test_mixedlm_snp4_reml">
+<code class="descname">test_mixedlm_snp4_reml</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/genetest/tests/test_mixedlm.html#TestStatsMixedLM.test_mixedlm_snp4_reml"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#genetest.tests.test_mixedlm.TestStatsMixedLM.test_mixedlm_snp4_reml" title="Permalink to this definition">¶</a></dt>
+<dd><p>Tests mixedlm regression with the fourth SNP (using REML).</p>
+</dd></dl>
+
+</dd></dl>
+
+</div>
+<div class="section" id="module-genetest.tests.test_phenotypes">
+<span id="genetest-tests-test-phenotypes-module"></span><h2>genetest.tests.test_phenotypes module<a class="headerlink" href="#module-genetest.tests.test_phenotypes" title="Permalink to this headline">¶</a></h2>
+<dl class="class">
+<dt id="genetest.tests.test_phenotypes.TestCore">
+<em class="property">class </em><code class="descclassname">genetest.tests.test_phenotypes.</code><code class="descname">TestCore</code><span class="sig-paren">(</span><em>methodName='runTest'</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/genetest/tests/test_phenotypes.html#TestCore"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#genetest.tests.test_phenotypes.TestCore" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">unittest.case.TestCase</span></code></p>
+<p>Create an instance of the class that will use the named test
+method when executed. Raises a ValueError if the instance does
+not have a method with the specified name.</p>
+<dl class="method">
+<dt id="genetest.tests.test_phenotypes.TestCore.test_close">
+<code class="descname">test_close</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/genetest/tests/test_phenotypes.html#TestCore.test_close"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#genetest.tests.test_phenotypes.TestCore.test_close" title="Permalink to this definition">¶</a></dt>
+<dd><p>Tests that ‘close’ raises a NotImplementedError.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="genetest.tests.test_phenotypes.TestCore.test_get_phenotypes">
+<code class="descname">test_get_phenotypes</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/genetest/tests/test_phenotypes.html#TestCore.test_get_phenotypes"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#genetest.tests.test_phenotypes.TestCore.test_get_phenotypes" title="Permalink to this definition">¶</a></dt>
+<dd><p>Tests that ‘get_phenotypes’ raises a NotImplementedError.</p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="class">
+<dt id="genetest.tests.test_phenotypes.TestText">
+<em class="property">class </em><code class="descclassname">genetest.tests.test_phenotypes.</code><code class="descname">TestText</code><span class="sig-paren">(</span><em>methodName='runTest'</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/genetest/tests/test_phenotypes.html#TestText"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#genetest.tests.test_phenotypes.TestText" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">unittest.case.TestCase</span></code></p>
+<p>Create an instance of the class that will use the named test
+method when executed. Raises a ValueError if the instance does
+not have a method with the specified name.</p>
+<dl class="method">
+<dt id="genetest.tests.test_phenotypes.TestText.setUp">
+<code class="descname">setUp</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/genetest/tests/test_phenotypes.html#TestText.setUp"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#genetest.tests.test_phenotypes.TestText.setUp" title="Permalink to this definition">¶</a></dt>
+<dd><p>Hook method for setting up the test fixture before exercising it.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="genetest.tests.test_phenotypes.TestText.tearDown">
+<code class="descname">tearDown</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/genetest/tests/test_phenotypes.html#TestText.tearDown"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#genetest.tests.test_phenotypes.TestText.tearDown" title="Permalink to this definition">¶</a></dt>
+<dd><p>Hook method for deconstructing the test fixture after testing it.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="genetest.tests.test_phenotypes.TestText.test_bad_subset_phenotypes">
+<code class="descname">test_bad_subset_phenotypes</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/genetest/tests/test_phenotypes.html#TestText.test_bad_subset_phenotypes"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#genetest.tests.test_phenotypes.TestText.test_bad_subset_phenotypes" title="Permalink to this definition">¶</a></dt>
+<dd><p>Tests asking for a subset with unavailable phenotypes.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="genetest.tests.test_phenotypes.TestText.test_multiple_missing_values">
+<code class="descname">test_multiple_missing_values</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/genetest/tests/test_phenotypes.html#TestText.test_multiple_missing_values"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#genetest.tests.test_phenotypes.TestText.test_multiple_missing_values" title="Permalink to this definition">¶</a></dt>
+<dd><p>Tests when there are multiple missing values.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="genetest.tests.test_phenotypes.TestText.test_normal_functionality">
+<code class="descname">test_normal_functionality</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/genetest/tests/test_phenotypes.html#TestText.test_normal_functionality"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#genetest.tests.test_phenotypes.TestText.test_normal_functionality" title="Permalink to this definition">¶</a></dt>
+<dd><p>Tests normal functionality.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="genetest.tests.test_phenotypes.TestText.test_one_other_missing_value">
+<code class="descname">test_one_other_missing_value</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/genetest/tests/test_phenotypes.html#TestText.test_one_other_missing_value"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#genetest.tests.test_phenotypes.TestText.test_one_other_missing_value" title="Permalink to this definition">¶</a></dt>
+<dd><p>Tests when there are other missing values.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="genetest.tests.test_phenotypes.TestText.test_repeated_measurements">
+<code class="descname">test_repeated_measurements</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/genetest/tests/test_phenotypes.html#TestText.test_repeated_measurements"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#genetest.tests.test_phenotypes.TestText.test_repeated_measurements" title="Permalink to this definition">¶</a></dt>
+<dd><p>Tests when there are repeated measurements available.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="genetest.tests.test_phenotypes.TestText.test_specific_column_missing_value">
+<code class="descname">test_specific_column_missing_value</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/genetest/tests/test_phenotypes.html#TestText.test_specific_column_missing_value"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#genetest.tests.test_phenotypes.TestText.test_specific_column_missing_value" title="Permalink to this definition">¶</a></dt>
+<dd><p>Tests when there are specific missing values for some columns.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="genetest.tests.test_phenotypes.TestText.test_string_representation">
+<code class="descname">test_string_representation</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/genetest/tests/test_phenotypes.html#TestText.test_string_representation"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#genetest.tests.test_phenotypes.TestText.test_string_representation" title="Permalink to this definition">¶</a></dt>
+<dd><p>Checks the string representation.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="genetest.tests.test_phenotypes.TestText.test_subset_phenotypes">
+<code class="descname">test_subset_phenotypes</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/genetest/tests/test_phenotypes.html#TestText.test_subset_phenotypes"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#genetest.tests.test_phenotypes.TestText.test_subset_phenotypes" title="Permalink to this definition">¶</a></dt>
+<dd><p>Tests asking for a subset of phenotypes.</p>
+</dd></dl>
+
+</dd></dl>
+
+</div>
+<div class="section" id="module-genetest.tests.test_stats_core">
+<span id="genetest-tests-test-stats-core-module"></span><h2>genetest.tests.test_stats_core module<a class="headerlink" href="#module-genetest.tests.test_stats_core" title="Permalink to this headline">¶</a></h2>
+<dl class="class">
+<dt id="genetest.tests.test_stats_core.TestStatsLinear">
+<em class="property">class </em><code class="descclassname">genetest.tests.test_stats_core.</code><code class="descname">TestStatsLinear</code><span class="sig-paren">(</span><em>methodName='runTest'</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/genetest/tests/test_stats_core.html#TestStatsLinear"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#genetest.tests.test_stats_core.TestStatsLinear" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">unittest.case.TestCase</span></code></p>
+<p>Tests the ‘StatsLinear’ class.</p>
+<p>Create an instance of the class that will use the named test
+method when executed. Raises a ValueError if the instance does
+not have a method with the specified name.</p>
+<dl class="method">
+<dt id="genetest.tests.test_stats_core.TestStatsLinear.setUp">
+<code class="descname">setUp</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/genetest/tests/test_stats_core.html#TestStatsLinear.setUp"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#genetest.tests.test_stats_core.TestStatsLinear.setUp" title="Permalink to this definition">¶</a></dt>
+<dd><p>Hook method for setting up the test fixture before exercising it.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="genetest.tests.test_stats_core.TestStatsLinear.test__create_model">
+<code class="descname">test__create_model</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/genetest/tests/test_stats_core.html#TestStatsLinear.test__create_model"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#genetest.tests.test_stats_core.TestStatsLinear.test__create_model" title="Permalink to this definition">¶</a></dt>
+<dd><p>Tests the ‘_create_model’ function.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="genetest.tests.test_stats_core.TestStatsLinear.test__create_model_no_intercept">
+<code class="descname">test__create_model_no_intercept</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/genetest/tests/test_stats_core.html#TestStatsLinear.test__create_model_no_intercept"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#genetest.tests.test_stats_core.TestStatsLinear.test__create_model_no_intercept" title="Permalink to this definition">¶</a></dt>
+<dd><p>Tests the ‘_create_model’ function with no intercept.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="genetest.tests.test_stats_core.TestStatsLinear.test__create_model_with_interaction">
+<code class="descname">test__create_model_with_interaction</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/genetest/tests/test_stats_core.html#TestStatsLinear.test__create_model_with_interaction"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#genetest.tests.test_stats_core.TestStatsLinear.test__create_model_with_interaction" title="Permalink to this definition">¶</a></dt>
+<dd><p>Tests the ‘_create_model’ function with an interaction.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="genetest.tests.test_stats_core.TestStatsLinear.test__create_model_with_interaction2">
+<code class="descname">test__create_model_with_interaction2</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/genetest/tests/test_stats_core.html#TestStatsLinear.test__create_model_with_interaction2"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#genetest.tests.test_stats_core.TestStatsLinear.test__create_model_with_interaction2" title="Permalink to this definition">¶</a></dt>
+<dd><p>Tests with an interaction (categorical).</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="genetest.tests.test_stats_core.TestStatsLinear.test__create_model_with_interaction_not_in_predictors">
+<code class="descname">test__create_model_with_interaction_not_in_predictors</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/genetest/tests/test_stats_core.html#TestStatsLinear.test__create_model_with_interaction_not_in_predictors"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#genetest.tests.test_stats_core.TestStatsLinear.test__create_model_with_interaction_not_in_predictors" title="Permalink to this definition">¶</a></dt>
+<dd><p>Tests with an interaction but not in predictors list.</p>
+</dd></dl>
+
+</dd></dl>
+
+</div>
+<div class="section" id="module-genetest.tests">
+<span id="module-contents"></span><h2>Module contents<a class="headerlink" href="#module-genetest.tests" title="Permalink to this headline">¶</a></h2>
+</div>
+</div>
+
+
+           </div>
+           
+          </div>
+          <footer>
+  
+    <div class="rst-footer-buttons" role="navigation" aria-label="footer navigation">
+      
+      
+        <a href="genetest.statistics.models.html" class="btn btn-neutral" title="genetest.statistics.models package" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left"></span> Previous</a>
+      
+    </div>
+  
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        &copy; Copyright 2016, Beaulieu-Saucier Pharmacogenomics Centre.
+
+    </p>
+  </div>
+  Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a <a href="https://github.com/rtfd/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+
+</footer>
+
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+
+  
+
+    <script type="text/javascript">
+        var DOCUMENTATION_OPTIONS = {
+            URL_ROOT:'../',
+            VERSION:'0.3.0',
+            LANGUAGE:'None',
+            COLLAPSE_INDEX:false,
+            FILE_SUFFIX:'.html',
+            HAS_SOURCE:  true,
+            SOURCELINK_SUFFIX: '.txt'
+        };
+    </script>
+      <script type="text/javascript" src="../_static/jquery.js"></script>
+      <script type="text/javascript" src="../_static/underscore.js"></script>
+      <script type="text/javascript" src="../_static/doctools.js"></script>
+      <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.1/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+
+  
+
+  
+  
+    <script type="text/javascript" src="../_static/js/theme.js"></script>
+  
+
+  <script type="text/javascript">
+      jQuery(function () {
+          
+          SphinxRtdTheme.Navigation.enableSticky();
+          
+      });
+  </script> 
+
+</body>
+</html>
