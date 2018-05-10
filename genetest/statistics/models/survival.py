@@ -11,10 +11,12 @@
 
 
 import logging
+import warnings
 
 import numpy as np
 
 import statsmodels.api as sm
+from statsmodels.tools.sm_exceptions import ConvergenceWarning
 
 from ..core import StatsModels, StatsError
 
@@ -73,10 +75,17 @@ class StatsCoxPH(StatsModels):
 
         # Creating the CoxPH model and fitting it
         model = sm.PHReg(tte, X, status=event, ties="efron", strata=strata)
+        fitted = None
         try:
-            fitted = model.fit()
+            with warnings.catch_warnings():
+                warnings.filterwarnings("error", category=ConvergenceWarning)
+                fitted = model.fit()
+
         except np.linalg.linalg.LinAlgError as e:
             raise StatsError(str(e))
+
+        except ConvergenceWarning as e:
+            raise StatsError(str(e).replace(" Check mle_retvals", ""))
 
         # Getting the results
         out = {}
