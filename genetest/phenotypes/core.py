@@ -77,3 +77,39 @@ class PhenotypesContainer(object):
 
         """
         raise NotImplementedError()
+
+    def get_sex(self):
+        """Returns the sex for all samples.
+
+        Returns:
+            pandas.Series: The sex for all samples.
+
+        """
+        if not hasattr(self, "_sex_column") or self._sex_column is None:
+            raise ValueError("No sex column was specified in Phenotype "
+                             "container")
+
+        # Extracting the sex
+        sex = self._phenotypes.loc[:, self._sex_column]
+
+        if self._repeated:
+            # Checking if the sex are the same across repeated measures
+            invalid = []
+            group = sex.groupby(sex.index)
+            for sample, values in group:
+                if len(values.unique()) != 1:
+                    invalid.append(sample)
+
+            if len(invalid) > 0:
+                raise ValueError(
+                    "Samples with duplicated different sex: {}"
+                    "".format(",".join(sorted(invalid))),
+                )
+
+            sex = group.first()
+
+        # Checking we only have 0 and 1 (and maybe NaN)
+        if len(set(sex.dropna().unique()) - {0.0, 1.0}) != 0:
+            raise ValueError("Sex should only contain 0 and 1 (and maybe NaN)")
+
+        return sex

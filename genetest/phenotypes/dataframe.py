@@ -10,6 +10,9 @@
 # Commons, PO Box 1866, Mountain View, CA 94042, USA.
 
 
+from .core import PhenotypesContainer
+
+
 __copyright__ = "Copyright 2016, Beaulieu-Saucier Pharmacogenomics Centre"
 __license__ = "Attribution-NonCommercial 4.0 International (CC BY-NC 4.0)"
 
@@ -17,7 +20,7 @@ __license__ = "Attribution-NonCommercial 4.0 International (CC BY-NC 4.0)"
 __all__ = ["DataFrameContainer"]
 
 
-class DataFrameContainer(object):
+class DataFrameContainer(PhenotypesContainer):
     def __init__(self, dataframe):
         self._phenotypes = dataframe
 
@@ -106,3 +109,12 @@ class DataFrameContainer(object):
 
         """
         self._phenotypes = self._phenotypes[self._phenotypes.index.isin(keep)]
+
+    def set_sex_column(self, sex_column):
+        """Sets the sex column (required to get sex from DataFrame).
+
+        Args:
+            sex_column (str): The name of the sex column.
+
+        """
+        self._sex_column = sex_column
