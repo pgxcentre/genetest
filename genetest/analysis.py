@@ -680,7 +680,12 @@ def _execute_gwas(genotypes, modelspec, subscribers, y, X, variant_predicates,
         for snp in not_analyzed:
             messages["skipped"].append(snp)
 
-        # Sanity check that there is nothing important left in the queues.
+        # Join the workers.
+        for worker in workers:
+            worker.join()
+
+        # Sanity check that there is nothing important left in the queues and
+        # join the queues
         queues_iter = zip(
             ('results', 'failed', 'q'), (results, failed, q)
         )
@@ -690,9 +695,5 @@ def _execute_gwas(genotypes, modelspec, subscribers, y, X, variant_predicates,
                 assert val is None, (name, val)
                 a_queue.task_done()
             a_queue.join()
-
-        # Join the workers.
-        for worker in workers:
-            worker.join()
 
         logger.info("Analysis completed")
