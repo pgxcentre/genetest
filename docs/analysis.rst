@@ -266,10 +266,10 @@ The following arguments and options are available for the linear regression.
     | Argument                  | Description                          | Required |
     +===========================+======================================+==========+
     | ``formula``               | The formula describing the analysis  | Yes      |
-    |                           | to be perfomed. Note that the formula|          |
-    |                           | is similar to the one used in R. The |          |
-    |                           | names of the variables need to be    |          |
-    |                           | the same as the columns in the       |          |
+    |                           | to be performed. Note that the       |          |
+    |                           | formula is similar to the one used in|          |
+    |                           | R. The names of the variables need to|          |
+    |                           | be the same as the columns in the    |          |
     |                           | phenotype file. The keyword ``SNPs`` |          |
     |                           | is used to perform a GWAS.           |          |
     +---------------------------+--------------------------------------+----------+
@@ -288,7 +288,7 @@ The following arguments and options are available for the linear regression.
 
 Below is an example of a ``model`` section of the *YAML* configuration file
 for a linear regression analysis of the phenotype *Pheno* over the variables
-*SNPs* (meaning a GWAS), *Age* and *Sex*. It also increase the conditional
+*SNPs* (meaning a GWAS), *Age* and *Sex*. It also increases the conditional
 value threshold from the default value of 1000 to 5000.
 
 .. code-block:: yaml
@@ -315,10 +315,10 @@ The logistic regression only requires the formula describing the model.
     | Argument                  | Description                          | Required |
     +===========================+======================================+==========+
     | ``formula``               | The formula describing the analysis  | Yes      |
-    |                           | to be perfomed. Note that the formula|          |
-    |                           | is similar to the one used in R. The |          |
-    |                           | names of the variables needs to be   |          |
-    |                           | the same as the columns in the       |          |
+    |                           | to be performed. Note that the       |          |
+    |                           | formula is similar to the one used in|          |
+    |                           | R. The names of the variables need to|          |
+    |                           | be the same as the columns in the    |          |
     |                           | phenotype file. The keyword ``SNPs`` |          |
     |                           | is used to perform a GWAS.           |          |
     +---------------------------+--------------------------------------+----------+
@@ -350,10 +350,10 @@ options.
     | Argument                  | Description                          | Required |
     +===========================+======================================+==========+
     | ``formula``               | The formula describing the analysis  | Yes      |
-    |                           | to be perfomed. Note that the formula|          |
-    |                           | is similar to the one used in R. The |          |
-    |                           | names of the variables needs to be   |          |
-    |                           | the same as the columns in the       |          |
+    |                           | to be performed. Note that the       |          |
+    |                           | formula is similar to the one used in|          |
+    |                           | R. The names of the variables need to|          |
+    |                           | be the same as the columns in the    |          |
     |                           | phenotype file. The keyword ``SNPs`` |          |
     |                           | is used to perform a GWAS.           |          |
     +---------------------------+--------------------------------------+----------+
@@ -406,10 +406,10 @@ the model.
     | Argument                  | Description                          | Required |
     +===========================+======================================+==========+
     | ``formula``               | The formula describing the analysis  | Yes      |
-    |                           | to be perfomed. Note that the formula|          |
-    |                           | is similar to the one used in R. The |          |
-    |                           | names of the variables needs to be   |          |
-    |                           | the same as the columns in the       |          |
+    |                           | to be performed. Note that the       |          |
+    |                           | formula is similar to the one used in|          |
+    |                           | R. The names of the variables need to|          |
+    |                           | be the same as the columns in the    |          |
     |                           | phenotype file. The keyword ``SNPs`` |          |
     |                           | is used to perform a GWAS.           |          |
     +---------------------------+--------------------------------------+----------+
@@ -468,14 +468,14 @@ prefix).
     +-----------------------------+-----------------------------------------------+
     | ``results.txt``             | File containing the results of the analysis.  |
     |                             | The file is tab-separated and contain summary |
-    |                             | information about each variants, along with   |
+    |                             | information about each variant, along with    |
     |                             | the statistics specific to the statistical    |
     |                             | model.                                        |
     +-----------------------------+-----------------------------------------------+
     | ``results_failed_snps.txt`` | File containing the list of variants that     |
     |                             | failed the analysis. Failure can be           |
     |                             | attributed to low minor allele frequency or   |
-    |                             | convergence issue, for example. A small       |
+    |                             | convergence issues, for example. A small      |
     |                             | description is added to describe the failure. |
     +-----------------------------+-----------------------------------------------+
 

@@ -368,7 +368,7 @@ def parse_args(parser):
     group = parser.add_argument_group("Other Options")
     group.add_argument(
         "--extract", type=argparse.FileType("r"), metavar="FILE",
-        help="A file containing a list of marker to extract prior to the "
+        help="A file containing a list of markers to extract prior to the "
              "statistical analysis (one marker per line).",
     )
     group.add_argument(
