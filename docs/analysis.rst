@@ -195,9 +195,9 @@ The following arguments and options are available for this format.
     | ``filename``              | The name of the *bgen* file.         | Yes      |
     +---------------------------+--------------------------------------+----------+
     | ``sample_column``         | The name of the column containing the|          |
-    |                           |  sample ID. This column will be used |          |
-    |                           |  to match the phenotypes with the    |          |
-    |                           |  genotypes. [Default: sample]        |          |
+    |                           | sample ID. This column will be used  |          |
+    |                           | to match the phenotypes with the     |          |
+    |                           | genotypes. [Default: sample]         |          |
     +---------------------------+--------------------------------------+----------+
     | ``field_separator``       | The character that separate a field  |          |
     |                           | in the file. [Default: '\\t']        |          |
@@ -217,6 +217,13 @@ The following arguments and options are available for this format.
     |                           | used for groups in the MixedLM       |          |
     |                           | analysis).                           |          |
     +---------------------------+--------------------------------------+----------+
+    | ``sex_column``            | The name of the column containing the|          |
+    |                           | sex information. Note that males need|          |
+    |                           | to be coded as *1* and females, as   |          |
+    |                           | *0*. The choice of this encoding is  |          |
+    |                           | to speed up the MAF computation for  |          |
+    |                           | sexual chromosomes.                  |          |
+    +---------------------------+--------------------------------------+----------+
 
 Below is an example of a ``phenotypes`` section of the *YAML* configuration file
 for a *text* file containing repeated measurements. The string ``-99999`` is
@@ -232,6 +239,7 @@ considered as a missing value.
             missing_values: "-99999"
             repeated_measurements: Yes
             keep_sample_column: Yes
+            sex_column: sex
 
 
 Statistical model
@@ -287,7 +295,7 @@ value threshold from the default value of 1000 to 5000.
 
     model:
         test: linear
-        formula: "Pheno ~ SNPs + Age + Sex"
+        formula: "Pheno ~ SNPs + Age + factor(Sex)"
         options:
             condition_value_t: 5000
 
@@ -323,7 +331,7 @@ for a logistic regression analysis of the phenotype *Status* over the variables
 
     model:
         test: logistic
-        formula: "Status ~ SNPs + Age + Sex"
+        formula: "Status ~ SNPs + Age + factor(Sex)"
 
 See :py:class:`genetest.statistics.models.logistic.StatsLogistic` for more
 information about the class.
@@ -377,7 +385,7 @@ IDs (*SampleID*) as the grouping variable.
 
     model:
         test: mixedlm
-        formula: "[outcome=Pheno, groups=SampleID] ~ SNPs + Age + Sex + Visit"
+        formula: "[outcome=Pheno, groups=SampleID] ~ SNPs + Age + factor(Sex) + factor(Visit)"
         options:
             optimize: Yes
 
@@ -415,7 +423,59 @@ for a survival analysis (Cox proportional hazard regression) of the event
 
     model:
         test: coxph
-        formula: "[tte=TTE, event=Event] ~ SNPs + Age + Sex"
+        formula: "[tte=TTE, event=Event] ~ SNPs + Age + factor(Sex)"
 
 See :py:class:`genetest.statistics.models.survival.StatsCoxPH` for more
 information about the class.
+
+
+Execution
+----------
+
+Assuming the name of the configuration file ``analysis.yaml``, and that the
+list of variant to extract for the analysis is in ``variants_to_extract.txt``
+(on variant ID per line), the following command will launch the analysis using
+6 CPUs. The resulting files will have the prefix ``results``.
+
+Note that the ``--extract`` option should be used to extract only the variants
+that pass quality control. Since genotypes file might be really big, extracting
+only the variants suited for analysis will dramatically decrease the execution
+time.
+
+
+.. code-block:: bash
+
+    genetest \
+        --configuration analysis.yaml \
+        --extract variants_to_extract.txt \
+        --nb-cpus 6 \
+        --output results
+
+
+Output files
+^^^^^^^^^^^^^
+
+Using the previous command, three files will be generated (with the ``results``
+prefix).
+
+.. table::
+    :widths: 20 80
+
+    +-----------------------------+-----------------------------------------------+
+    | File name                   | Description                                   |
+    +=============================+===============================================+
+    | ``results.log``             | File containing the LOG of the analysis.      |
+    +-----------------------------+-----------------------------------------------+
+    | ``results.txt``             | File containing the results of the analysis.  |
+    |                             | The file is tab-separated and contain summary |
+    |                             | information about each variants, along with   |
+    |                             | the statistics specific to the statistical    |
+    |                             | model.                                        |
+    +-----------------------------+-----------------------------------------------+
+    | ``results_failed_snps.txt`` | File containing the list of variants that     |
+    |                             | failed the analysis. Failure can be           |
+    |                             | attributed to low minor allele frequency or   |
+    |                             | convergence issue, for example. A small       |
+    |                             | description is added to describe the failure. |
+    +-----------------------------+-----------------------------------------------+
+
