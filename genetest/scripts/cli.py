@@ -203,6 +203,7 @@ def performed_optimized_mixedlm(args, test, phenotypes, genotypes, formula,
         phenotypes=phenotypes, genotypes=genotypes, modelspec=modelspec,
         subscribers=[memory_subscriber], output_prefix=args.output,
         subgroups=subgroups, maf_t=args.maf, cpus=args.nb_cpus,
+        sexual_chromosome=args.sexual_chromosome,
     )
 
     # Getting the RE values
@@ -269,6 +270,7 @@ def performed_optimized_mixedlm(args, test, phenotypes, genotypes, formula,
         output_prefix=args.output + ".mixedlm_approximation",
         maf_t=args.maf, cpus=args.nb_cpus,
         variant_predicates=variant_predicates,
+        sexual_chromosome=args.sexual_chromosome,
     )
 
     # Making sure the output file exists
@@ -304,6 +306,7 @@ def performed_optimized_mixedlm(args, test, phenotypes, genotypes, formula,
         test="mixedlm", test_kwargs=test_kwargs, subscribers=subscribers,
         variant_predicates=variant_predicates, output_prefix=args.output,
         maf_t=args.maf, cpus=args.nb_cpus,
+        sexual_chromosome=args.sexual_chromosome,
     )
 
 
@@ -319,6 +322,7 @@ def perform_normal_analysis(args, test, phenotypes, genotypes, formula,
         test_kwargs=test_kwargs, subscribers=subscribers,
         variant_predicates=variant_predicates, output_prefix=args.output,
         maf_t=args.maf, cpus=args.nb_cpus,
+        sexual_chromosome=args.sexual_chromosome,
     )
 
 
@@ -380,6 +384,12 @@ def parse_args(parser):
         "--maf", type=float, default=0.01, metavar="MAF",
         help="The MAF threshold to include a marker in the analysis. "
              "[%(default).2f]",
+    )
+    group.add_argument(
+        "--sexual-chromosome", action="store_true",
+        help="Analysis is performed on a sexual chromosome. This will impact "
+             "the MAF computation (as males are hemizygotes on sexual "
+             "chromosomes). This has an effect only on a GWAS analysis.",
     )
 
     return parser.parse_args()

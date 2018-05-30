@@ -25,7 +25,7 @@ import numpy as np
 import pandas as pd
 
 from .statistics.core import StatsError
-from .statistics.descriptive import get_maf
+from .statistics.descriptive import get_maf, get_sex_maf
 from . import subscribers as subscribers_module
 from .modelspec import SNPs, PheWAS, modelspec_from_formula
 
@@ -66,7 +66,7 @@ def _generate_sample_order(x_samples, geno_samples):
 
 
 def _gwas_worker(q, results_q, failed, abort, fit, y, X, samples, maf_t=None,
-                 interaction=None):
+                 interaction=None, sample_sex=None):
     # The sample order (to add genotypes to the X data frame
     geno_index = None
     sample_order = None
@@ -124,11 +124,24 @@ def _gwas_worker(q, results_q, failed, abort, fit, y, X, samples, maf_t=None,
         if has_duplicates:
             samples_for_maf = samples_for_maf & unique_samples
 
-        maf, minor, major, flip = get_maf(
-            genotypes=X.loc[samples_for_maf, "SNPs"],
-            minor=snp.coded,
-            major=snp.reference,
-        )
+        maf = None
+        minor = None
+        major = None
+        flip = None
+        if sample_sex is None:
+            maf, minor, major, flip = get_maf(
+                genotypes=X.loc[samples_for_maf, "SNPs"],
+                minor=snp.coded,
+                major=snp.reference,
+            )
+        else:
+            indexes = X.index[samples_for_maf]
+            maf, minor, major, flip = get_sex_maf(
+                genotypes=X.loc[indexes, "SNPs"],
+                minor=snp.coded,
+                major=snp.reference,
+                sexes=sample_sex.reindex(indexes),
+            )
 
         # Is the MAF below the threshold?
         if maf_t is not None and maf < maf_t:
@@ -199,19 +212,20 @@ def _log_warnings(identifier, warning_list):
 
 def execute_formula(phenotypes, genotypes, formula, test, test_kwargs=None,
                     subscribers=None, variant_predicates=None,
-                    output_prefix=None, maf_t=None, cpus=None):
+                    output_prefix=None, maf_t=None, cpus=None,
+                    sexual_chromosome=False):
 
     # Getting the model specification and the subgroups (if any)
     modelspec, subgroups = modelspec_from_formula(formula, test, test_kwargs)
 
     # Executing
     execute(phenotypes, genotypes, modelspec, subscribers, variant_predicates,
-            output_prefix, subgroups, maf_t, cpus)
+            output_prefix, subgroups, maf_t, cpus, sexual_chromosome)
 
 
 def execute(phenotypes, genotypes, modelspec, subscribers=None,
             variant_predicates=None, output_prefix=None, subgroups=None,
-            maf_t=None, cpus=None):
+            maf_t=None, cpus=None, sexual_chromosome=False):
     """Execute an analysis.
 
     Args:
@@ -224,6 +238,7 @@ def execute(phenotypes, genotypes, modelspec, subscribers=None,
         subgroups (list): The subgroup analysis.
         maf_t (float): The MAF threshold.
         cpus (int): The number of CPUs to perform the analysis.
+        sexual_chromosome (bool): The analysis is performed on sexual chrom.
 
     """
     if subscribers is None:
@@ -271,13 +286,22 @@ def execute(phenotypes, genotypes, modelspec, subscribers=None,
         "failed": []
     }
 
+    # If sexual chromosomes, we need to get the sex from the phenotypes
+    sample_sex = None
+    if sexual_chromosome:
+        logger.info("Analysis is performed on a sexual chromosome")
+        sample_sex = phenotypes.get_sex()
+        logger.info("  - {:,d} males".format((sample_sex == 1).sum()))
+        logger.info("  - {:,d} females".format((sample_sex == 0).sum()))
+        logger.info("  - {:,d} unknowns".format((sample_sex.isnull().sum())))
+
     if modelspec.stratify_by is not None:
         _execute_stratified(genotypes, modelspec, subscribers, y, X,
                             variant_predicates, subgroups, messages, maf_t,
-                            cpus)
+                            cpus, sample_sex)
     elif SNPs in modelspec.predictors:
         _execute_gwas(genotypes, modelspec, subscribers, y, X,
-                      variant_predicates, messages, maf_t, cpus)
+                      variant_predicates, messages, maf_t, cpus, sample_sex)
     else:
         _execute_simple(modelspec, subscribers, y, X, variant_predicates,
                         messages)
@@ -424,7 +448,7 @@ def _phewas_worker(data, predictors, abort, fit, phen_queue, results_queue):
 
 def _execute_stratified(genotypes, modelspec, subscribers, y, X,
                         variant_predicates, subgroups, messages, maf_t=None,
-                        cpus=None):
+                        cpus=None, sample_sex=None):
     # Levels.
     assert len(modelspec.stratify_by) == len(subgroups)
 
@@ -506,7 +530,7 @@ def _execute_stratified(genotypes, modelspec, subscribers, y, X,
         if gwas_mode:
             _execute_gwas(
                 genotypes, modelspec, subscribers, y.loc[idx, :], this_x,
-                variant_predicates, messages, maf_t, cpus,
+                variant_predicates, messages, maf_t, cpus, sample_sex,
             )
         else:
             _execute_simple(
@@ -563,7 +587,7 @@ def _execute_simple(modelspec, subscribers, y, X, variant_predicates,
 
 
 def _execute_gwas(genotypes, modelspec, subscribers, y, X, variant_predicates,
-                  messages, maf_t=None, cpus=None):
+                  messages, maf_t=None, cpus=None, sample_sex=None):
         if cpus is None:
             cpus = multiprocessing.cpu_count() - 1
 
@@ -597,7 +621,8 @@ def _execute_gwas(genotypes, modelspec, subscribers, y, X, variant_predicates,
             worker = multiprocessing.Process(
                 target=_gwas_worker,
                 args=(q, results, failed, abort, fit, this_y, this_X, samples,
-                      maf_t, gwas_interaction)
+                      maf_t, gwas_interaction,
+                      sample_sex if sample_sex is None else sample_sex.copy())
             )
 
             workers.append(worker)
