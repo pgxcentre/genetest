@@ -207,9 +207,10 @@ The following arguments and options are available for this format.
     | ``field_separator``       | The character that separate a field  |          |
     |                           | in the file. [Default: '\\t']        |          |
     +---------------------------+--------------------------------------+----------+
-    | ``missing_values``        | The values that are considered as    |          |
-    |                           | missing. An empty field is           |          |
-    |                           | automaticaly considered as missing.  |          |
+    | ``missing_values``        | A string (using quotes) that         |          |
+    |                           | represents missing values. An empty  |          |
+    |                           | field, ``NA``, ``nan`` or ``NaN`` are|          |
+    |                           | always considered as missing.        |          |
     +---------------------------+--------------------------------------+----------+
     | ``repeated_measurements`` | Enter 'Yes' if the file containes    |          |
     |                           | repeated measurements.               |          |
