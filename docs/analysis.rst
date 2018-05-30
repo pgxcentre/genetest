@@ -212,7 +212,7 @@ The following arguments and options are available for this format.
     |                           | field, ``NA``, ``nan`` or ``NaN`` are|          |
     |                           | always considered as missing.        |          |
     +---------------------------+--------------------------------------+----------+
-    | ``repeated_measurements`` | Enter 'Yes' if the file containes    |          |
+    | ``repeated_measurements`` | Enter 'Yes' if the file contains     |          |
     |                           | repeated measurements.               |          |
     +---------------------------+--------------------------------------+----------+
     | ``keep_sample_column``    | For now, if repeated measurements are|          |
