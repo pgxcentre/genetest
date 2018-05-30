@@ -11,30 +11,35 @@ the ``geneparse`` tool.
     $ genetest --help
     usage: genetest [-h] [-v] [--test] [--nb-cpus NB] --configuration YAML
                     [--output FILE] [--extract FILE] [--keep FILE] [--maf MAF]
+                    [--sexual-chromosome]
 
     Performs statistical analysis on genotypic data (version 0.3.0).
 
     optional arguments:
-      -h, --help            show this help message and exit
-      -v, --version         show program's version number and exit
-      --test                Execute the test suite and exit.
-      --nb-cpus NB          The number of processes to use for the analysis. [1]
+    -h, --help            show this help message and exit
+    -v, --version         show program's version number and exit
+    --test                Execute the test suite and exit.
+    --nb-cpus NB          The number of processes to use for the analysis. [1]
 
     Input Options:
-      --configuration YAML  The configuration file that describe the phenotypes,
+    --configuration YAML  The configuration file that describe the phenotypes,
                             genotypes, and model.
 
     Output Options:
-      --output FILE         The output file prefix that will contain the results
+    --output FILE         The output file prefix that will contain the results
                             and other information. [genetest_results]
 
     Other Options:
-      --extract FILE        A file containing a list of marker to extract prior to
-                            the statistical analysis (one marker per line).
-      --keep FILE           A file containing a list of samples to keep prior to
+    --extract FILE        A file containing a list of markers to extract prior
+                            to the statistical analysis (one marker per line).
+    --keep FILE           A file containing a list of samples to keep prior to
                             the statistical analysis (one sample per line).
-      --maf MAF             The MAF threshold to include a marker in the analysis.
+    --maf MAF             The MAF threshold to include a marker in the analysis.
                             [0.01]
+    --sexual-chromosome   Analysis is performed on a sexual chromosome. This
+                            will impact the MAF computation (as males are
+                            hemizygotes on sexual chromosomes). This has an effect
+                            only on a GWAS analysis.
 
 A single configuration file (using the *YAML* format) describes the genetic and
 phenotypic files and the statistical model to perform. The following describe
@@ -222,7 +227,10 @@ The following arguments and options are available for this format.
     |                           | to be coded as *1* and females, as   |          |
     |                           | *0*. The choice of this encoding is  |          |
     |                           | to speed up the MAF computation for  |          |
-    |                           | sexual chromosomes.                  |          |
+    |                           | sexual chromosomes. This column will |          |
+    |                           | be used only if the analysis is      |          |
+    |                           | performed using the                  |          |
+    |                           | ``--sexual-chromosome`` option.      |          |
     +---------------------------+--------------------------------------+----------+
 
 Below is an example of a ``phenotypes`` section of the *YAML* configuration file
