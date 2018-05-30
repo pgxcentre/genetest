@@ -23,6 +23,11 @@ The tool has been tested on *Linux* only, but should work on *MacOS* operating
 systems as well.
 
 
+## Documentation
+
+Documentation is available at http://pgxcentre.github.io/genetest/.
+
+
 ## Installation
 
 Using `pip`:
