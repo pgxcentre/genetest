@@ -21,8 +21,8 @@ from .grammar import parse_modelspec, parse_formula
 
 __all__ = [
     "ModelSpec", "parse_modelspec", "parse_formula", "result", "phenotypes",
-    "genotypes", "factor", "log10", "pow", "interaction", "SNPs", "_reset",
-    "pheWAS", "modelspec_from_formula",
+    "genotypes", "factor", "log10", "pow", "interaction", "SNPs",
+    "modelspec_from_formula",
 ]
 
 
