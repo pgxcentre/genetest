@@ -22,7 +22,6 @@ from geneparse import Extractor
 
 from .. import modelspec as spec
 from .. import __version__, _LOG_FORMAT
-from ..modelspec.predicates import NameFilter
 from ..modelspec import modelspec_from_formula
 from ..analysis import execute, execute_formula
 from ..configuration import AnalysisConfiguration
@@ -192,9 +191,11 @@ def performed_optimized_mixedlm(args, test, phenotypes, genotypes, formula,
     if subgroups is not None:
         raise CliError("Subgroups are not available for MixedLM optimization")
 
-    # Removing the SNPs from the predictors
+    # Removing the SNPs from the predictors and removing the gwas flag
     if "SNPs" in modelspec.predictors:
         del modelspec.predictors[modelspec.predictors.index("SNPs")]
+    if "SNPs" in modelspec.dependencies:
+        del modelspec.dependencies[modelspec.dependencies.index("SNPs")]
 
     # Executing the normal MixedLM analysis and executing the analysis
     logger.info("Computing the random effects")
@@ -210,7 +211,9 @@ def performed_optimized_mixedlm(args, test, phenotypes, genotypes, formula,
     random_effects = memory_subscriber.results.pop()["MODEL"]["random_effects"]
 
     # Getting the column for the groupings
-    group_col = modelspec.get_translations()[modelspec.outcome["groups"].id]
+    group_col = modelspec.outcome["groups"].columns
+    assert len(group_col) == 1
+    group_col = group_col[0]
 
     # Checking we don't have the random effects column in the original pheno
     assert "_random_effects" not in phenotypes.get_phenotypes().columns
@@ -226,9 +229,6 @@ def performed_optimized_mixedlm(args, test, phenotypes, genotypes, formula,
         left_on=group_col,
         right_index=True,
     )
-
-    # Resetting the model spec
-    spec._reset()
 
     # Creating the new phenotypes container
     new_phenotypes = DataFrameContainer(dataframe=new_phenotypes)
@@ -287,17 +287,15 @@ def performed_optimized_mixedlm(args, test, phenotypes, genotypes, formula,
         logger.info("No marker had a p value < than {}".format(p_t))
         return
 
-    # Adding the SNPs into the original ModelSpec
-    modelspec.predictors.append("SNPs")
-
-    # Creating the new variant predicates
-    variant_predicates = [NameFilter(extract=markers)]
+    # Performing the extraction
+    if isinstance(genotypes, Extractor):
+        # The genotype object is already an Extractor, so we retrieve the
+        # parser
+        genotypes = genotypes.parser
+    genotypes = Extractor(parser=genotypes, names=markers)
 
     # Creating the GWAS subscriber
     subscribers = [GWASWriter(filename=args.output + ".txt", test="mixedlm")]
-
-    # Resetting the model spec
-    spec._reset()
 
     # Executing the real MixdLM
     logger.info("Executing MixedLM on {:,d} markers".format(len(markers)))
