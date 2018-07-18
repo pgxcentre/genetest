@@ -41,13 +41,39 @@ the ``geneparse`` tool.
                             hemizygotes on sexual chromosomes). This has an effect
                             only on a GWAS analysis.
 
-A single configuration file (using the *YAML* format) describes the genetic and
-phenotypic files and the statistical model to perform. The following describe
-the different sections.
+A single configuration file (using the *YAML* format) describes the
+:ref:`genotypes <yaml_genotypes_section>` and
+:ref:`phenotypes <yaml_phenotypes_section>` files, and the
+:ref:`statistical model <yaml_statistics_section>` to perform. The following
+describe the different sections.
 
 In all the cases, when values are optional, it needs to be inserted into a
-``options`` subsection, otherwise, the default values will be used.
+``options`` subsection, otherwise, the default values will be used (see below
+for examples).
 
+.. warning::
+
+    By default, the MAF computed during a GWAS uses the formula for autosomes
+    (*i.e.* there is no check for sexual chromosomes). If the analysis is
+    performed on a sexual chromosome, make sure to use the
+    ``--sexual-chromosome`` flag and to use the YAML option ``sex_column`` (in
+    the :ref:`Phenotype <yaml_phenotypes_section>` section) to specify the
+    gender column in the phenotype file.
+
+    Also note that when using the ``--sexual-chromosome`` option, all markers
+    in the genotype file will be treated as being on a sexual chromosome. If
+    the genotype file contains a mixture of autosomes and sexual chromosomes,
+    make sure use a combination of the ``--extract`` (extracting only markers
+    located on a sexual chromosome) and ``--sexual-chromosome`` in order to
+    properly compute the MAF.
+
+    Finally, the column containing the sex in the phenotype file (the
+    ``sex_column`` option of the :ref:`Phenotype <yaml_phenotypes_section>`
+    section in the YAML file) should have encoding of ``male=1`` and
+    ``female=0``.
+
+
+.. _yaml_genotypes_section:
 
 Genotypes
 ----------
@@ -179,6 +205,8 @@ for the VCF format.
         filename: cohort.vcf
 
 
+.. _yaml_phenotypes_section:
+
 Phenotypes
 -----------
 
@@ -250,6 +278,8 @@ considered as a missing value.
             keep_sample_column: Yes
             sex_column: sex
 
+
+.. _yaml_statistics_section:
 
 Statistical model
 ------------------
