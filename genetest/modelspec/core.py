@@ -17,7 +17,6 @@ import itertools
 import functools
 
 import numpy as np
-import pandas as pd
 from geneparse.utils import genotype_to_df
 
 from ..statistics import model_map

@@ -24,7 +24,7 @@ __all__ = ["TextPhenotypes"]
 class TextPhenotypes(PhenotypesContainer):
     def __init__(self, filename, sample_column="sample", field_separator="\t",
                  missing_values=None, repeated_measurements=False,
-                 keep_sample_column=False):
+                 keep_sample_column=False, sex_column=None):
         """Instantiate a new TextPhenotypes object.
 
         Args:
@@ -37,11 +37,14 @@ class TextPhenotypes(PhenotypesContainer):
             missing_values (str or list or dict): The missing value(s).
             repeated_measurements (bool): Are the data containing repeated
                                           measurements (e.g. for MixedLM).
+            sex_column (str): The name of the column containing the sex for
+                              each sample.
 
         """
         # TODO: Check the different column names
         self._phenotypes = pd.read_csv(filename, sep=field_separator,
-                                       na_values=missing_values)
+                                       na_values=missing_values,
+                                       dtype={sample_column: str})
 
         # If there are repeated measurements, the sample column will have
         # duplicated values. We will set the index, but we won't verify its
@@ -55,6 +58,9 @@ class TextPhenotypes(PhenotypesContainer):
 
         # Renaming the index
         self._phenotypes.index.name = "sample_id"
+
+        # The sex column
+        self._sex_column = sex_column
 
     def close(self):
         pass

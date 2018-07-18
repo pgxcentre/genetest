@@ -92,6 +92,7 @@ class StatsMixedLM(StatsModels):
             "MODEL": {
                 "log_likelihood": fitted.llf,
                 "nobs": X.shape[0],
+                "n_groups": model.n_groups,
                 "random_effects": self._format_re(fitted.random_effects),
             },
         }

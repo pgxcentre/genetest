@@ -11,10 +11,12 @@
 
 
 import logging
+import warnings
 
 import numpy as np
 
 import statsmodels.api as sm
+from statsmodels.tools.sm_exceptions import ConvergenceWarning
 
 from ..core import StatsModels, StatsError
 
@@ -39,7 +41,7 @@ class StatsCoxPH(StatsModels):
             raise ValueError(
                 "missing column in y: coxph requires 'tte' and 'event'"
             )
-        if len(y.columns) > 2:
+        if len(y.columns) > 3 and "strata" not in y.columns:
             extra = set(y.columns) - {"tte", "event"}
             logger.warning("{}: unknown column in y, will be ignored".format(
                 ",".join(extra),
@@ -49,7 +51,11 @@ class StatsCoxPH(StatsModels):
         if "intercept" in X.columns:
             X = X.drop("intercept", axis=1)
 
-        return y.tte, y.event, X
+        strata = None
+        if "strata" in y.columns:
+            strata = y.strata
+
+        return y.tte, y.event, X, strata
 
     def fit(self, y, X):
         """Fit the model.
@@ -65,14 +71,21 @@ class StatsCoxPH(StatsModels):
 
         """
         # Retrieving the data
-        tte, event, X = self._prepare_data(y, X)
+        tte, event, X, strata = self._prepare_data(y, X)
 
         # Creating the CoxPH model and fitting it
-        model = sm.PHReg(tte, X, status=event, ties="efron")
+        model = sm.PHReg(tte, X, status=event, ties="efron", strata=strata)
+        fitted = None
         try:
-            fitted = model.fit()
+            with warnings.catch_warnings():
+                warnings.filterwarnings("error", category=ConvergenceWarning)
+                fitted = model.fit()
+
         except np.linalg.linalg.LinAlgError as e:
             raise StatsError(str(e))
+
+        except ConvergenceWarning as e:
+            raise StatsError(str(e).replace(" Check mle_retvals", ""))
 
         # Getting the results
         out = {}

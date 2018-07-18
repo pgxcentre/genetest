@@ -29,7 +29,14 @@ class StatsLinear(StatsModels):
 
         Args:
             condition_value_t (int): The condition value threshold (for
-                                     multicollinearity).
+                                     multicollinearity). Usually, values higher
+                                     than 1000 indicate strong
+                                     multicollinearity or other numerical
+                                     problems.
+            eigenvals_t (float): The Eigen value threshold (for
+                                 multicollinearity). Usually, values lower than
+                                 1e-10 might indicate strong multicollinearity
+                                 or singular design matrix.
 
         """
         # Saving the condition value threshold
