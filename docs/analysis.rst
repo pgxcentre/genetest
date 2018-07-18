@@ -13,7 +13,7 @@ the ``geneparse`` tool.
                     [--output FILE] [--extract FILE] [--keep FILE] [--maf MAF]
                     [--sexual-chromosome]
 
-    Performs statistical analysis on genotypic data (version 0.3.0).
+    Performs statistical analysis on genotypic data (version 0.4.0).
 
     optional arguments:
       -h, --help            show this help message and exit
