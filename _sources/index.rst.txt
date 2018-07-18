@@ -20,7 +20,9 @@ multiple co-variables.
 
 A command line interface tool was also added to facilitate genome-wide
 association studies using a configuration file (*YAML* format) to describe the
-analysis.
+analysis (:ref:`genotypes <yaml_genotypes_section>`,
+:ref:`phenotypes <yaml_phenotypes_section>` and
+:ref:`statistical model <yaml_statistics_section>`).
 
 .. toctree::
     :maxdepth: 2

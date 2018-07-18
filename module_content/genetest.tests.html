@@ -8,7 +8,7 @@
   
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   
-  <title>genetest.tests package &mdash; genetest 0.3.0 documentation</title>
+  <title>genetest.tests package &mdash; genetest 0.4.0 documentation</title>
   
 
   
@@ -24,8 +24,7 @@
 
   
 
-  
-    <link rel="stylesheet" href="../_static/css/theme.css" type="text/css" />
+  <link rel="stylesheet" href="../_static/css/theme.css" type="text/css" />
   <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
   <link rel="stylesheet" href="../_static/theme_overrides.css" type="text/css" />
     <link rel="index" title="Index" href="../genindex.html" />
@@ -59,7 +58,7 @@
             
             
               <div class="version">
-                0.3
+                0.4
               </div>
             
           
@@ -765,6 +764,12 @@ not have a method with the specified name.</p>
 <dd><p>Tests that ‘get_phenotypes’ raises a NotImplementedError.</p>
 </dd></dl>
 
+<dl class="method">
+<dt id="genetest.tests.test_phenotypes.TestCore.test_get_sex_no_attribute">
+<code class="descname">test_get_sex_no_attribute</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/genetest/tests/test_phenotypes.html#TestCore.test_get_sex_no_attribute"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#genetest.tests.test_phenotypes.TestCore.test_get_sex_no_attribute" title="Permalink to this definition">¶</a></dt>
+<dd><p>Tests when the ‘_sex_column’ attribute is missing.</p>
+</dd></dl>
+
 </dd></dl>
 
 <dl class="class">
@@ -790,6 +795,24 @@ not have a method with the specified name.</p>
 <dt id="genetest.tests.test_phenotypes.TestText.test_bad_subset_phenotypes">
 <code class="descname">test_bad_subset_phenotypes</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/genetest/tests/test_phenotypes.html#TestText.test_bad_subset_phenotypes"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#genetest.tests.test_phenotypes.TestText.test_bad_subset_phenotypes" title="Permalink to this definition">¶</a></dt>
 <dd><p>Tests asking for a subset with unavailable phenotypes.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="genetest.tests.test_phenotypes.TestText.test_duplicated_sex">
+<code class="descname">test_duplicated_sex</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/genetest/tests/test_phenotypes.html#TestText.test_duplicated_sex"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#genetest.tests.test_phenotypes.TestText.test_duplicated_sex" title="Permalink to this definition">¶</a></dt>
+<dd><p>Tests when there are repeated (different) sex for a sample.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="genetest.tests.test_phenotypes.TestText.test_get_sex">
+<code class="descname">test_get_sex</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/genetest/tests/test_phenotypes.html#TestText.test_get_sex"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#genetest.tests.test_phenotypes.TestText.test_get_sex" title="Permalink to this definition">¶</a></dt>
+<dd><p>Tests asking for the sex series.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="genetest.tests.test_phenotypes.TestText.test_invalid_sex">
+<code class="descname">test_invalid_sex</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/genetest/tests/test_phenotypes.html#TestText.test_invalid_sex"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#genetest.tests.test_phenotypes.TestText.test_invalid_sex" title="Permalink to this definition">¶</a></dt>
+<dd><p>Tests when other values than 0, 1 and NaN are in the sex column.</p>
 </dd></dl>
 
 <dl class="method">
@@ -832,6 +855,12 @@ not have a method with the specified name.</p>
 <dt id="genetest.tests.test_phenotypes.TestText.test_subset_phenotypes">
 <code class="descname">test_subset_phenotypes</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/genetest/tests/test_phenotypes.html#TestText.test_subset_phenotypes"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#genetest.tests.test_phenotypes.TestText.test_subset_phenotypes" title="Permalink to this definition">¶</a></dt>
 <dd><p>Tests asking for a subset of phenotypes.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="genetest.tests.test_phenotypes.TestText.test_undefined_sex_column">
+<code class="descname">test_undefined_sex_column</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/genetest/tests/test_phenotypes.html#TestText.test_undefined_sex_column"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#genetest.tests.test_phenotypes.TestText.test_undefined_sex_column" title="Permalink to this definition">¶</a></dt>
+<dd><p>Tests when the sex column wasn’t specified.</p>
 </dd></dl>
 
 </dd></dl>
@@ -931,7 +960,7 @@ not have a method with the specified name.</p>
     <script type="text/javascript">
         var DOCUMENTATION_OPTIONS = {
             URL_ROOT:'../',
-            VERSION:'0.3.0',
+            VERSION:'0.4.0',
             LANGUAGE:'None',
             COLLAPSE_INDEX:false,
             FILE_SUFFIX:'.html',
@@ -946,16 +975,11 @@ not have a method with the specified name.</p>
 
   
 
-  
-  
-    <script type="text/javascript" src="../_static/js/theme.js"></script>
-  
+  <script type="text/javascript" src="../_static/js/theme.js"></script>
 
   <script type="text/javascript">
       jQuery(function () {
-          
-          SphinxRtdTheme.Navigation.enableSticky();
-          
+          SphinxRtdTheme.Navigation.enable(true);
       });
   </script> 
 

@@ -8,7 +8,7 @@
   
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   
-  <title>genetest.phenotypes.text &mdash; genetest 0.3.0 documentation</title>
+  <title>genetest.phenotypes.text &mdash; genetest 0.4.0 documentation</title>
   
 
   
@@ -24,8 +24,7 @@
 
   
 
-  
-    <link rel="stylesheet" href="../../../_static/css/theme.css" type="text/css" />
+  <link rel="stylesheet" href="../../../_static/css/theme.css" type="text/css" />
   <link rel="stylesheet" href="../../../_static/pygments.css" type="text/css" />
   <link rel="stylesheet" href="../../../_static/theme_overrides.css" type="text/css" />
     <link rel="index" title="Index" href="../../../genindex.html" />
@@ -58,7 +57,7 @@
             
             
               <div class="version">
-                0.3
+                0.4
               </div>
             
           
@@ -177,7 +176,7 @@
 <div class="viewcode-block" id="TextPhenotypes"><a class="viewcode-back" href="../../../module_content/genetest.phenotypes.html#genetest.phenotypes.text.TextPhenotypes">[docs]</a><span class="k">class</span> <span class="nc">TextPhenotypes</span><span class="p">(</span><span class="n">PhenotypesContainer</span><span class="p">):</span>
     <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">filename</span><span class="p">,</span> <span class="n">sample_column</span><span class="o">=</span><span class="s2">&quot;sample&quot;</span><span class="p">,</span> <span class="n">field_separator</span><span class="o">=</span><span class="s2">&quot;</span><span class="se">\t</span><span class="s2">&quot;</span><span class="p">,</span>
                  <span class="n">missing_values</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">repeated_measurements</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
-                 <span class="n">keep_sample_column</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
+                 <span class="n">keep_sample_column</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">sex_column</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Instantiate a new TextPhenotypes object.</span>
 
 <span class="sd">        Args:</span>
@@ -190,6 +189,8 @@
 <span class="sd">            missing_values (str or list or dict): The missing value(s).</span>
 <span class="sd">            repeated_measurements (bool): Are the data containing repeated</span>
 <span class="sd">                                          measurements (e.g. for MixedLM).</span>
+<span class="sd">            sex_column (str): The name of the column containing the sex for</span>
+<span class="sd">                              each sample.</span>
 
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="c1"># TODO: Check the different column names</span>
@@ -209,6 +210,9 @@
 
         <span class="c1"># Renaming the index</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_phenotypes</span><span class="o">.</span><span class="n">index</span><span class="o">.</span><span class="n">name</span> <span class="o">=</span> <span class="s2">&quot;sample_id&quot;</span>
+
+        <span class="c1"># The sex column</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_sex_column</span> <span class="o">=</span> <span class="n">sex_column</span>
 
 <div class="viewcode-block" id="TextPhenotypes.close"><a class="viewcode-back" href="../../../module_content/genetest.phenotypes.html#genetest.phenotypes.text.TextPhenotypes.close">[docs]</a>    <span class="k">def</span> <span class="nf">close</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="k">pass</span></div>
@@ -320,7 +324,7 @@
     <script type="text/javascript">
         var DOCUMENTATION_OPTIONS = {
             URL_ROOT:'../../../',
-            VERSION:'0.3.0',
+            VERSION:'0.4.0',
             LANGUAGE:'None',
             COLLAPSE_INDEX:false,
             FILE_SUFFIX:'.html',
@@ -335,16 +339,11 @@
 
   
 
-  
-  
-    <script type="text/javascript" src="../../../_static/js/theme.js"></script>
-  
+  <script type="text/javascript" src="../../../_static/js/theme.js"></script>
 
   <script type="text/javascript">
       jQuery(function () {
-          
-          SphinxRtdTheme.Navigation.enableSticky();
-          
+          SphinxRtdTheme.Navigation.enable(true);
       });
   </script> 
 

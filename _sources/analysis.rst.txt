@@ -11,8 +11,9 @@ the ``geneparse`` tool.
     $ genetest --help
     usage: genetest [-h] [-v] [--test] [--nb-cpus NB] --configuration YAML
                     [--output FILE] [--extract FILE] [--keep FILE] [--maf MAF]
+                    [--sexual-chromosome]
 
-    Performs statistical analysis on genotypic data (version 0.3.0).
+    Performs statistical analysis on genotypic data (version 0.4.0).
 
     optional arguments:
       -h, --help            show this help message and exit
@@ -29,20 +30,50 @@ the ``geneparse`` tool.
                             and other information. [genetest_results]
 
     Other Options:
-      --extract FILE        A file containing a list of marker to extract prior to
-                            the statistical analysis (one marker per line).
+      --extract FILE        A file containing a list of markers to extract prior
+                            to the statistical analysis (one marker per line).
       --keep FILE           A file containing a list of samples to keep prior to
                             the statistical analysis (one sample per line).
       --maf MAF             The MAF threshold to include a marker in the analysis.
                             [0.01]
+      --sexual-chromosome   Analysis is performed on a sexual chromosome. This
+                            will impact the MAF computation (as males are
+                            hemizygotes on sexual chromosomes). This has an effect
+                            only on a GWAS analysis.
 
-A single configuration file (using the *YAML* format) describes the genetic and
-phenotypic files and the statistical model to perform. The following describe
-the different sections.
+A single configuration file (using the *YAML* format) describes the
+:ref:`genotypes <yaml_genotypes_section>` and
+:ref:`phenotypes <yaml_phenotypes_section>` files, and the
+:ref:`statistical model <yaml_statistics_section>` to perform. The following
+describe the different sections.
 
 In all the cases, when values are optional, it needs to be inserted into a
-``options`` subsection, otherwise, the default values will be used.
+``options`` subsection, otherwise, the default values will be used (see below
+for examples).
 
+.. warning::
+
+    By default, the MAF computed during a GWAS uses the formula for autosomes
+    (*i.e.* there is no check for sexual chromosomes). If the analysis is
+    performed on a sexual chromosome, make sure to use the
+    ``--sexual-chromosome`` flag and to use the YAML option ``sex_column`` (in
+    the :ref:`Phenotype <yaml_phenotypes_section>` section) to specify the
+    gender column in the phenotype file.
+
+    Also note that when using the ``--sexual-chromosome`` option, all markers
+    in the genotype file will be treated as being on a sexual chromosome. If
+    the genotype file contains a mixture of autosomes and sexual chromosomes,
+    make sure use a combination of the ``--extract`` (extracting only markers
+    located on a sexual chromosome) and ``--sexual-chromosome`` in order to
+    properly compute the MAF.
+
+    Finally, the column containing the sex in the phenotype file (the
+    ``sex_column`` option of the :ref:`Phenotype <yaml_phenotypes_section>`
+    section in the YAML file) should have encoding of ``male=1`` and
+    ``female=0``.
+
+
+.. _yaml_genotypes_section:
 
 Genotypes
 ----------
@@ -174,6 +205,8 @@ for the VCF format.
         filename: cohort.vcf
 
 
+.. _yaml_phenotypes_section:
+
 Phenotypes
 -----------
 
@@ -195,18 +228,19 @@ The following arguments and options are available for this format.
     | ``filename``              | The name of the *bgen* file.         | Yes      |
     +---------------------------+--------------------------------------+----------+
     | ``sample_column``         | The name of the column containing the|          |
-    |                           |  sample ID. This column will be used |          |
-    |                           |  to match the phenotypes with the    |          |
-    |                           |  genotypes. [Default: sample]        |          |
+    |                           | sample ID. This column will be used  |          |
+    |                           | to match the phenotypes with the     |          |
+    |                           | genotypes. [Default: sample]         |          |
     +---------------------------+--------------------------------------+----------+
     | ``field_separator``       | The character that separate a field  |          |
     |                           | in the file. [Default: '\\t']        |          |
     +---------------------------+--------------------------------------+----------+
-    | ``missing_values``        | The values that are considered as    |          |
-    |                           | missing. An empty field is           |          |
-    |                           | automaticaly considered as missing.  |          |
+    | ``missing_values``        | A string (using quotes) that         |          |
+    |                           | represents missing values. An empty  |          |
+    |                           | field, ``NA``, ``nan`` or ``NaN`` are|          |
+    |                           | always considered as missing.        |          |
     +---------------------------+--------------------------------------+----------+
-    | ``repeated_measurements`` | Enter 'Yes' if the file containes    |          |
+    | ``repeated_measurements`` | Enter 'Yes' if the file contains     |          |
     |                           | repeated measurements.               |          |
     +---------------------------+--------------------------------------+----------+
     | ``keep_sample_column``    | For now, if repeated measurements are|          |
@@ -216,6 +250,16 @@ The following arguments and options are available for this format.
     |                           | the statistical analysis (will be    |          |
     |                           | used for groups in the MixedLM       |          |
     |                           | analysis).                           |          |
+    +---------------------------+--------------------------------------+----------+
+    | ``sex_column``            | The name of the column containing the|          |
+    |                           | sex information. Note that males need|          |
+    |                           | to be coded as *1* and females, as   |          |
+    |                           | *0*. The choice of this encoding is  |          |
+    |                           | to speed up the MAF computation for  |          |
+    |                           | sexual chromosomes. This column will |          |
+    |                           | be used only if the analysis is      |          |
+    |                           | performed using the                  |          |
+    |                           | ``--sexual-chromosome`` option.      |          |
     +---------------------------+--------------------------------------+----------+
 
 Below is an example of a ``phenotypes`` section of the *YAML* configuration file
@@ -232,7 +276,10 @@ considered as a missing value.
             missing_values: "-99999"
             repeated_measurements: Yes
             keep_sample_column: Yes
+            sex_column: sex
 
+
+.. _yaml_statistics_section:
 
 Statistical model
 ------------------
@@ -258,10 +305,10 @@ The following arguments and options are available for the linear regression.
     | Argument                  | Description                          | Required |
     +===========================+======================================+==========+
     | ``formula``               | The formula describing the analysis  | Yes      |
-    |                           | to be perfomed. Note that the formula|          |
-    |                           | is similar to the one used in R. The |          |
-    |                           | names of the variables need to be    |          |
-    |                           | the same as the columns in the       |          |
+    |                           | to be performed. Note that the       |          |
+    |                           | formula is similar to the one used in|          |
+    |                           | R. The names of the variables need to|          |
+    |                           | be the same as the columns in the    |          |
     |                           | phenotype file. The keyword ``SNPs`` |          |
     |                           | is used to perform a GWAS.           |          |
     +---------------------------+--------------------------------------+----------+
@@ -280,14 +327,14 @@ The following arguments and options are available for the linear regression.
 
 Below is an example of a ``model`` section of the *YAML* configuration file
 for a linear regression analysis of the phenotype *Pheno* over the variables
-*SNPs* (meaning a GWAS), *Age* and *Sex*. It also increase the conditional
+*SNPs* (meaning a GWAS), *Age* and *Sex*. It also increases the conditional
 value threshold from the default value of 1000 to 5000.
 
 .. code-block:: yaml
 
     model:
         test: linear
-        formula: "Pheno ~ SNPs + Age + Sex"
+        formula: "Pheno ~ SNPs + Age + factor(Sex)"
         options:
             condition_value_t: 5000
 
@@ -307,10 +354,10 @@ The logistic regression only requires the formula describing the model.
     | Argument                  | Description                          | Required |
     +===========================+======================================+==========+
     | ``formula``               | The formula describing the analysis  | Yes      |
-    |                           | to be perfomed. Note that the formula|          |
-    |                           | is similar to the one used in R. The |          |
-    |                           | names of the variables needs to be   |          |
-    |                           | the same as the columns in the       |          |
+    |                           | to be performed. Note that the       |          |
+    |                           | formula is similar to the one used in|          |
+    |                           | R. The names of the variables need to|          |
+    |                           | be the same as the columns in the    |          |
     |                           | phenotype file. The keyword ``SNPs`` |          |
     |                           | is used to perform a GWAS.           |          |
     +---------------------------+--------------------------------------+----------+
@@ -323,7 +370,7 @@ for a logistic regression analysis of the phenotype *Status* over the variables
 
     model:
         test: logistic
-        formula: "Status ~ SNPs + Age + Sex"
+        formula: "Status ~ SNPs + Age + factor(Sex)"
 
 See :py:class:`genetest.statistics.models.logistic.StatsLogistic` for more
 information about the class.
@@ -342,10 +389,10 @@ options.
     | Argument                  | Description                          | Required |
     +===========================+======================================+==========+
     | ``formula``               | The formula describing the analysis  | Yes      |
-    |                           | to be perfomed. Note that the formula|          |
-    |                           | is similar to the one used in R. The |          |
-    |                           | names of the variables needs to be   |          |
-    |                           | the same as the columns in the       |          |
+    |                           | to be performed. Note that the       |          |
+    |                           | formula is similar to the one used in|          |
+    |                           | R. The names of the variables need to|          |
+    |                           | be the same as the columns in the    |          |
     |                           | phenotype file. The keyword ``SNPs`` |          |
     |                           | is used to perform a GWAS.           |          |
     +---------------------------+--------------------------------------+----------+
@@ -377,7 +424,7 @@ IDs (*SampleID*) as the grouping variable.
 
     model:
         test: mixedlm
-        formula: "[outcome=Pheno, groups=SampleID] ~ SNPs + Age + Sex + Visit"
+        formula: "[outcome=Pheno, groups=SampleID] ~ SNPs + Age + factor(Sex) + factor(Visit)"
         options:
             optimize: Yes
 
@@ -398,10 +445,10 @@ the model.
     | Argument                  | Description                          | Required |
     +===========================+======================================+==========+
     | ``formula``               | The formula describing the analysis  | Yes      |
-    |                           | to be perfomed. Note that the formula|          |
-    |                           | is similar to the one used in R. The |          |
-    |                           | names of the variables needs to be   |          |
-    |                           | the same as the columns in the       |          |
+    |                           | to be performed. Note that the       |          |
+    |                           | formula is similar to the one used in|          |
+    |                           | R. The names of the variables need to|          |
+    |                           | be the same as the columns in the    |          |
     |                           | phenotype file. The keyword ``SNPs`` |          |
     |                           | is used to perform a GWAS.           |          |
     +---------------------------+--------------------------------------+----------+
@@ -415,7 +462,59 @@ for a survival analysis (Cox proportional hazard regression) of the event
 
     model:
         test: coxph
-        formula: "[tte=TTE, event=Event] ~ SNPs + Age + Sex"
+        formula: "[tte=TTE, event=Event] ~ SNPs + Age + factor(Sex)"
 
 See :py:class:`genetest.statistics.models.survival.StatsCoxPH` for more
 information about the class.
+
+
+Execution
+----------
+
+Assuming the name of the configuration file ``analysis.yaml``, and that the
+list of variant to extract for the analysis is in ``variants_to_extract.txt``
+(on variant ID per line), the following command will launch the analysis using
+6 CPUs. The resulting files will have the prefix ``results``.
+
+Note that the ``--extract`` option should be used to extract only the variants
+that pass quality control. Since genotypes file might be really big, extracting
+only the variants suited for analysis will dramatically decrease the execution
+time.
+
+
+.. code-block:: bash
+
+    genetest \
+        --configuration analysis.yaml \
+        --extract variants_to_extract.txt \
+        --nb-cpus 6 \
+        --output results
+
+
+Output files
+^^^^^^^^^^^^^
+
+Using the previous command, three files will be generated (with the ``results``
+prefix).
+
+.. table::
+    :widths: 20 80
+
+    +-----------------------------+-----------------------------------------------+
+    | File name                   | Description                                   |
+    +=============================+===============================================+
+    | ``results.log``             | File containing the LOG of the analysis.      |
+    +-----------------------------+-----------------------------------------------+
+    | ``results.txt``             | File containing the results of the analysis.  |
+    |                             | The file is tab-separated and contain summary |
+    |                             | information about each variant, along with    |
+    |                             | the statistics specific to the statistical    |
+    |                             | model.                                        |
+    +-----------------------------+-----------------------------------------------+
+    | ``results_failed_snps.txt`` | File containing the list of variants that     |
+    |                             | failed the analysis. Failure can be           |
+    |                             | attributed to low minor allele frequency or   |
+    |                             | convergence issues, for example. A small      |
+    |                             | description is added to describe the failure. |
+    +-----------------------------+-----------------------------------------------+
+

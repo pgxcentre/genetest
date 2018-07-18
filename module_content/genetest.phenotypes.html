@@ -8,7 +8,7 @@
   
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   
-  <title>genetest.phenotypes package &mdash; genetest 0.3.0 documentation</title>
+  <title>genetest.phenotypes package &mdash; genetest 0.4.0 documentation</title>
   
 
   
@@ -24,8 +24,7 @@
 
   
 
-  
-    <link rel="stylesheet" href="../_static/css/theme.css" type="text/css" />
+  <link rel="stylesheet" href="../_static/css/theme.css" type="text/css" />
   <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
   <link rel="stylesheet" href="../_static/theme_overrides.css" type="text/css" />
     <link rel="index" title="Index" href="../genindex.html" />
@@ -60,7 +59,7 @@
             
             
               <div class="version">
-                0.3
+                0.4
               </div>
             
           
@@ -181,7 +180,7 @@
 <dl class="class">
 <dt id="genetest.phenotypes.core.PhenotypesContainer">
 <em class="property">class </em><code class="descclassname">genetest.phenotypes.core.</code><code class="descname">PhenotypesContainer</code><a class="reference internal" href="../_modules/genetest/phenotypes/core.html#PhenotypesContainer"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#genetest.phenotypes.core.PhenotypesContainer" title="Permalink to this definition">¶</a></dt>
-<dd><p>Bases: <a class="reference external" href="https://docs.python.org/3/library/functions.html#object" title="(in Python v3.6)"><code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></a></p>
+<dd><p>Bases: <a class="reference external" href="https://docs.python.org/3/library/functions.html#object" title="(in Python v3.7)"><code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></a></p>
 <dl class="method">
 <dt id="genetest.phenotypes.core.PhenotypesContainer.close">
 <code class="descname">close</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/genetest/phenotypes/core.html#PhenotypesContainer.close"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#genetest.phenotypes.core.PhenotypesContainer.close" title="Permalink to this definition">¶</a></dt>
@@ -197,7 +196,7 @@
 <tbody valign="top">
 <tr class="field-odd field"><th class="field-name">Returns:</th><td class="field-body">The number of samples.</td>
 </tr>
-<tr class="field-even field"><th class="field-name">Return type:</th><td class="field-body"><a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.6)">int</a></td>
+<tr class="field-even field"><th class="field-name">Return type:</th><td class="field-body"><a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.7)">int</a></td>
 </tr>
 </tbody>
 </table>
@@ -213,7 +212,7 @@
 <tbody valign="top">
 <tr class="field-odd field"><th class="field-name">Returns:</th><td class="field-body">The number of variables.</td>
 </tr>
-<tr class="field-even field"><th class="field-name">Return type:</th><td class="field-body"><a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.6)">int</a></td>
+<tr class="field-even field"><th class="field-name">Return type:</th><td class="field-body"><a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.7)">int</a></td>
 </tr>
 </tbody>
 </table>
@@ -227,13 +226,29 @@
 <col class="field-name" />
 <col class="field-body" />
 <tbody valign="top">
-<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>li</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#list" title="(in Python v3.6)"><em>list</em></a>) – A list of phenotypes to extract (default: None means
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>li</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#list" title="(in Python v3.7)"><em>list</em></a>) – A list of phenotypes to extract (default: None means
 all phenotypes).</td>
 </tr>
 <tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body">A dataframe containing the phenotypes (with the
 sample IDs as index).</td>
 </tr>
-<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body"><a class="reference external" href="http://pandas.pydata.org/pandas-docs/stable/generated/pandas.DataFrame.html#pandas.DataFrame" title="(in pandas v0.22.0)">pandas.DataFrame</a></td>
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body"><a class="reference external" href="http://pandas.pydata.org/pandas-docs/stable/generated/pandas.DataFrame.html#pandas.DataFrame" title="(in pandas v0.23.3)">pandas.DataFrame</a></td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="genetest.phenotypes.core.PhenotypesContainer.get_sex">
+<code class="descname">get_sex</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/genetest/phenotypes/core.html#PhenotypesContainer.get_sex"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#genetest.phenotypes.core.PhenotypesContainer.get_sex" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns the sex for all samples.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Returns:</th><td class="field-body">The sex for all samples.</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Return type:</th><td class="field-body"><a class="reference external" href="http://pandas.pydata.org/pandas-docs/stable/generated/pandas.Series.html#pandas.Series" title="(in pandas v0.23.3)">pandas.Series</a></td>
 </tr>
 </tbody>
 </table>
@@ -250,7 +265,7 @@ sample IDs as index).</td>
 <tr class="field-odd field"><th class="field-name">Returns:</th><td class="field-body"><code class="docutils literal notranslate"><span class="pre">True</span></code> if the data contains repeated measurements,
 <code class="docutils literal notranslate"><span class="pre">False</span></code> otherwise.</td>
 </tr>
-<tr class="field-even field"><th class="field-name">Return type:</th><td class="field-body"><a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.6)">bool</a></td>
+<tr class="field-even field"><th class="field-name">Return type:</th><td class="field-body"><a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.7)">bool</a></td>
 </tr>
 </tbody>
 </table>
@@ -264,7 +279,7 @@ sample IDs as index).</td>
 <col class="field-name" />
 <col class="field-body" />
 <tbody valign="top">
-<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>keep</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#list" title="(in Python v3.6)"><em>list</em></a>) – The list of samples to keep.</td>
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>keep</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#list" title="(in Python v3.7)"><em>list</em></a>) – The list of samples to keep.</td>
 </tr>
 </tbody>
 </table>
@@ -277,7 +292,7 @@ sample IDs as index).</td>
 <span id="genetest-phenotypes-text-module"></span><h2>genetest.phenotypes.text module<a class="headerlink" href="#module-genetest.phenotypes.text" title="Permalink to this headline">¶</a></h2>
 <dl class="class">
 <dt id="genetest.phenotypes.text.TextPhenotypes">
-<em class="property">class </em><code class="descclassname">genetest.phenotypes.text.</code><code class="descname">TextPhenotypes</code><span class="sig-paren">(</span><em>filename</em>, <em>sample_column='sample'</em>, <em>field_separator='t'</em>, <em>missing_values=None</em>, <em>repeated_measurements=False</em>, <em>keep_sample_column=False</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/genetest/phenotypes/text.html#TextPhenotypes"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#genetest.phenotypes.text.TextPhenotypes" title="Permalink to this definition">¶</a></dt>
+<em class="property">class </em><code class="descclassname">genetest.phenotypes.text.</code><code class="descname">TextPhenotypes</code><span class="sig-paren">(</span><em>filename</em>, <em>sample_column='sample'</em>, <em>field_separator='t'</em>, <em>missing_values=None</em>, <em>repeated_measurements=False</em>, <em>keep_sample_column=False</em>, <em>sex_column=None</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/genetest/phenotypes/text.html#TextPhenotypes"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#genetest.phenotypes.text.TextPhenotypes" title="Permalink to this definition">¶</a></dt>
 <dd><p>Bases: <a class="reference internal" href="#genetest.phenotypes.core.PhenotypesContainer" title="genetest.phenotypes.core.PhenotypesContainer"><code class="xref py py-class docutils literal notranslate"><span class="pre">genetest.phenotypes.core.PhenotypesContainer</span></code></a></p>
 <p>Instantiate a new TextPhenotypes object.</p>
 <table class="docutils field-list" frame="void" rules="none">
@@ -285,15 +300,17 @@ sample IDs as index).</td>
 <col class="field-body" />
 <tbody valign="top">
 <tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
-<li><strong>filename</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.6)"><em>str</em></a>) – The name of the text file containing the
+<li><strong>filename</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.7)"><em>str</em></a>) – The name of the text file containing the
 phenotypes.</li>
-<li><strong>sample_column</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.6)"><em>str</em></a>) – The name of the column containing the sample
+<li><strong>sample_column</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.7)"><em>str</em></a>) – The name of the column containing the sample
 identification number (to fit with the
 genotypes).</li>
-<li><strong>field_separator</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.6)"><em>str</em></a>) – The field separator (default is tabulation).</li>
-<li><strong>missing_values</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.6)"><em>str</em></a><em> or </em><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#list" title="(in Python v3.6)"><em>list</em></a><em> or </em><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#dict" title="(in Python v3.6)"><em>dict</em></a>) – The missing value(s).</li>
-<li><strong>repeated_measurements</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.6)"><em>bool</em></a>) – Are the data containing repeated
+<li><strong>field_separator</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.7)"><em>str</em></a>) – The field separator (default is tabulation).</li>
+<li><strong>missing_values</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.7)"><em>str</em></a><em> or </em><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#list" title="(in Python v3.7)"><em>list</em></a><em> or </em><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#dict" title="(in Python v3.7)"><em>dict</em></a>) – The missing value(s).</li>
+<li><strong>repeated_measurements</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.7)"><em>bool</em></a>) – Are the data containing repeated
 measurements (e.g. for MixedLM).</li>
+<li><strong>sex_column</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.7)"><em>str</em></a>) – The name of the column containing the sex for
+each sample.</li>
 </ul>
 </td>
 </tr>
@@ -314,7 +331,7 @@ measurements (e.g. for MixedLM).</li>
 <tbody valign="top">
 <tr class="field-odd field"><th class="field-name">Returns:</th><td class="field-body">The number of samples.</td>
 </tr>
-<tr class="field-even field"><th class="field-name">Return type:</th><td class="field-body"><a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.6)">int</a></td>
+<tr class="field-even field"><th class="field-name">Return type:</th><td class="field-body"><a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.7)">int</a></td>
 </tr>
 </tbody>
 </table>
@@ -330,7 +347,7 @@ measurements (e.g. for MixedLM).</li>
 <tbody valign="top">
 <tr class="field-odd field"><th class="field-name">Returns:</th><td class="field-body">The number of variables.</td>
 </tr>
-<tr class="field-even field"><th class="field-name">Return type:</th><td class="field-body"><a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.6)">int</a></td>
+<tr class="field-even field"><th class="field-name">Return type:</th><td class="field-body"><a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.7)">int</a></td>
 </tr>
 </tbody>
 </table>
@@ -347,7 +364,7 @@ measurements (e.g. for MixedLM).</li>
 <tr class="field-odd field"><th class="field-name">Returns:</th><td class="field-body">A dataframe containing the phenotypes (with the
 sample IDs as index).</td>
 </tr>
-<tr class="field-even field"><th class="field-name">Return type:</th><td class="field-body"><a class="reference external" href="http://pandas.pydata.org/pandas-docs/stable/generated/pandas.DataFrame.html#pandas.DataFrame" title="(in pandas v0.22.0)">pandas.DataFrame</a></td>
+<tr class="field-even field"><th class="field-name">Return type:</th><td class="field-body"><a class="reference external" href="http://pandas.pydata.org/pandas-docs/stable/generated/pandas.DataFrame.html#pandas.DataFrame" title="(in pandas v0.23.3)">pandas.DataFrame</a></td>
 </tr>
 </tbody>
 </table>
@@ -364,7 +381,7 @@ sample IDs as index).</td>
 <tr class="field-odd field"><th class="field-name">Returns:</th><td class="field-body"><code class="docutils literal notranslate"><span class="pre">True</span></code> if the data contains repeated measurements,
 <code class="docutils literal notranslate"><span class="pre">False</span></code> otherwise.</td>
 </tr>
-<tr class="field-even field"><th class="field-name">Return type:</th><td class="field-body"><a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.6)">bool</a></td>
+<tr class="field-even field"><th class="field-name">Return type:</th><td class="field-body"><a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.7)">bool</a></td>
 </tr>
 </tbody>
 </table>
@@ -378,7 +395,7 @@ sample IDs as index).</td>
 <col class="field-name" />
 <col class="field-body" />
 <tbody valign="top">
-<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>keep</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#set" title="(in Python v3.6)"><em>set</em></a>) – The list of samples to keep.</td>
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>keep</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#set" title="(in Python v3.7)"><em>set</em></a>) – The list of samples to keep.</td>
 </tr>
 </tbody>
 </table>
@@ -440,7 +457,7 @@ sample IDs as index).</td>
     <script type="text/javascript">
         var DOCUMENTATION_OPTIONS = {
             URL_ROOT:'../',
-            VERSION:'0.3.0',
+            VERSION:'0.4.0',
             LANGUAGE:'None',
             COLLAPSE_INDEX:false,
             FILE_SUFFIX:'.html',
@@ -455,16 +472,11 @@ sample IDs as index).</td>
 
   
 
-  
-  
-    <script type="text/javascript" src="../_static/js/theme.js"></script>
-  
+  <script type="text/javascript" src="../_static/js/theme.js"></script>
 
   <script type="text/javascript">
       jQuery(function () {
-          
-          SphinxRtdTheme.Navigation.enableSticky();
-          
+          SphinxRtdTheme.Navigation.enable(true);
       });
   </script> 
 
