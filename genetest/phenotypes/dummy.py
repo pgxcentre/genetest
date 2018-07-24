@@ -33,6 +33,7 @@ class _DummyPhenotypes(PhenotypesContainer):
             "V4": [0.1, 0.2, 0.3, 0.4, 0.5],
             "V5": [0, 0, 0, 1, 1],
         }, index=["s{}".format(i) for i in range(1, 6)])
+        self._repeated = False
 
     def close(self):
         pass
@@ -54,7 +55,7 @@ class _DummyPhenotypes(PhenotypesContainer):
         return self.data.shape[1]
 
     def is_repeated(self):
-        return False
+        return self._repeated
 
     def keep_samples(self, keep):
         self.data = self.data.loc[keep, :]
