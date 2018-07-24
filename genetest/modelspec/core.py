@@ -437,9 +437,17 @@ class ModelSpec(object):
                     )
 
                 if not is_stratification_variable:
-                    # Compute the maf.
+                    # The marker's genotypes.
+                    marker_genotypes = df[entity.id]
+
+                    # Is the data repeated?
+                    if phenotypes.is_repeated():
+                        marker_genotypes = marker_genotypes.loc[
+                            ~marker_genotypes.index.duplicated(keep="first")
+                        ]
+
                     maf, minor, major, flip = get_maf(
-                        df[entity.id], g.coded, g.reference,
+                        marker_genotypes, g.coded, g.reference,
                     )
 
                     if flip:
