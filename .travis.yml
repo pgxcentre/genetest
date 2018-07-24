@@ -6,6 +6,7 @@ python:
   - "3.6"
 
 install:
+  - sudo apt-get install libcurl4-openssl-dev
   - pip install -U pip setuptools
   - pip install -U cython
   - pip install -U numpy
