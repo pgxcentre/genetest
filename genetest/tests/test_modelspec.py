@@ -60,7 +60,9 @@ class TestModelSpec(unittest.TestCase):
         cls.plink_prefix = path.join(cls.tmp_dir.name, "input")
 
         # Permuting the sample to add a bit of randomness
-        new_sample_order = np.random.permutation(cls.data.index)
+        new_sample_order = np.random.permutation(
+            np.copy(cls.data.index.values)
+        )
 
         # Creating the BED file
         with PyPlink(cls.plink_prefix, "w") as bed:

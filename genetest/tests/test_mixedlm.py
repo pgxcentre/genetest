@@ -52,7 +52,7 @@ class TestStatsMixedLM(unittest.TestCase):
         )
 
         # Permuting the sample to add a bit of randomness
-        new_sample_order = np.random.permutation(data.index)
+        new_sample_order = np.random.permutation(np.copy(data.index.values))
 
         # Creating the genotypes data frame
         genotypes = data.loc[
@@ -90,6 +90,7 @@ class TestStatsMixedLM(unittest.TestCase):
             np.random.permutation(self.phenotypes.data.shape[0]),
             np.random.permutation(self.phenotypes.data.shape[1])
         ]
+        self.phenotypes._repeated = True
 
     @classmethod
     def tearDownClass(cls):
