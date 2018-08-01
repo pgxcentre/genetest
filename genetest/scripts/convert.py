@@ -69,7 +69,7 @@ def convert_file(f):
             line[header["minor"]],
             line[header["maf"]],
             line[header["n"]],
-            "",  # log-likelihood.
+            "NA",  # log-likelihood.
         ]
 
         if linear:
