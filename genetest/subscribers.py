@@ -253,6 +253,9 @@ class GWASWriter(RowWriter):
                 ("t", ("SNPs", "t_value")),
                 ("p", ("SNPs", "p_value")),
             ]
+            self._specific_model_cols.append(
+                ("n_events", analysis_results["MODEL"]["nevents"]),
+            )
 
         # CoxPH
         elif test == "coxph":
@@ -265,6 +268,9 @@ class GWASWriter(RowWriter):
                 ("z", ("SNPs", "z_value")),
                 ("p", ("SNPs", "p_value")),
             ]
+            self._specific_model_cols.append(
+                ("n_events", analysis_results["MODEL"]["nevents"]),
+            )
 
         # MixedLM
         elif test == "mixedlm":
