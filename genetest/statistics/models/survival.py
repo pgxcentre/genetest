@@ -96,6 +96,7 @@ class StatsCoxPH(StatsModels):
             "MODEL": {
                 "log_likelihood": fitted.llf,
                 "nobs": X.shape[0],
+                "nevents": np.sum(event),
             },
         }
 

@@ -49,7 +49,8 @@ class StatsLogistic(StatsModels):
         out = {
             "MODEL": {
                 "log_likelihood": fitted.llf,
-                "nobs": fitted.nobs
+                "nobs": fitted.nobs,
+                "nevents": np.sum(y.y),
             },
         }
 
