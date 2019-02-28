@@ -126,6 +126,8 @@ class TestStatsCoxPH(unittest.TestCase):
         # Checking the first marker (snp1)
         results = gwas_results["snp1"]
         self.assertEqual("snp1", results["SNPs"]["name"])
+        self.assertEqual(31, results["MODEL"]["nobs"])
+        self.assertEqual(15, results["MODEL"]["nevents"])
         self.assertEqual("3", results["SNPs"]["chrom"])
         self.assertEqual(1234, results["SNPs"]["pos"])
         self.assertEqual("C", results["SNPs"]["minor"])
@@ -147,6 +149,8 @@ class TestStatsCoxPH(unittest.TestCase):
         # Checking the second marker (snp2)
         results = gwas_results["snp2"]
         self.assertEqual("snp2", results["SNPs"]["name"])
+        self.assertEqual(60, results["MODEL"]["nobs"])
+        self.assertEqual(28, results["MODEL"]["nevents"])
         self.assertEqual("3", results["SNPs"]["chrom"])
         self.assertEqual(9618, results["SNPs"]["pos"])
         self.assertEqual("C", results["SNPs"]["minor"])
@@ -168,6 +172,8 @@ class TestStatsCoxPH(unittest.TestCase):
         # Checking the third marker (snp3)
         results = gwas_results["snp3"]
         self.assertEqual("snp3", results["SNPs"]["name"])
+        self.assertEqual(60, results["MODEL"]["nobs"])
+        self.assertEqual(28, results["MODEL"]["nevents"])
         self.assertEqual("2", results["SNPs"]["chrom"])
         self.assertEqual(1519, results["SNPs"]["pos"])
         self.assertEqual("G", results["SNPs"]["minor"])
@@ -228,6 +234,8 @@ class TestStatsCoxPH(unittest.TestCase):
         # Checking the first marker (snp1)
         results = gwas_results["snp1"]
         self.assertEqual("snp1", results["SNPs"]["name"])
+        self.assertEqual(31, results["MODEL"]["nobs"])
+        self.assertEqual(15, results["MODEL"]["nevents"])
         self.assertEqual("3", results["SNPs"]["chrom"])
         self.assertEqual(1234, results["SNPs"]["pos"])
         self.assertEqual("C", results["SNPs"]["minor"])
@@ -253,6 +261,8 @@ class TestStatsCoxPH(unittest.TestCase):
         # Checking the second marker (snp2)
         results = gwas_results["snp2"]
         self.assertEqual("snp2", results["SNPs"]["name"])
+        self.assertEqual(60, results["MODEL"]["nobs"])
+        self.assertEqual(28, results["MODEL"]["nevents"])
         self.assertEqual("3", results["SNPs"]["chrom"])
         self.assertEqual(9618, results["SNPs"]["pos"])
         self.assertEqual("C", results["SNPs"]["minor"])
@@ -276,6 +286,8 @@ class TestStatsCoxPH(unittest.TestCase):
         # Checking the third marker (snp3)
         results = gwas_results["snp3"]
         self.assertEqual("snp3", results["SNPs"]["name"])
+        self.assertEqual(60, results["MODEL"]["nobs"])
+        self.assertEqual(28, results["MODEL"]["nevents"])
         self.assertEqual("2", results["SNPs"]["chrom"])
         self.assertEqual(1519, results["SNPs"]["pos"])
         self.assertEqual("G", results["SNPs"]["minor"])
@@ -327,6 +339,8 @@ class TestStatsCoxPH(unittest.TestCase):
 
         # Checking the marker information (it's a flip)
         self.assertEqual("snp1", results["snp1"]["name"])
+        self.assertEqual(31, results["MODEL"]["nobs"])
+        self.assertEqual(15, results["MODEL"]["nevents"])
         self.assertEqual("3", results["snp1"]["chrom"])
         self.assertEqual(1234, results["snp1"]["pos"])
         self.assertEqual("C", results["snp1"]["minor"])
@@ -374,6 +388,8 @@ class TestStatsCoxPH(unittest.TestCase):
 
         # Checking the marker information (it's a flip)
         self.assertEqual("snp1", results["snp1"]["name"])
+        self.assertEqual(31, results["MODEL"]["nobs"])
+        self.assertEqual(15, results["MODEL"]["nevents"])
         self.assertEqual("3", results["snp1"]["chrom"])
         self.assertEqual(1234, results["snp1"]["pos"])
         self.assertEqual("C", results["snp1"]["minor"])
@@ -424,6 +440,8 @@ class TestStatsCoxPH(unittest.TestCase):
 
         # Checking the marker information (it's a flip)
         self.assertEqual("snp1", results["snp1"]["name"])
+        self.assertEqual(31, results["MODEL"]["nobs"])
+        self.assertEqual(15, results["MODEL"]["nevents"])
         self.assertEqual("3", results["snp1"]["chrom"])
         self.assertEqual(1234, results["snp1"]["pos"])
         self.assertEqual("C", results["snp1"]["minor"])
@@ -467,6 +485,8 @@ class TestStatsCoxPH(unittest.TestCase):
 
         # Checking the marker information
         self.assertEqual("snp2", results["snp2"]["name"])
+        self.assertEqual(60, results["MODEL"]["nobs"])
+        self.assertEqual(28, results["MODEL"]["nevents"])
         self.assertEqual("3", results["snp2"]["chrom"])
         self.assertEqual(9618, results["snp2"]["pos"])
         self.assertEqual("C", results["snp2"]["minor"])
@@ -513,6 +533,8 @@ class TestStatsCoxPH(unittest.TestCase):
 
         # Checking the marker information
         self.assertEqual("snp2", results["snp2"]["name"])
+        self.assertEqual(60, results["MODEL"]["nobs"])
+        self.assertEqual(28, results["MODEL"]["nevents"])
         self.assertEqual("3", results["snp2"]["chrom"])
         self.assertEqual(9618, results["snp2"]["pos"])
         self.assertEqual("C", results["snp2"]["minor"])
@@ -558,6 +580,8 @@ class TestStatsCoxPH(unittest.TestCase):
 
         # Checking the marker information
         self.assertEqual("snp3", results["snp3"]["name"])
+        self.assertEqual(60, results["MODEL"]["nobs"])
+        self.assertEqual(28, results["MODEL"]["nevents"])
         self.assertEqual("2", results["snp3"]["chrom"])
         self.assertEqual(1519, results["snp3"]["pos"])
         self.assertEqual("G", results["snp3"]["minor"])
@@ -604,6 +628,8 @@ class TestStatsCoxPH(unittest.TestCase):
 
         # Checking the marker information
         self.assertEqual("snp3", results["snp3"]["name"])
+        self.assertEqual(60, results["MODEL"]["nobs"])
+        self.assertEqual(28, results["MODEL"]["nevents"])
         self.assertEqual("2", results["snp3"]["chrom"])
         self.assertEqual(1519, results["snp3"]["pos"])
         self.assertEqual("G", results["snp3"]["minor"])

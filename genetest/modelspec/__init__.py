@@ -47,7 +47,7 @@ PheWAS = core.PheWAS
 
 def modelspec_from_formula(formula, test, test_kwargs):
     """Generates the model specification (and the subgroups) from formula."""
-    model = parse_formula(formula)
+    model = dict(parse_formula(formula))
 
     # Handle the statistical test.
     if test_kwargs is None:

@@ -15,8 +15,8 @@ from setuptools import setup, find_packages
 
 
 MAJOR = 0
-MINOR = 4
-MICRO = 1
+MINOR = 5
+MICRO = 0
 VERSION = "{0}.{1}.{2}".format(MAJOR, MINOR, MICRO)
 
 
@@ -95,6 +95,7 @@ def setup_package():
         entry_points={
             "console_scripts": [
                 "genetest=genetest.scripts.cli:main",
+                "imputed-stats2genetest=genetest.scripts.convert:main",
             ],
         },
         install_requires=["numpy >= 1.12.0", "pandas >= 0.19.0",

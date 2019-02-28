@@ -129,6 +129,8 @@ class TestStatsMixedLM(unittest.TestCase):
         # Checking the first marker (snp1)
         results = gwas_results["snp1"]
         self.assertEqual("snp1", results["SNPs"]["name"])
+        self.assertEqual(180, results["MODEL"]["nobs"])
+        self.assertEqual(60, results["MODEL"]["n_groups"])
         self.assertEqual("3", results["SNPs"]["chrom"])
         self.assertEqual(1234, results["SNPs"]["pos"])
         self.assertEqual("T", results["SNPs"]["minor"])
@@ -151,6 +153,8 @@ class TestStatsMixedLM(unittest.TestCase):
         # Checking the second marker (snp2)
         results = gwas_results["snp2"]
         self.assertEqual("snp2", results["SNPs"]["name"])
+        self.assertEqual(180, results["MODEL"]["nobs"])
+        self.assertEqual(60, results["MODEL"]["n_groups"])
         self.assertEqual("3", results["SNPs"]["chrom"])
         self.assertEqual(2345, results["SNPs"]["pos"])
         self.assertEqual("C", results["SNPs"]["minor"])
@@ -173,6 +177,8 @@ class TestStatsMixedLM(unittest.TestCase):
         # Checking the third marker (snp3)
         results = gwas_results["snp3"]
         self.assertEqual("snp3", results["SNPs"]["name"])
+        self.assertEqual(180, results["MODEL"]["nobs"])
+        self.assertEqual(60, results["MODEL"]["n_groups"])
         self.assertEqual("2", results["SNPs"]["chrom"])
         self.assertEqual(3456, results["SNPs"]["pos"])
         self.assertEqual("G", results["SNPs"]["minor"])
@@ -195,6 +201,8 @@ class TestStatsMixedLM(unittest.TestCase):
         # Checking the fourth marker (snp4)
         results = gwas_results["snp4"]
         self.assertEqual("snp4", results["SNPs"]["name"])
+        self.assertEqual(180, results["MODEL"]["nobs"])
+        self.assertEqual(60, results["MODEL"]["n_groups"])
         self.assertEqual("22", results["SNPs"]["chrom"])
         self.assertEqual(4567, results["SNPs"]["pos"])
         self.assertEqual("A", results["SNPs"]["minor"])
@@ -249,6 +257,8 @@ class TestStatsMixedLM(unittest.TestCase):
         # Checking the first marker (snp1)
         results = gwas_results["snp1"]
         self.assertEqual("snp1", results["SNPs"]["name"])
+        self.assertEqual(180, results["MODEL"]["nobs"])
+        self.assertEqual(60, results["MODEL"]["n_groups"])
         self.assertEqual("3", results["SNPs"]["chrom"])
         self.assertEqual(1234, results["SNPs"]["pos"])
         self.assertEqual("T", results["SNPs"]["minor"])
@@ -272,6 +282,8 @@ class TestStatsMixedLM(unittest.TestCase):
         # Checking the second marker (snp2)
         results = gwas_results["snp2"]
         self.assertEqual("snp2", results["SNPs"]["name"])
+        self.assertEqual(180, results["MODEL"]["nobs"])
+        self.assertEqual(60, results["MODEL"]["n_groups"])
         self.assertEqual("3", results["SNPs"]["chrom"])
         self.assertEqual(2345, results["SNPs"]["pos"])
         self.assertEqual("C", results["SNPs"]["minor"])
@@ -295,6 +307,8 @@ class TestStatsMixedLM(unittest.TestCase):
         # Checking the third marker (snp3)
         results = gwas_results["snp3"]
         self.assertEqual("snp3", results["SNPs"]["name"])
+        self.assertEqual(180, results["MODEL"]["nobs"])
+        self.assertEqual(60, results["MODEL"]["n_groups"])
         self.assertEqual("2", results["SNPs"]["chrom"])
         self.assertEqual(3456, results["SNPs"]["pos"])
         self.assertEqual("G", results["SNPs"]["minor"])
@@ -318,6 +332,8 @@ class TestStatsMixedLM(unittest.TestCase):
         # Checking the fourth marker (snp4)
         results = gwas_results["snp4"]
         self.assertEqual("snp4", results["SNPs"]["name"])
+        self.assertEqual(180, results["MODEL"]["nobs"])
+        self.assertEqual(60, results["MODEL"]["n_groups"])
         self.assertEqual("22", results["SNPs"]["chrom"])
         self.assertEqual(4567, results["SNPs"]["pos"])
         self.assertEqual("A", results["SNPs"]["minor"])
@@ -366,6 +382,8 @@ class TestStatsMixedLM(unittest.TestCase):
 
         # Checking the marker information
         self.assertEqual("snp1", results["snp1"]["name"])
+        self.assertEqual(180, results["MODEL"]["nobs"])
+        self.assertEqual(60, results["MODEL"]["n_groups"])
         self.assertEqual("3", results["snp1"]["chrom"])
         self.assertEqual(1234, results["snp1"]["pos"])
         self.assertEqual("T", results["snp1"]["minor"])
@@ -415,6 +433,8 @@ class TestStatsMixedLM(unittest.TestCase):
 
         # Checking the marker information
         self.assertEqual("snp1", results["snp1"]["name"])
+        self.assertEqual(180, results["MODEL"]["nobs"])
+        self.assertEqual(60, results["MODEL"]["n_groups"])
         self.assertEqual("3", results["snp1"]["chrom"])
         self.assertEqual(1234, results["snp1"]["pos"])
         self.assertEqual("T", results["snp1"]["minor"])
@@ -467,6 +487,8 @@ class TestStatsMixedLM(unittest.TestCase):
 
         # Checking the marker information
         self.assertEqual("snp1", results["snp1"]["name"])
+        self.assertEqual(180, results["MODEL"]["nobs"])
+        self.assertEqual(60, results["MODEL"]["n_groups"])
         self.assertEqual("3", results["snp1"]["chrom"])
         self.assertEqual(1234, results["snp1"]["pos"])
         self.assertEqual("T", results["snp1"]["minor"])
@@ -520,6 +542,8 @@ class TestStatsMixedLM(unittest.TestCase):
 
         # Checking the marker information
         self.assertEqual("snp1", results["snp1"]["name"])
+        self.assertEqual(180, results["MODEL"]["nobs"])
+        self.assertEqual(60, results["MODEL"]["n_groups"])
         self.assertEqual("3", results["snp1"]["chrom"])
         self.assertEqual(1234, results["snp1"]["pos"])
         self.assertEqual("T", results["snp1"]["minor"])
@@ -570,6 +594,8 @@ class TestStatsMixedLM(unittest.TestCase):
 
         # Checking the marker information
         self.assertEqual("snp2", results["snp2"]["name"])
+        self.assertEqual(180, results["MODEL"]["nobs"])
+        self.assertEqual(60, results["MODEL"]["n_groups"])
         self.assertEqual("3", results["snp2"]["chrom"])
         self.assertEqual(2345, results["snp2"]["pos"])
         self.assertEqual("C", results["snp2"]["minor"])
@@ -617,6 +643,16 @@ class TestStatsMixedLM(unittest.TestCase):
         )
         results = subscriber.results[0]
 
+        # Checking the marker information
+        self.assertEqual("snp2", results["snp2"]["name"])
+        self.assertEqual(180, results["MODEL"]["nobs"])
+        self.assertEqual(60, results["MODEL"]["n_groups"])
+        self.assertEqual("3", results["snp2"]["chrom"])
+        self.assertEqual(2345, results["snp2"]["pos"])
+        self.assertEqual("C", results["snp2"]["minor"])
+        self.assertEqual("A", results["snp2"]["major"])
+        self.assertAlmostEqual(0.36666666666666664, results["snp2"]["maf"])
+
         # Checking the marker statistics (according to R lme4)
         self.assertAlmostEqual(28.87619649885465023, results["snp2"]["coef"])
         self.assertAlmostEqual(7.2921675410708389, results["snp2"]["std_err"],
@@ -663,6 +699,8 @@ class TestStatsMixedLM(unittest.TestCase):
 
         # Checking the marker information
         self.assertEqual("snp2", results["snp2"]["name"])
+        self.assertEqual(180, results["MODEL"]["nobs"])
+        self.assertEqual(60, results["MODEL"]["n_groups"])
         self.assertEqual("3", results["snp2"]["chrom"])
         self.assertEqual(2345, results["snp2"]["pos"])
         self.assertEqual("C", results["snp2"]["minor"])
@@ -716,6 +754,8 @@ class TestStatsMixedLM(unittest.TestCase):
 
         # Checking the marker information
         self.assertEqual("snp2", results["snp2"]["name"])
+        self.assertEqual(180, results["MODEL"]["nobs"])
+        self.assertEqual(60, results["MODEL"]["n_groups"])
         self.assertEqual("3", results["snp2"]["chrom"])
         self.assertEqual(2345, results["snp2"]["pos"])
         self.assertEqual("C", results["snp2"]["minor"])
@@ -766,6 +806,8 @@ class TestStatsMixedLM(unittest.TestCase):
 
         # Checking the marker information
         self.assertEqual("snp3", results["snp3"]["name"])
+        self.assertEqual(180, results["MODEL"]["nobs"])
+        self.assertEqual(60, results["MODEL"]["n_groups"])
         self.assertEqual("2", results["snp3"]["chrom"])
         self.assertEqual(3456, results["snp3"]["pos"])
         self.assertEqual("G", results["snp3"]["minor"])
@@ -815,6 +857,8 @@ class TestStatsMixedLM(unittest.TestCase):
 
         # Checking the marker information
         self.assertEqual("snp3", results["snp3"]["name"])
+        self.assertEqual(180, results["MODEL"]["nobs"])
+        self.assertEqual(60, results["MODEL"]["n_groups"])
         self.assertEqual("2", results["snp3"]["chrom"])
         self.assertEqual(3456, results["snp3"]["pos"])
         self.assertEqual("G", results["snp3"]["minor"])
@@ -867,6 +911,8 @@ class TestStatsMixedLM(unittest.TestCase):
 
         # Checking the marker information
         self.assertEqual("snp3", results["snp3"]["name"])
+        self.assertEqual(180, results["MODEL"]["nobs"])
+        self.assertEqual(60, results["MODEL"]["n_groups"])
         self.assertEqual("2", results["snp3"]["chrom"])
         self.assertEqual(3456, results["snp3"]["pos"])
         self.assertEqual("G", results["snp3"]["minor"])
@@ -920,6 +966,8 @@ class TestStatsMixedLM(unittest.TestCase):
 
         # Checking the marker information
         self.assertEqual("snp3", results["snp3"]["name"])
+        self.assertEqual(180, results["MODEL"]["nobs"])
+        self.assertEqual(60, results["MODEL"]["n_groups"])
         self.assertEqual("2", results["snp3"]["chrom"])
         self.assertEqual(3456, results["snp3"]["pos"])
         self.assertEqual("G", results["snp3"]["minor"])
@@ -970,6 +1018,8 @@ class TestStatsMixedLM(unittest.TestCase):
 
         # Checking the marker information
         self.assertEqual("snp4", results["snp4"]["name"])
+        self.assertEqual(180, results["MODEL"]["nobs"])
+        self.assertEqual(60, results["MODEL"]["n_groups"])
         self.assertEqual("22", results["snp4"]["chrom"])
         self.assertEqual(4567, results["snp4"]["pos"])
         self.assertEqual("A", results["snp4"]["minor"])
@@ -1019,6 +1069,8 @@ class TestStatsMixedLM(unittest.TestCase):
 
         # Checking the marker information
         self.assertEqual("snp4", results["snp4"]["name"])
+        self.assertEqual(180, results["MODEL"]["nobs"])
+        self.assertEqual(60, results["MODEL"]["n_groups"])
         self.assertEqual("22", results["snp4"]["chrom"])
         self.assertEqual(4567, results["snp4"]["pos"])
         self.assertEqual("A", results["snp4"]["minor"])
@@ -1071,6 +1123,8 @@ class TestStatsMixedLM(unittest.TestCase):
 
         # Checking the marker information
         self.assertEqual("snp4", results["snp4"]["name"])
+        self.assertEqual(180, results["MODEL"]["nobs"])
+        self.assertEqual(60, results["MODEL"]["n_groups"])
         self.assertEqual("22", results["snp4"]["chrom"])
         self.assertEqual(4567, results["snp4"]["pos"])
         self.assertEqual("A", results["snp4"]["minor"])
@@ -1124,6 +1178,8 @@ class TestStatsMixedLM(unittest.TestCase):
 
         # Checking the marker information
         self.assertEqual("snp4", results["snp4"]["name"])
+        self.assertEqual(180, results["MODEL"]["nobs"])
+        self.assertEqual(60, results["MODEL"]["n_groups"])
         self.assertEqual("22", results["snp4"]["chrom"])
         self.assertEqual(4567, results["snp4"]["pos"])
         self.assertEqual("A", results["snp4"]["minor"])
