@@ -257,8 +257,8 @@ class GWASWriter(RowWriter):
                 ("n_events", analysis_results["MODEL"]["nevents"]),
             )
 
-        # CoxPH
-        elif test == "coxph":
+        # CoxPH and recurrent events
+        elif test == "coxph" or test == "recurrentl" or test == "coxphl":
             self._specific_cols = [
                 ("coef", ("SNPs", "coef")),
                 ("se", ("SNPs", "std_err")),

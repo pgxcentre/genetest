@@ -80,11 +80,15 @@ class StatsCoxTimeVarying(StatsModels):
         data = self._prepare_data(y, X)
         strata = None
         cluster = None
+        robust = False
 
         if "strata" in y.columns:
             strata = y.strata.values
+        # Clustering covariance is not yet available in Time varying survival
+        # only robust estimator of variance is forced
         if "cluster" in y.columns:
             cluster = "cluster"
+            robust =  True
 
         # Creating the CoxPH model and fitting it
         model = CoxTimeVaryingFitter(penalizer=0.1)
@@ -92,7 +96,7 @@ class StatsCoxTimeVarying(StatsModels):
         # Fitting the model
         try:
             model.fit(data, start_col="tte", stop_col="stop",
-                event_col="event", cluster_col=cluster, strata=strata)
+                event_col="event", strata=strata, robust=robust)
 
         except np.linalg.linalg.LinAlgError as e:
             raise StatsError(str(e))
