@@ -50,12 +50,15 @@ class StatsCoxPH(StatsModels):
         # Removing the intercept (if present)
         if "intercept" in X.columns:
             X = X.drop("intercept", axis=1)
-
+        # Strata and groups (cluster) for recurrent events models
         strata = None
+        cluster = None
         if "strata" in y.columns:
             strata = y.strata
+        if "cluster" in y.columns:
+            cluster = y.cluster
 
-        return y.tte, y.event, X, strata
+        return y.tte, y.event, X, strata, cluster
 
     def fit(self, y, X):
         """Fit the model.
@@ -71,7 +74,7 @@ class StatsCoxPH(StatsModels):
 
         """
         # Retrieving the data
-        tte, event, X, strata = self._prepare_data(y, X)
+        tte, event, X, strata, cluster = self._prepare_data(y, X)
 
         # Creating the CoxPH model and fitting it
         model = sm.PHReg(tte, X, status=event, ties="efron", strata=strata)
@@ -79,7 +82,7 @@ class StatsCoxPH(StatsModels):
         try:
             with warnings.catch_warnings():
                 warnings.filterwarnings("error", category=ConvergenceWarning)
-                fitted = model.fit()
+                fitted = model.fit(groups=cluster)
 
         except np.linalg.linalg.LinAlgError as e:
             raise StatsError(str(e))

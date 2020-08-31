@@ -12,6 +12,8 @@
 
 from .models.linear import StatsLinear
 from .models.survival import StatsCoxPH
+from .models.survival_lifelines import StatsCoxPHLifelines
+from .models.survival_time_varying import StatsCoxTimeVarying
 from .models.mixedlm import StatsMixedLM
 from .models.logistic import StatsLogistic
 
@@ -28,6 +30,9 @@ available_models = {
     "logistic": "Logistic regression (GLM with binomial distribution).",
     "mixedlm": "Linear mixed effect model (random intercept).",
     "coxph": "Cox's proportional hazard regression (survival analysis).",
+    "coxphl": "Cox's proportional hazard regression (survival analysis) using lifelines.",
+    "recurrentl": "Recurrent events using Cox's proportional hazard regression (survival analysis) on lifelines.",
+
 }
 
 
@@ -37,4 +42,6 @@ model_map = {
     "logistic": StatsLogistic,
     "mixedlm": StatsMixedLM,
     "coxph": StatsCoxPH,
+    "coxphl": StatsCoxPHLifelines,
+    "recurrentl": StatsCoxTimeVarying,
 }

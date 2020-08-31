@@ -16,7 +16,7 @@ import warnings
 import numpy as np
 import pandas as pd
 
-from lifelines import CoxPHFitter
+from lifelines import CoxTimeVaryingFitter
 
 from ..core import StatsModels, StatsError
 
@@ -24,16 +24,16 @@ __copyright__ = "Copyright 2016, Beaulieu-Saucier Pharmacogenomics Centre"
 __license__ = "Attribution-NonCommercial 4.0 International (CC BY-NC 4.0)"
 
 
-__all__ = ["StatsCoxPHLifelines"]
+__all__ = ["StatsCoxTimeVarying"]
 
 
 logger = logging.getLogger(__name__)
 
 
-class StatsCoxPHLifelines(StatsModels):
+class StatsCoxTimeVarying(StatsModels):
 
     def __init__(self, include_likelihood=True, normalize=False):
-        """Initializes a 'StatsCoxPH' instance.
+        """Initializes a 'StatsCoxTimeVarying' instance.
         Args:	
             include_likelihood (bool): Whether to compute the log likelihood or
                                        not (might increase computation time).
@@ -46,13 +46,14 @@ class StatsCoxPHLifelines(StatsModels):
     def _prepare_data(y, X):
         """Prepares the data for the CoxPH analysis."""
         # Checking y has tte and event columns
-        missing_cols = {"tte", "event"} - set(y.columns)
+        missing_cols = {"tte", "event", "stop"} - set(y.columns)
         if missing_cols:
             raise ValueError(
-                "missing column in y: coxph requires 'tte' and 'event'"
+                "missing column in y: CoxTimeVaryingFitter requires 'tte', 'stop' "
+                "and 'event'"
             )
-        if len(y.columns) > 3 and "strata" not in y.columns:
-            extra = set(y.columns) - {"tte", "event"}
+        if len(y.columns) > 4 and "strata" not in y.columns:
+            extra = set(y.columns) - {"tte", "event", "stop"}
             logger.warning("{}: unknown column in y, will be ignored".format(
                 ",".join(extra),
             ))
@@ -61,11 +62,9 @@ class StatsCoxPHLifelines(StatsModels):
         if "intercept" in X.columns:
             X = X.drop("intercept", axis=1)
 
-        # Creating one data frame
-        ret = pd.merge(y[["tte", "event"]], X, left_index=True,
+         # Creating one data frame
+        return pd.merge(y[["tte", "stop", "event"]], X, left_index=True,
                         right_index=True)
-        print(ret)
-        return ret
 
     def fit(self, y, X):
         """Fit the model.
@@ -88,11 +87,12 @@ class StatsCoxPHLifelines(StatsModels):
             cluster = "cluster"
 
         # Creating the CoxPH model and fitting it
-        model = CoxPHFitter()
+        model = CoxTimeVaryingFitter(penalizer=0.1)
 
         # Fitting the model
         try:
-            model.fit(data, "tte", "event", cluster_col=cluster, strata=strata)
+            model.fit(data, start_col="tte", stop_col="stop",
+                event_col="event", cluster_col=cluster, strata=strata)
 
         except np.linalg.linalg.LinAlgError as e:
             raise StatsError(str(e))
