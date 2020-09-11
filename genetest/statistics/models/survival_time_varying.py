@@ -49,8 +49,8 @@ class StatsCoxTimeVarying(StatsModels):
         missing_cols = {"tte", "event", "stop"} - set(y.columns)
         if missing_cols:
             raise ValueError(
-                "missing column in y: CoxTimeVaryingFitter requires 'tte', 'stop' "
-                "and 'event'"
+                "missing column in y: CoxTimeVaryingFitter requires 'tte',"
+                "'stop' and 'event'"
             )
         if len(y.columns) > 4 and "strata" not in y.columns:
             extra = set(y.columns) - {"tte", "event", "stop"}
@@ -63,8 +63,7 @@ class StatsCoxTimeVarying(StatsModels):
             X = X.drop("intercept", axis=1)
 
          # Creating one data frame
-        return pd.merge(y[["tte", "stop", "event"]], X, left_index=True,
-                        right_index=True)
+        return pd.concat([y[["tte", "stop", "event"]], X], axis=1)
 
     def fit(self, y, X):
         """Fit the model.
@@ -100,6 +99,8 @@ class StatsCoxTimeVarying(StatsModels):
 
         except np.linalg.linalg.LinAlgError as e:
             raise StatsError(str(e))
+        except ConvergenceWarning as e:
+            raise StatsError(str(e).replace(" Convergence warning", ""))
 
         # Getting the fitted results
         fitted = model.summary
@@ -113,16 +114,16 @@ class StatsCoxTimeVarying(StatsModels):
             out = {
                 "MODEL": {"log_likelihood": model.log_likelihood_,
                 "nobs": data.shape[0],
-                "nevents": np.sum(data.event),
+                "nevents": model.event_observed.sum(),
                 }
             }
         else:
             out = {
                 "MODEL": {
                 "nobs": data.shape[0],
-                "nevents": np.sum(data.event),
+                "nevents": model.event_observed.sum(),
                 },
-            }        
+            }
         # Getting the values for each parameters
         for param in parameters:
             # If GWAS, check that inference could be done on the SNP.

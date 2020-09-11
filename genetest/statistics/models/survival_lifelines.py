@@ -62,9 +62,7 @@ class StatsCoxPHLifelines(StatsModels):
             X = X.drop("intercept", axis=1)
 
         # Creating one data frame
-        ret = pd.merge(y[["tte", "event"]], X, left_index=True,
-                        right_index=True)
-        print(ret)
+        ret = pd.concat([y[["tte", "event"]], X], axis=1)
         return ret
 
     def fit(self, y, X):
@@ -96,6 +94,8 @@ class StatsCoxPHLifelines(StatsModels):
 
         except np.linalg.linalg.LinAlgError as e:
             raise StatsError(str(e))
+        except ConvergenceWarning as e:
+            raise StatsError(str(e).replace(" Convergence warning", ""))
 
         # Getting the fitted results
         fitted = model.summary
@@ -109,14 +109,14 @@ class StatsCoxPHLifelines(StatsModels):
             out = {
                 "MODEL": {"log_likelihood": model.log_likelihood_,
                 "nobs": data.shape[0],
-                "nevents": np.sum(data.event),
+                "nevents": model.weights[model.event_observed > 0].sum(),
                 }
             }
         else:
             out = {
                 "MODEL": {
                 "nobs": data.shape[0],
-                "nevents": np.sum(data.event),
+                "nevents": model.weights[model.event_observed > 0].sum(),
                 },
             }        
         # Getting the values for each parameters
