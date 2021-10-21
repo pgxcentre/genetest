@@ -38,7 +38,7 @@ class AnalysisConfiguration(object):
         """
         # Reading the configuration file
         with open(filename, "r") as f:
-            self._configuration = yaml.load(f)
+            self._configuration = yaml.safe_load(f)
 
         # Getting the required and available sections
         required_sections = {"genotypes", "phenotypes", "model"}
