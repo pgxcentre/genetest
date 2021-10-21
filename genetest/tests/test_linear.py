@@ -11,6 +11,7 @@
 import os
 import unittest
 from tempfile import TemporaryDirectory
+from shutil import copyfile
 
 import numpy as np
 import pandas as pd
@@ -43,11 +44,26 @@ class TestStatsLinear(unittest.TestCase):
             compression="bz2",
         )
 
+        # Loading the data with missing values
+        data_missing = pd.read_csv(
+            resource_filename(
+                __name__, "data/statistics/linear_missing.txt.bz2",
+            ),
+            sep="\t",
+            compression="bz2",
+        )
+
         # Creating the index
         data["sample"] = [
             "s{}".format(i+1) for i in range(data.shape[0])
         ]
         data = data.set_index("sample")
+
+        # Creating the index for the missing
+        data_missing["sample"] = [
+            "s{}".format(i+1) for i in range(data_missing.shape[0])
+        ]
+        data_missing = data_missing.set_index("sample")
 
         # Creating the dummy phenotype container
         cls.phenotypes = _DummyPhenotypes()
@@ -70,6 +86,14 @@ class TestStatsLinear(unittest.TestCase):
             for snp in [s for s in data.columns if s.startswith("snp")]:
                 bed.write_genotypes(data.loc[new_sample_order, snp])
 
+        # Creating the BED file for missing values
+        with PyPlink(cls.plink_prefix + "_missing", "w") as bed:
+            snps = [s for s in data_missing.columns if s.startswith("snp")]
+            for snp in snps:
+                bed.write_genotypes(
+                    data_missing.loc[new_sample_order, snp].fillna(-1)
+                )
+
         # Creating the BIM file
         with open(cls.plink_prefix + ".bim", "w") as bim:
             print(3, "snp1", 0, 1234, "T", "C", sep="\t", file=bim)
@@ -83,8 +107,16 @@ class TestStatsLinear(unittest.TestCase):
             for sample in new_sample_order:
                 print(sample, sample, 0, 0, 0, -9, file=fam)
 
+        # Copying the FAM/BIM files for the missing values
+        for extension in ("bim", "fam"):
+            copyfile(
+                cls.plink_prefix + "." + extension,
+                cls.plink_prefix + "_missing." + extension,
+            )
+
         # Creating the genotype parser
         cls.genotypes = parsers["plink"](cls.plink_prefix)
+        cls.genotypes_missing = parsers["plink"](cls.plink_prefix + "_missing")
 
     @classmethod
     def tearDownClass(cls):
@@ -374,6 +406,159 @@ class TestStatsLinear(unittest.TestCase):
         self.assertAlmostEqual(
             1 - (n - 1) * (1 - 0.13411074411446)/((n - 1) - p),
             results["MODEL"]["r_squared_adj"],
+        )
+
+        # There should be a file for the failed snp5
+        self.assertTrue(os.path.isfile(out_prefix + "_failed_snps.txt"))
+        with open(out_prefix + "_failed_snps.txt") as f:
+            self.assertEqual(
+                [["snp5", "condition number is large, inf"]],
+                [line.split("\t") for line in f.read().splitlines()],
+            )
+
+    def test_linear_gwas_inter_with_missing(self):
+        """Tests linear regression for GWAS with interaction (missing geno)."""
+        # The variables which are factors
+        gender = spec.factor(spec.phenotypes.gender)
+
+        # The interaction term
+        inter = spec.gwas_interaction(gender)
+
+        # Creating the model specification
+        modelspec = spec.ModelSpec(
+            outcome=spec.phenotypes.pheno1,
+            predictors=[spec.SNPs, spec.phenotypes.age,
+                        spec.phenotypes.var1, gender, inter],
+            test=lambda: StatsLinear(condition_value_t=15000),
+        )
+
+        # The output prefix
+        out_prefix = os.path.join(self.tmp_dir.name, "results")
+
+        # Performing the analysis and retrieving the results
+        subscriber = subscribers.ResultsMemory()
+        analysis.execute(
+            self.phenotypes, self.genotypes_missing, modelspec,
+            subscribers=[subscriber], output_prefix=out_prefix, cpus=1,
+        )
+        gwas_results = subscriber._get_gwas_results()
+
+        # Checking the number of results (should be 4)
+        self.assertEqual(4, len(gwas_results.keys()))
+
+        # The id of the interaction
+        inter_id = inter.id + ":level.2"
+
+        # Checking the first marker (snp1)
+        results = gwas_results["snp1"]
+        self.assertEqual("snp1", results["SNPs"]["name"])
+        self.assertEqual(58, results["MODEL"]["nobs"])
+        self.assertEqual("3", results["SNPs"]["chrom"])
+        self.assertEqual(1234, results["SNPs"]["pos"])
+        self.assertEqual("T", results["SNPs"]["minor"])
+        self.assertEqual("C", results["SNPs"]["major"])
+        self.assertAlmostEqual(0.01724138, results["SNPs"]["maf"])
+
+        # Checking the marker statistics (according to R)
+        self.assertAlmostEqual(-73.524906092593682, results[inter_id]["coef"])
+        self.assertAlmostEqual(
+            39.421713186231742, results[inter_id]["std_err"],
+        )
+        self.assertAlmostEqual(
+            -152.63036090780383, results[inter_id]["lower_ci"], places=6,
+        )
+        self.assertAlmostEqual(
+            5.58054872261646, results[inter_id]["upper_ci"], places=6,
+        )
+        self.assertAlmostEqual(
+            -1.865086525926851, results[inter_id]["t_value"]
+        )
+        self.assertAlmostEqual(0.067816454951341, results[inter_id]["p_value"])
+
+        # Checking the model r squared (adjusted) (according to R)
+        self.assertAlmostEqual(
+            0.36721462482, results["MODEL"]["r_squared_adj"],
+        )
+
+        # Checking the second marker (snp2)
+        results = gwas_results["snp2"]
+        self.assertEqual("snp2", results["SNPs"]["name"])
+        self.assertEqual(60, results["MODEL"]["nobs"])
+        self.assertEqual("3", results["SNPs"]["chrom"])
+        self.assertEqual(9618, results["SNPs"]["pos"])
+        self.assertEqual("C", results["SNPs"]["minor"])
+        self.assertEqual("A", results["SNPs"]["major"])
+        self.assertAlmostEqual(0.20833333333333334, results["SNPs"]["maf"])
+
+        # Checking the marker statistics (according to R)
+        self.assertAlmostEqual(-14.58097699426284, results[inter_id]["coef"])
+        self.assertAlmostEqual(14.74093659220610, results[inter_id]["std_err"])
+        self.assertAlmostEqual(
+            -44.13477545647029, results[inter_id]["lower_ci"],
+        )
+        self.assertAlmostEqual(
+            14.97282146794460, results[inter_id]["upper_ci"],
+        )
+        self.assertAlmostEqual(-0.98914861366219, results[inter_id]["t_value"])
+        self.assertAlmostEqual(0.32700205682564, results[inter_id]["p_value"])
+
+        # Checking the model r squared (adjusted) (according to R)
+        self.assertAlmostEqual(
+            0.14490168164, results["MODEL"]["r_squared_adj"],
+        )
+
+        # Checking the third marker (snp3)
+        results = gwas_results["snp3"]
+        self.assertEqual("snp3", results["SNPs"]["name"])
+        self.assertEqual(57, results["MODEL"]["nobs"])
+        self.assertEqual("2", results["SNPs"]["chrom"])
+        self.assertEqual(1519, results["SNPs"]["pos"])
+        self.assertEqual("G", results["SNPs"]["minor"])
+        self.assertEqual("T", results["SNPs"]["major"])
+        self.assertAlmostEqual(0.28947368421053, results["SNPs"]["maf"])
+
+        # Checking the marker statistics (according to R)
+        self.assertAlmostEqual(25.214378978588954, results[inter_id]["coef"])
+        self.assertAlmostEqual(
+            13.184490128342404, results[inter_id]["std_err"],
+        )
+        self.assertAlmostEqual(-1.25458942296061,
+                               results[inter_id]["lower_ci"])
+        self.assertAlmostEqual(51.6833473801385, results[inter_id]["upper_ci"])
+        self.assertAlmostEqual(1.912427309144566,
+                               results[inter_id]["t_value"])
+        self.assertAlmostEqual(0.061445603050293, results[inter_id]["p_value"])
+
+        # Checking the model r squared (adjusted) (according to R)
+        self.assertAlmostEqual(
+            0.0071127680164, results["MODEL"]["r_squared_adj"],
+        )
+
+        # Checking the fourth marker (snp4)
+        results = gwas_results["snp4"]
+        self.assertEqual("snp4", results["SNPs"]["name"])
+        self.assertEqual(60, results["MODEL"]["nobs"])
+        self.assertEqual("1", results["SNPs"]["chrom"])
+        self.assertEqual(5871, results["SNPs"]["pos"])
+        self.assertEqual("G", results["SNPs"]["minor"])
+        self.assertEqual("A", results["SNPs"]["major"])
+        self.assertAlmostEqual(0.275, results["SNPs"]["maf"])
+
+        # Checking the marker statistics (according to SAS)
+        self.assertAlmostEqual(14.43114906311632, results[inter_id]["coef"])
+        self.assertAlmostEqual(13.18945505989541, results[inter_id]["std_err"])
+        self.assertAlmostEqual(
+            -12.01211620895516, results[inter_id]["lower_ci"],
+        )
+        self.assertAlmostEqual(
+            40.87441433518780, results[inter_id]["upper_ci"],
+        )
+        self.assertAlmostEqual(1.09414293445652, results[inter_id]["t_value"])
+        self.assertAlmostEqual(0.27874894975796, results[inter_id]["p_value"])
+
+        # Checking the model r squared (adjusted) (according to SAS)
+        self.assertAlmostEqual(
+            0.059942658948, results["MODEL"]["r_squared_adj"],
         )
 
         # There should be a file for the failed snp5
