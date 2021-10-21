@@ -1,5 +1,5 @@
 [![PyPI version](https://badge.fury.io/py/genetest.svg)](http://badge.fury.io/py/genetest)
-[![Build Status](https://travis-ci.org/pgxcentre/genetest.svg?branch=master)](https://travis-ci.org/pgxcentre/genetest)
+[![Build Status](https://github.com/pgxcentre/genetest/actions/workflows/tests.yml/badge.svg?branch=master)](https://github.com/pgxcentre/genetest/actions/workflows/tests.yml)
 
 
 # genetest - A Python module for statistical genetics
