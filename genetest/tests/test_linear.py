@@ -544,7 +544,7 @@ class TestStatsLinear(unittest.TestCase):
         self.assertEqual("A", results["SNPs"]["major"])
         self.assertAlmostEqual(0.275, results["SNPs"]["maf"])
 
-        # Checking the marker statistics (according to SAS)
+        # Checking the marker statistics (according to R)
         self.assertAlmostEqual(14.43114906311632, results[inter_id]["coef"])
         self.assertAlmostEqual(13.18945505989541, results[inter_id]["std_err"])
         self.assertAlmostEqual(
@@ -556,7 +556,7 @@ class TestStatsLinear(unittest.TestCase):
         self.assertAlmostEqual(1.09414293445652, results[inter_id]["t_value"])
         self.assertAlmostEqual(0.27874894975796, results[inter_id]["p_value"])
 
-        # Checking the model r squared (adjusted) (according to SAS)
+        # Checking the model r squared (adjusted) (according to R)
         self.assertAlmostEqual(
             0.059942658948, results["MODEL"]["r_squared_adj"],
         )
