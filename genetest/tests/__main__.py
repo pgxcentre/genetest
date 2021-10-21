@@ -8,6 +8,7 @@
 # Commons, PO Box 1866, Mountain View, CA 94042, USA.
 
 
+import sys
 import unittest
 
 from . import test_suite
@@ -17,4 +18,5 @@ __copyright__ = "Copyright 2016, Beaulieu-Saucier Pharmacogenomics Centre"
 __license__ = "Attribution-NonCommercial 4.0 International (CC BY-NC 4.0)"
 
 
-unittest.TextTestRunner(verbosity=1).run(test_suite)
+result = unittest.TextTestRunner(verbosity=1).run(test_suite)
+sys.exit(not result.wasSuccessful())
