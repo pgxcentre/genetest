@@ -14,6 +14,7 @@ genetest/version.py
 
 genetest/modelspec/parser.py
 
+.tox
 .coverage
 htmlcov
 

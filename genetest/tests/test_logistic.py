@@ -41,11 +41,26 @@ class TestStatsLogistic(unittest.TestCase):
             compression="bz2",
         )
 
+        # Loading the data with missing values
+        data_missing = pd.read_csv(
+            resource_filename(
+                __name__, "data/statistics/logistic_missing.txt.bz2",
+            ),
+            sep="\t",
+            compression="bz2",
+        )
+
         # Creating the index
         data["sample"] = [
             "s{}".format(i+1) for i in range(data.shape[0])
         ]
         data = data.set_index("sample")
+
+        # Creating the index for the missing
+        data_missing["sample"] = [
+            "s{}".format(i+1) for i in range(data_missing.shape[0])
+        ]
+        data_missing = data_missing.set_index("sample")
 
         # Creating the dummy phenotype container
         cls.phenotypes = _DummyPhenotypes()
@@ -63,6 +78,12 @@ class TestStatsLogistic(unittest.TestCase):
             [_ for _ in data.columns if _.startswith("snp")],
         ].copy()
 
+        # Creating the genotypes data frame for missing
+        genotypes_missing = data_missing.loc[
+            new_sample_order,
+            [_ for _ in data_missing.columns if _.startswith("snp")],
+        ].copy()
+
         # Creating the mapping information
         map_info = pd.DataFrame(
             {"chrom": ["3", "3", "2"],
@@ -75,6 +96,12 @@ class TestStatsLogistic(unittest.TestCase):
         # Creating the genotype parser
         cls.genotypes = parsers["dataframe"](
             dataframe=genotypes,
+            map_info=map_info,
+        )
+
+        # Creating the genotype parser for missing
+        cls.genotypes_missing = parsers["dataframe"](
+            dataframe=genotypes_missing,
             map_info=map_info,
         )
 
@@ -262,6 +289,100 @@ class TestStatsLogistic(unittest.TestCase):
                                results[inter.id]["t_value"]**2, places=3)
         self.assertAlmostEqual(0.48491356159603, results[inter.id]["p_value"],
                                places=4)
+
+        # There should be a file for the failed snp3
+        self.assertTrue(os.path.isfile(out_prefix + "_failed_snps.txt"))
+        with open(out_prefix + "_failed_snps.txt") as f:
+            self.assertEqual(
+                [["snp3", "Perfect separation detected, results not "
+                          "available"]],
+                [line.split("\t") for line in f.read().splitlines()],
+            )
+
+    def test_logistic_gwas_inter_with_missing(self):
+        """Tests logistic regression for GWAS with interaction (missing)."""
+        # The variables which are factors
+        gender = spec.factor(spec.phenotypes.gender)
+
+        # The interaction term
+        inter = spec.gwas_interaction(gender)
+
+        # Creating the model specification
+        modelspec = spec.ModelSpec(
+            outcome=spec.phenotypes.pheno2,
+            predictors=[spec.SNPs, spec.phenotypes.age,
+                        spec.phenotypes.var1, gender, inter],
+            test="logistic",
+        )
+
+        # The output prefix
+        out_prefix = os.path.join(self.tmp_dir.name, "results")
+
+        # Performing the analysis and retrieving the results
+        subscriber = subscribers.ResultsMemory()
+        analysis.execute(
+            self.phenotypes, self.genotypes_missing, modelspec,
+            subscribers=[subscriber], output_prefix=out_prefix, cpus=1,
+        )
+        gwas_results = subscriber._get_gwas_results()
+
+        # Checking the number of results (should be 2)
+        self.assertEqual(2, len(gwas_results.keys()))
+
+        # The id of the interaction
+        inter_id = inter.id + ":level.2"
+
+        # Checking the first marker (snp1)
+        results = gwas_results["snp1"]
+        self.assertEqual("snp1", results["SNPs"]["name"])
+        self.assertEqual(56, results["MODEL"]["nobs"])
+        self.assertEqual(26, results["MODEL"]["nevents"])
+        self.assertEqual("3", results["SNPs"]["chrom"])
+        self.assertEqual(1234, results["SNPs"]["pos"])
+        self.assertEqual("T", results["SNPs"]["minor"])
+        self.assertEqual("C", results["SNPs"]["major"])
+        self.assertAlmostEqual(0.366, results["SNPs"]["maf"])
+
+        # Checking the marker statistics (according to R)
+        self.assertAlmostEqual(-0.0104984919651751, results[inter_id]["coef"])
+        self.assertAlmostEqual(
+            1.2527746922778626, results[inter_id]["std_err"], places=4,
+        )
+        self.assertAlmostEqual(
+            -2.5672869105412, results[inter_id]["lower_ci"], places=0,
+        )
+        self.assertAlmostEqual(
+            2.4914054672852, results[inter_id]["upper_ci"], places=1,
+        )
+        self.assertAlmostEqual(
+            -0.0083801916097827, results[inter_id]["t_value"], places=6,
+        )
+        self.assertAlmostEqual(
+            0.9933136527591089, results[inter_id]["p_value"], places=6,
+        )
+
+        # Checking the second marker (snp2)
+        results = gwas_results["snp2"]
+        self.assertEqual("snp2", results["SNPs"]["name"])
+        self.assertEqual(60, results["MODEL"]["nobs"])
+        self.assertEqual(28, results["MODEL"]["nevents"])
+        self.assertEqual("3", results["SNPs"]["chrom"])
+        self.assertEqual(9618, results["SNPs"]["pos"])
+        self.assertEqual("C", results["SNPs"]["minor"])
+        self.assertEqual("A", results["SNPs"]["major"])
+        self.assertAlmostEqual(0.41590833333333332, results["SNPs"]["maf"])
+
+        # Checking the marker statistics (according to R)
+        self.assertAlmostEqual(-0.84515903941970, results[inter_id]["coef"])
+        self.assertAlmostEqual(0.95649136663185, results[inter_id]["std_err"])
+        self.assertAlmostEqual(
+            -2.8125995700032, results[inter_id]["lower_ci"], places=0,
+        )
+        self.assertAlmostEqual(
+            1.0333394081932, results[inter_id]["upper_ci"], places=2,
+        )
+        self.assertAlmostEqual(-0.88360341651155, results[inter_id]["t_value"])
+        self.assertAlmostEqual(0.37691033409790, results[inter_id]["p_value"])
 
         # There should be a file for the failed snp3
         self.assertTrue(os.path.isfile(out_prefix + "_failed_snps.txt"))

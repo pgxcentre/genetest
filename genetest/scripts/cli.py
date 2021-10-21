@@ -329,7 +329,10 @@ def perform_normal_analysis(args, test, phenotypes, genotypes, formula,
 def check_args(args):
     """Checks the arguments and options."""
     # Checking that configuration file exists
-    if not os.path.isfile(args.configuration):
+    try:
+        with open(args.configuration, "r") as f:
+            pass
+    except:
         raise CliError("{}: no such file.".format(args.configuration))
 
     # Checking the number of CPUs

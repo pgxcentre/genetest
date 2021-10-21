@@ -108,6 +108,10 @@ def _gwas_worker(q, results_q, failed, abort, fit, y, X, samples, maf_t=None,
         # Set all to missing genotypes
         X.loc[:, "SNPs"] = np.nan
 
+        # If interaction, we remove the previously computed columns
+        if interaction:
+            X = X.drop(list(interaction.keys()), axis=1, errors="ignore")
+
         # Set the genotypes
         X.loc[sample_order, "SNPs"] = snp.genotypes[geno_index]
 
